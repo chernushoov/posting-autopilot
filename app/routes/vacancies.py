@@ -105,6 +105,20 @@ def new_vacancy_post():
     bot_cold_criteria = request.form.get("bot_cold_criteria", "").strip() or None
     whatsapp_number = request.form.get("whatsapp_number", "").strip() or None
 
+    # Image upload
+    image_path = None
+    if 'image' in request.files:
+        img = request.files['image']
+        if img and img.filename:
+            import os
+            upload_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            import time as _time
+            safe_name = f"{int(_time.time())}_{img.filename.replace(' ', '_')}"
+            save_path = os.path.join(upload_dir, safe_name)
+            img.save(save_path)
+            image_path = save_path
+
     # Parse bot qualifying questions as JSON array
     bot_qq = None
     if bot_qualifying_questions_raw:
@@ -133,11 +147,67 @@ def new_vacancy_post():
         bot_hot_criteria=bot_hot_criteria,
         bot_cold_criteria=bot_cold_criteria,
         whatsapp_number=whatsapp_number,
+        image_path=image_path,
     )
     db.add(vacancy)
+    db.flush()  # get vacancy.id
+
+    # Auto-create campaign if coming from quick-post modal (has interval_minutes)
+    interval_minutes = request.form.get("interval_minutes", "").strip()
+    if interval_minutes:
+        from ..models import Campaign, CampaignSource, Source
+        cid = current_company_id()
+
+        # Parse schedule params
+        try:
+            interval = int(interval_minutes)
+        except ValueError:
+            interval = 180
+        active_start = request.form.get("active_start", "9")
+        active_end = request.form.get("active_end", "19")
+        days = request.form.getlist("days") or ["0", "1", "2", "3", "4"]
+
+        hours_json = json.dumps({"start": int(active_start), "end": int(active_end)})
+        days_json = json.dumps([int(d) for d in days])
+
+        campaign = Campaign(
+            company_id=cid,
+            vacancy_id=vacancy.id,
+            name=f"Auto: {title[:40]}",
+            interval_minutes=interval,
+            active_hours_json=hours_json,
+            days_of_week_json=days_json,
+            max_posts_per_day=10,
+            is_running=True,
+        )
+        db.add(campaign)
+        db.flush()
+
+        # Attach all active Telegram sources
+        tg_sources = db.query(Source).filter(
+            Source.company_id == cid,
+            Source.platform == "telegram",
+            Source.is_active == True,
+        ).all()
+        for src in tg_sources:
+            link = CampaignSource(campaign_id=campaign.id, source_id=src.id)
+            db.add(link)
+
+        db.commit()
+
+        # Trigger first post immediately
+        try:
+            from worker.queue import enqueue_campaign_tick
+            enqueue_campaign_tick(campaign.id)
+        except Exception:
+            pass
+
+        db.close()
+        return redirect(url_for("auth.connect_telegram", message=f"Listing created + campaign started with {len(tg_sources)} destinations"))
+
     db.commit()
     db.close()
-    return redirect(url_for("vacancies.list_vacancies", message="Pilot vacancy created with posting-ready asset."))
+    return redirect(url_for("vacancies.list_vacancies", message="Listing created."))
 
 
 @bp.post("/toggle/<int:vacancy_id>")

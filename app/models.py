@@ -154,6 +154,11 @@ class Company(Base):
     tg_api_id = Column(String(20), nullable=True)
     tg_api_hash = Column(String(64), nullable=True)
 
+    # Facebook OAuth
+    fb_access_token = Column(Text, nullable=True)
+    fb_user_id = Column(String(64), nullable=True)
+    fb_user_name = Column(String(200), nullable=True)
+
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
@@ -194,6 +199,7 @@ class Vacancy(Base):
     bot_hot_criteria = Column(Text, nullable=True)
     bot_cold_criteria = Column(Text, nullable=True)
     whatsapp_number = Column(String(20), nullable=True)  # Task 2.3: WhatsApp click-to-chat
+    image_path = Column(String(500), nullable=True)  # uploaded photo path
 
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

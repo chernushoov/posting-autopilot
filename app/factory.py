@@ -30,6 +30,7 @@ def create_app():
         # Exempt API endpoints that don't use forms
         csrf.exempt("fb_safe_workflow.api_groups")
         csrf.exempt("billing.stripe_webhook")
+        csrf.exempt("auth.fb_callback")
 
         # Auto-inject CSRF token into all POST forms via after_request
         @app.after_request

@@ -209,6 +209,7 @@ async def _post_to_group_async(
     company_id: int,
     group_id: str,
     text: str,
+    file_path: str = None,
 ) -> dict:
     """
     Post a message to a Telegram group/channel via Telethon user account.
@@ -242,9 +243,13 @@ async def _post_to_group_async(
     for attempt in range(MAX_RETRIES):
         try:
             entity = await client.get_entity(entity_ref)
-            msg = await client.send_message(entity, text)
+            if file_path and os.path.exists(file_path):
+                msg = await client.send_file(entity, file_path, caption=text)
+            else:
+                msg = await client.send_message(entity, text)
+            msg_id = getattr(msg, 'id', None) if msg else None
             await client.disconnect()
-            return {"ok": True, "message_id": msg.id, "error": None}
+            return {"ok": True, "message_id": msg_id, "error": None}
 
         except FloodWaitError as e:
             last_error = f"FloodWait: {e.seconds}s (attempt {attempt + 1}/{MAX_RETRIES})"
@@ -283,6 +288,7 @@ def post_to_group(
     company_id: int,
     group_id: str,
     text: str,
+    file_path: str = None,
 ) -> tuple[bool, str]:
     """
     Synchronous wrapper for posting to a group via Telethon.
@@ -308,7 +314,7 @@ def post_to_group(
 
     loop = _get_loop()
     result = loop.run_until_complete(
-        _post_to_group_async(api_id, api_hash, company_id, group_id, text)
+        _post_to_group_async(api_id, api_hash, company_id, group_id, text, file_path)
     )
 
     if result["ok"]:

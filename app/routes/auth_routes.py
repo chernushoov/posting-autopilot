@@ -405,9 +405,217 @@ def tg_add_selected():
 def connect_facebook():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
-    db = db_session()
     company_id = session.get("current_company_id")
+    if not company_id:
+        return redirect(url_for("companies.list_companies"))
+
+    db = db_session()
     from ..models import Source
     facebook_sources = db.query(Source).filter(Source.company_id == company_id, Source.platform == "facebook", Source.is_active == True).all() if company_id else []
+    existing_urls = {s.destination_url for s in facebook_sources if s.destination_url}
+
+    # Check if Facebook is connected (token in Company)
+    comp = db.query(Company).filter(Company.id == company_id).first()
+    fb_connected = bool(comp and comp.fb_access_token)
+    fb_user_name = comp.fb_user_name if comp else None
+
+    # Load synced groups from cache
+    fb_groups = []
+    try:
+        import os, json as _json
+        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache', f'groups_{company_id}.json')
+        if os.path.exists(cache_path):
+            with open(cache_path) as f:
+                fb_groups = _json.load(f)
+    except Exception:
+        pass
+
     db.close()
-    return render_template("connect_facebook.html", facebook_sources=facebook_sources)
+
+    from common.fb_client import is_configured, FB_APP_ID
+    return render_template("connect_facebook.html",
+        facebook_sources=facebook_sources,
+        existing_urls=existing_urls,
+        fb_configured=is_configured(),
+        fb_app_id=FB_APP_ID,
+        fb_connected=fb_connected,
+        fb_user_name=fb_user_name,
+        fb_groups=fb_groups,
+        error=request.args.get("error"),
+        message=request.args.get("message"),
+    )
+
+
+@bp.post("/connect/facebook/setup")
+def fb_setup():
+    """Save FB App credentials and redirect to Facebook OAuth."""
+    if not session.get("is_admin"):
+        return redirect(url_for("auth.login"))
+    fb_app_id = request.form.get("fb_app_id", "").strip()
+    fb_app_secret = request.form.get("fb_app_secret", "").strip()
+    if not fb_app_id or not fb_app_secret:
+        return redirect(url_for("auth.connect_facebook", error="App ID and Secret required"))
+
+    # Save to session for callback
+    session["fb_app_id"] = fb_app_id
+    session["fb_app_secret"] = fb_app_secret
+
+    # Also save to env-like storage for fb_client
+    import os
+    os.environ["FB_APP_ID"] = fb_app_id
+    os.environ["FB_APP_SECRET"] = fb_app_secret
+
+    # Redirect to Facebook OAuth
+    redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
+    oauth_url = (
+        f"https://www.facebook.com/v19.0/dialog/oauth?"
+        f"client_id={fb_app_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=public_profile"
+        f"&response_type=code"
+    )
+    return redirect(oauth_url)
+
+
+@bp.get("/connect/facebook/callback")
+def fb_callback():
+    """Facebook OAuth callback — exchange code for token, sync groups."""
+    if not session.get("is_admin"):
+        return redirect(url_for("auth.login"))
+    company_id = session.get("current_company_id")
+    code = request.args.get("code")
+    error = request.args.get("error")
+
+    if error or not code:
+        return redirect(url_for("auth.connect_facebook", error=error or "Facebook login cancelled"))
+
+    # Use credentials from session (set during setup)
+    import os
+    fb_app_id = session.get("fb_app_id") or os.getenv("FB_APP_ID", "")
+    fb_app_secret = session.get("fb_app_secret") or os.getenv("FB_APP_SECRET", "")
+    if fb_app_id:
+        os.environ["FB_APP_ID"] = fb_app_id
+    if fb_app_secret:
+        os.environ["FB_APP_SECRET"] = fb_app_secret
+
+    from common.fb_client import exchange_code, get_long_lived_token, get_user_info, get_user_groups
+    redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
+
+    # Exchange code for token
+    result = exchange_code(code, redirect_uri)
+    if not result.get("ok"):
+        return redirect(url_for("auth.connect_facebook", error=result.get("error", "Token exchange failed")))
+
+    # Get long-lived token
+    long = get_long_lived_token(result["access_token"])
+    token = long["access_token"] if long.get("ok") else result["access_token"]
+
+    # Get user info
+    user_info = get_user_info(token)
+
+    # Save to Company
+    db = db_session()
+    comp = db.query(Company).filter(Company.id == company_id).first()
+    if comp:
+        comp.fb_access_token = token
+        if user_info.get("ok"):
+            comp.fb_user_id = user_info["user"].get("id")
+            comp.fb_user_name = user_info["user"].get("name")
+        db.commit()
+    db.close()
+
+    # Sync groups
+    groups_result = get_user_groups(token)
+    if groups_result.get("ok"):
+        import os, json as _json
+        cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_path = os.path.join(cache_dir, f'groups_{company_id}.json')
+        with open(cache_path, 'w') as f:
+            _json.dump(groups_result["groups"], f, ensure_ascii=False)
+        msg = f"Facebook connected! Found {groups_result['total']} groups."
+    else:
+        msg = "Facebook connected but could not sync groups: " + groups_result.get("error", "")
+
+    return redirect(url_for("auth.connect_facebook", message=msg))
+
+
+@bp.post("/connect/facebook/sync")
+def fb_sync():
+    """Re-sync Facebook groups."""
+    if not session.get("is_admin"):
+        return redirect(url_for("auth.login"))
+    company_id = session.get("current_company_id")
+
+    db = db_session()
+    comp = db.query(Company).filter(Company.id == company_id).first()
+    if not comp or not comp.fb_access_token:
+        db.close()
+        return redirect(url_for("auth.connect_facebook", error="Facebook not connected"))
+    token = comp.fb_access_token
+    db.close()
+
+    from common.fb_client import get_user_groups
+    result = get_user_groups(token)
+    if result.get("ok"):
+        import os, json as _json
+        cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_path = os.path.join(cache_dir, f'groups_{company_id}.json')
+        with open(cache_path, 'w') as f:
+            _json.dump(result["groups"], f, ensure_ascii=False)
+        return redirect(url_for("auth.connect_facebook", message=f"Synced {result['total']} groups"))
+    return redirect(url_for("auth.connect_facebook", error=result.get("error", "Sync failed")))
+
+
+@bp.post("/connect/facebook/add-selected")
+def fb_add_selected():
+    """Add selected Facebook groups as posting destinations."""
+    if not session.get("is_admin"):
+        return redirect(url_for("auth.login"))
+    company_id = session.get("current_company_id")
+    group_ids = request.form.get("group_ids", "").split(",")
+
+    # Load from cache
+    fb_groups = []
+    try:
+        import os, json as _json
+        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache', f'groups_{company_id}.json')
+        if os.path.exists(cache_path):
+            with open(cache_path) as f:
+                fb_groups = _json.load(f)
+    except Exception:
+        pass
+
+    db = db_session()
+    from ..models import Source, SourceType
+    added = 0
+    for gid in group_ids:
+        gid = gid.strip()
+        if not gid:
+            continue
+        group = next((g for g in fb_groups if str(g["id"]) == gid), None)
+        if not group:
+            continue
+        fb_url = f"https://facebook.com/groups/{group['id']}"
+        existing = db.query(Source).filter(Source.company_id == company_id, Source.destination_url == fb_url).first()
+        if existing:
+            continue
+        import time as _time
+        source = Source(
+            company_id=company_id,
+            tg_ref=f"fb-{group['id']}",
+            label=group["name"],
+            source_type=SourceType.group,
+            platform="facebook",
+            destination_kind="group",
+            posting_mode="assisted_manual",
+            destination_url=fb_url,
+            last_check_ok=True,
+            last_check_message=f"Synced from Facebook ({group.get('member_count', 0)} members)",
+        )
+        db.add(source)
+        added += 1
+    db.commit()
+    db.close()
+    return redirect(url_for("auth.connect_facebook", message=f"Added {added} groups"))
