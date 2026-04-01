@@ -1,0 +1,124 @@
+{% extends "_layout.html" %}
+{% block content %}
+<h1>{{ ui("analytics_title") }}</h1>
+
+<!-- KPI Cards -->
+<div class="grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+  <div class="card" style="text-align:center;padding:20px">
+    <div style="font-size:2em;font-weight:bold">{{ total }}</div>
+    <div class="muted">{{ ui("total_candidates") }}</div>
+  </div>
+  <div class="card" style="text-align:center;padding:20px">
+    <div style="font-size:2em;font-weight:bold;color:#3fb950">{{ passed }}</div>
+    <div class="muted">{{ ui("passed") }}</div>
+  </div>
+  <div class="card" style="text-align:center;padding:20px">
+    <div style="font-size:2em;font-weight:bold;color:#f85149">{{ rejected }}</div>
+    <div class="muted">{{ ui("rejected") }}</div>
+  </div>
+  <div class="card" style="text-align:center;padding:20px">
+    <div style="font-size:2em;font-weight:bold;color:#58a6ff">{{ hired }}</div>
+    <div class="muted">{{ ui("hired") }}</div>
+  </div>
+</div>
+
+<!-- Conversion Funnel -->
+<div class="card" style="padding:20px;margin:20px 0">
+  <h2>{{ ui("conversion_funnel") }}</h2>
+  <table class="table" style="width:100%">
+    <thead><tr><th>{{ ui("stage") }}</th><th>{{ ui("count") }}</th><th>%</th><th style="width:50%">Bar</th></tr></thead>
+    <tbody>
+    {% for step in funnel %}
+      <tr>
+        <td>{{ step.stage }}</td>
+        <td><strong>{{ step.count }}</strong></td>
+        <td>{{ step.pct }}%</td>
+        <td>
+          <div style="background:#21262d;border-radius:4px;height:24px;width:100%;position:relative">
+            <div style="background:{% if step.pct > 50 %}#3fb950{% elif step.pct > 20 %}#d29922{% else %}#f85149{% endif %};height:100%;border-radius:4px;width:{{ step.pct }}%;min-width:2px;transition:width 0.3s"></div>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0">
+
+  <!-- Language Breakdown -->
+  <div class="card" style="padding:20px">
+    <h2>{{ ui("languages_title") }}</h2>
+    <table class="table" style="width:100%">
+      <thead><tr><th>{{ ui("language") }}</th><th>{{ ui("candidates_title") }}</th><th>%</th></tr></thead>
+      <tbody>
+      {% for lang, cnt in lang_stats.items() %}
+        <tr>
+          <td>
+            {% if lang == 'ru' %}Russian
+            {% elif lang == 'he' %}Hebrew
+            {% elif lang == 'en' %}English
+            {% else %}{{ lang or 'Unknown' }}
+            {% endif %}
+          </td>
+          <td>{{ cnt }}</td>
+          <td>{{ (cnt / total * 100) | round(0) if total > 0 else 0 }}%</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Operations -->
+  <div class="card" style="padding:20px">
+    <h2>{{ ui("operations") }}</h2>
+    <table class="table" style="width:100%">
+      <tbody>
+        <tr><td>{{ ui("active_vacancies") }}</td><td><strong>{{ active_vacancies }}</strong></td></tr>
+        <tr><td>{{ ui("active_campaigns") }}</td><td><strong>{{ active_campaigns }}</strong></td></tr>
+        <tr><td>{{ ui("active_sources") }}</td><td><strong>{{ active_sources }}</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Vacancy Performance -->
+<div class="card" style="padding:20px;margin:20px 0">
+  <h2>{{ ui("vacancy_performance") }}</h2>
+  <table class="table" style="width:100%">
+    <thead><tr><th>{{ ui("vacancy") }}</th><th>{{ ui("applicants") }}</th><th>{{ ui("avg_score") }}</th></tr></thead>
+    <tbody>
+    {% for v in vacancies %}
+      <tr>
+        <td>{{ v.title }}</td>
+        <td>{{ v.applicants }}</td>
+        <td>{% if v.avg_score %}{{ v.avg_score | round(0) }}{% else %}—{% endif %}</td>
+      </tr>
+    {% endfor %}
+    {% if not vacancies %}
+      <tr><td colspan="3" class="muted">{{ ui("no_data") }}</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Daily Activity (last 7 days) -->
+<div class="card" style="padding:20px;margin:20px 0">
+  <h2>{{ ui("daily_candidates") }}</h2>
+  {% if daily %}
+  <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:10px 0">
+    {% set max_cnt = daily | map(attribute='cnt') | max %}
+    {% for d in daily %}
+      <div style="flex:1;text-align:center">
+        <div style="background:#58a6ff;border-radius:4px 4px 0 0;height:{{ (d.cnt / max_cnt * 100) if max_cnt > 0 else 0 }}px;min-height:4px;margin:0 auto;width:80%"></div>
+        <div style="font-size:0.8em;margin-top:4px"><strong>{{ d.cnt }}</strong></div>
+        <div style="font-size:0.7em" class="muted">{{ d.day }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="muted">{{ ui("no_data") }}</p>
+  {% endif %}
+</div>
+
+{% endblock %}

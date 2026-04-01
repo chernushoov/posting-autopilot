@@ -1,0 +1,118 @@
+{% extends "_layout.html" %}
+{% block content %}
+<h1>{{ ui("new_vacancy_title") }}</h1>
+
+{% if templates %}
+<div class="card" style="margin-bottom:1.5rem;padding:1rem;">
+  <label style="font-weight:600;font-size:1.05rem;margin-bottom:0.5rem;display:block">What are you posting?</label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    {% for key, tpl in templates.items() %}
+    <button type="button" class="pill template-btn" data-template="{{ key }}"
+            style="cursor:pointer;padding:8px 16px;font-size:14px"
+            onclick="loadTemplate('{{ key }}')">{{ tpl.emoji }} {{ tpl.label }}</button>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<form method="post" class="card" id="listing-form">
+  <label>{{ ui("title") }}</label>
+  <input name="title" id="f-title" value="{{ form_values.get('title', '') }}" placeholder="e.g. Construction worker — Tel Aviv">
+  <label>{{ ui("city") }}</label>
+  <input name="city" value="{{ form_values.get('city', '') }}" placeholder="e.g. Tel Aviv">
+  <label>{{ ui("language") }}</label>
+  <select name="language">
+    {% for l in languages %}<option value="{{ l }}" {% if form_values.get('language', 'ru') == l %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <div class="grid2">
+    <div>
+      <label>{{ ui("salary") }}</label>
+      <input name="salary_text" value="{{ form_values.get('salary_text', '') }}" placeholder="e.g. 55 ₪/hour">
+    </div>
+    <div>
+      <label>{{ ui("schedule") }}</label>
+      <input name="schedule_text" value="{{ form_values.get('schedule_text', '') }}" placeholder="e.g. Sun-Thu, 07:00-16:00">
+    </div>
+  </div>
+  <div class="grid2">
+    <div>
+      <label>{{ ui("contact") }}</label>
+      <input name="contact_text" value="{{ form_values.get('contact_text', '') }}" placeholder="e.g. Telegram @recruiter or phone">
+    </div>
+    <div>
+      <label>WhatsApp Number</label>
+      <input name="whatsapp_number" id="f-whatsapp" value="{{ form_values.get('whatsapp_number', '') }}" placeholder="e.g. 972541234567">
+    </div>
+  </div>
+  <div class="grid2">
+    <div>
+      <label>{{ ui("apply_link") }}</label>
+      <input name="apply_url" value="{{ form_values.get('apply_url', '') }}" placeholder="https://...">
+    </div>
+    <div></div>
+  </div>
+  <label>{{ ui("body") }}</label>
+  <textarea name="body" rows="8" placeholder="Listing description...">{{ form_values.get('body', '') }}</textarea>
+  <label>{{ ui("final_post_title") }}</label>
+  <input name="final_post_title" value="{{ form_values.get('final_post_title', '') }}" placeholder="Defaults to listing title">
+  <label>{{ ui("final_post_body") }}</label>
+  <textarea name="final_post_body" rows="8" placeholder="If empty, the system builds the posting asset from the listing fields.">{{ form_values.get('final_post_body', '') }}</textarea>
+  <label>{{ ui("questions") }}</label>
+  <textarea name="questions" rows="6" placeholder="1) ...&#10;2) ...">{{ form_values.get('questions', '') }}</textarea>
+
+  <details class="card" style="margin-top:1.5rem;padding:1rem;" id="bot-settings">
+    <summary style="cursor:pointer;font-weight:600;font-size:1.05rem;">AI Bot Settings</summary>
+    <div style="margin-top:1rem;">
+      <label>Listing Type</label>
+      <select name="listing_type" id="f-listing-type">
+        <option value="recruitment" {% if form_values.get('listing_type','recruitment')=='recruitment' %}selected{% endif %}>Job Vacancy</option>
+        <option value="auto" {% if form_values.get('listing_type')=='auto' %}selected{% endif %}>Car Sale</option>
+        <option value="realestate" {% if form_values.get('listing_type')=='realestate' %}selected{% endif %}>Apartment Rental</option>
+        <option value="services" {% if form_values.get('listing_type')=='services' %}selected{% endif %}>Service Offering</option>
+        <option value="custom" {% if form_values.get('listing_type')=='custom' %}selected{% endif %}>Custom</option>
+      </select>
+
+      <label>Bot Introduction</label>
+      <textarea name="bot_introduction" id="f-bot-intro" rows="3" placeholder="How the bot introduces itself to respondents...">{{ form_values.get('bot_introduction', '') }}</textarea>
+
+      <label>Bot FAQ Knowledge</label>
+      <textarea name="bot_faq_knowledge" id="f-bot-faq" rows="5" placeholder="Facts the bot can answer by itself (price, schedule, location, etc.)...">{{ form_values.get('bot_faq_knowledge', '') }}</textarea>
+
+      <label>Bot Qualifying Questions (one per line)</label>
+      <textarea name="bot_qualifying_questions" id="f-bot-qq" rows="4" placeholder="What's your budget?&#10;When are you available?&#10;Do you have experience?">{{ form_values.get('bot_qualifying_questions', '') }}</textarea>
+
+      <label>Mark as HOT when</label>
+      <textarea name="bot_hot_criteria" id="f-bot-hot" rows="2" placeholder="Answered all questions + left phone number">{{ form_values.get('bot_hot_criteria', '') }}</textarea>
+
+      <label>Mark as COLD when</label>
+      <textarea name="bot_cold_criteria" id="f-bot-cold" rows="2" placeholder="Spam, rude, irrelevant, doesn't meet criteria">{{ form_values.get('bot_cold_criteria', '') }}</textarea>
+    </div>
+  </details>
+
+  <button class="btn" type="submit" style="margin-top:1rem;">{{ ui("create_vacancy_btn") }}</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadTemplate(key) {
+  fetch('/vacancies/api/template/' + key)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('f-listing-type').value = d.listing_type || 'custom';
+      document.getElementById('f-bot-intro').value = d.bot_introduction || '';
+      document.getElementById('f-bot-faq').value = d.bot_faq_knowledge || '';
+      var qq = d.bot_qualifying_questions || [];
+      document.getElementById('f-bot-qq').value = Array.isArray(qq) ? qq.join('\n') : qq;
+      document.getElementById('f-bot-hot').value = d.bot_hot_criteria || '';
+      document.getElementById('f-bot-cold').value = d.bot_cold_criteria || '';
+      // Open bot settings section
+      document.getElementById('bot-settings').open = true;
+      // Highlight selected template
+      document.querySelectorAll('.template-btn').forEach(b => b.style.background = '');
+      var btn = document.querySelector('[data-template="'+key+'"]');
+      if (btn) btn.style.background = 'var(--accent)';
+    });
+}
+</script>
+{% endblock %}

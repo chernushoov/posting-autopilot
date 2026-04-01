@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="{{ ui_lang }}" {% if is_rtl %}dir="rtl"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ title or 'Posting Autopilot' }}</title>
+  <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  {% if is_rtl %}
+  <style>
+    body { direction: rtl; text-align: right; }
+    .topbar { flex-direction: row-reverse; }
+    .nav { flex-direction: row-reverse; }
+    .right { flex-direction: row-reverse; }
+    .row { flex-direction: row-reverse; }
+    .grid2, .grid3, .setup-grid { direction: rtl; }
+    .actions { text-align: left; }
+    table th, table td { text-align: right; }
+    .lang-switcher { direction: ltr; }
+    .setup-step { flex-direction: row-reverse; }
+    .connect-step { flex-direction: row-reverse; }
+    .page-hero { flex-direction: row-reverse; }
+    .section-head { flex-direction: row-reverse; }
+    .info-list { text-align: right; }
+  </style>
+  {% endif %}
+</head>
+<body>
+  <header class="topbar">
+    <a href="/dashboard" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+    <button class="hamburger" onclick="document.querySelector('.nav').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+    <nav class="nav">
+      <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>{{ ui("nav_dashboard") }}</a>
+      <a href="/profile/" {% if request.path.startswith('/profile') or request.path.startswith('/companies') %}class="active"{% endif %}>{{ ui("company_profile") }}</a>
+      <a href="/connect/telegram" {% if '/connect/telegram' in request.path %}class="active"{% endif %}>Telegram</a>
+      <a href="/connect/facebook" {% if '/connect/facebook' in request.path %}class="active"{% endif %}>Facebook</a>
+      <a href="/vacancies/" {% if request.path.startswith('/vacancies') %}class="active"{% endif %}>{{ ui("nav_vacancies") }}</a>
+      <a href="/sources/" {% if request.path.startswith('/sources') %}class="active"{% endif %}>{{ ui("nav_destinations") }}</a>
+      <a href="/campaigns/" {% if request.path.startswith('/campaigns') %}class="active"{% endif %}>{{ ui("nav_campaigns") }}</a>
+      <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
+      <a href="/analytics/" {% if request.path.startswith('/analytics') %}class="active"{% endif %}>{{ ui("nav_analytics") }}</a>
+    </nav>
+    <div class="right">
+      <div class="lang-switcher" style="display:flex;gap:4px">
+        {% for l in supported_langs %}
+          {% if l == ui_lang %}
+            <span class="pill" style="background:var(--accent);color:#fff;border-color:var(--accent)">{{ l.upper() }}</span>
+          {% else %}
+            <a class="pill" href="/set-lang/{{ l }}">{{ l.upper() }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% if current_company_name %}
+        <a class="pill" href="/companies/" style="font-weight:500">{{ current_company_name }}</a>
+      {% endif %}
+      <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
+    </div>
+  </header>
+  <main class="container" style="padding-top:28px;padding-bottom:40px">
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+    {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

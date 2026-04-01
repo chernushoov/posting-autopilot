@@ -1,0 +1,79 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div class="row">
+  <h1>{{ ui("destinations_title") }}</h1>
+</div>
+
+<form method="post" action="/sources/new" class="card">
+  <div class="grid2">
+    <div>
+      <label>{{ ui("platform") }}</label>
+      <select name="platform">
+        {% for platform in platforms %}<option value="{{ platform }}">{{ platform }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>{{ ui("dest_kind") }}</label>
+      <select name="source_type">
+        {% for t in types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="grid2">
+    <div>
+      <label>{{ ui("dest_ref") }}</label>
+      <input name="tg_ref" placeholder="Telegram: @groupname or -100123... / Facebook: page or group name">
+    </div>
+    <div>
+      <label>{{ ui("posting_mode") }}</label>
+      <select name="posting_mode">
+        {% for mode in posting_modes %}<option value="{{ mode }}">{{ mode }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  <label>{{ ui("label") }}</label>
+  <input name="label" placeholder="Optional label">
+  <label>{{ ui("dest_url") }}</label>
+  <input name="destination_url" placeholder="Optional direct URL, especially useful for Facebook manual posting">
+  <button class="btn" type="submit">{{ ui("add_dest_btn") }}</button>
+</form>
+
+<table class="table">
+  <tr><th>ID</th><th>{{ ui("platform") }}</th><th>{{ ui("dest_ref") }}</th><th>Mode</th><th>{{ ui("ready") }}</th><th>{{ ui("actions") }}</th></tr>
+  {% for s in sources %}
+  <tr>
+    <td>{{ s.id }}</td>
+    <td>{{ s.platform or "telegram" }}</td>
+    <td>
+      <strong>{{ s.label or s.tg_ref }}</strong>
+      <div class="small muted">{{ s.destination_kind or s.source_type.value }} · {{ s.destination_url or s.tg_ref }}</div>
+    </td>
+    <td>{{ s.posting_mode or "auto" }}</td>
+    <td>
+      {% if s.last_check_ok and s.last_check_message and "stub" in s.last_check_message %}
+        FORMAT ONLY
+      {% elif s.last_check_ok %}
+        READY
+      {% else %}
+        {{ ui("check_needed") }}
+      {% endif %}
+      {% if s.last_check_message %} · <span class="muted">{{ s.last_check_message }}</span>{% endif %}
+    </td>
+    <td class="actions">
+      <form method="post" action="/sources/check/{{ s.id }}" style="display:inline"><button class="pill" type="submit">{{ ui("check_btn") }}</button></form>
+      {% if (s.platform or "telegram") == "telegram" %}
+        <form method="post" action="/sources/test/{{ s.id }}" style="display:inline">
+          <label class="checkbox muted" style="display:inline-flex;gap:6px;align-items:center">
+            <input type="checkbox" name="confirm_live_send" value="yes">
+            {{ ui("confirm_live_send") }}
+          </label>
+          <button class="pill" type="submit">{{ ui("test_msg_btn") }}</button>
+        </form>
+      {% else %}
+        <span class="small muted">Use assisted/manual flow in Pilot Runs.</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

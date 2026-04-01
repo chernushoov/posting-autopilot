@@ -1,0 +1,8 @@
+source_name,platform,source_group,posting_mode,status,next_action_before_posting,owner,apply_path_ready,notes
+Client-owned Telegram channel,telegram,telegram bot-ready,bot-ready,needs_quick_setup,"Confirm bot admin rights and final apply link",operator,no,"Best first source if the bot path is healthy"
+Recruiter-controlled Telegram group,telegram,telegram bot-ready,bot-ready,needs_quick_setup,"Confirm bot admin rights or switch to manual posting",recruiter,no,"Good first-wave source if bot posting works"
+Recruiter personal Telegram account list,telegram,telegram userbot-only,userbot-only,ready_now,"Need final text and a posting owner",recruiter,manual,"Fast manual fallback path"
+Manual Telegram job groups,telegram,telegram manual-only,manual-only,ready_now,"Need final text and posting order",recruiter,manual,"Use first on Sunday if bot path is still blocked"
+Facebook company page,facebook,facebook pages,manual-only,ready_now,"Need final standard copy and page access",recruiter,manual,"Good for controlled proof capture"
+Facebook Israel job groups,facebook,facebook groups assisted/manual,manual-only,ready_now,"Need shortlist of groups and compact post version",recruiter,manual,"Expect moderation and source-by-source rules"
+RecruitBot apply link,telegram,blocked / invalid,bot-ready,blocked,"Set valid RECRUITBOT_TELEGRAM_BOT_TOKEN and confirm bot health",operator,no,"Core structured apply and screening path"

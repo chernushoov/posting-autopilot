@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="{{ ui_lang or 'he' }}" {% if is_rtl %}dir="rtl"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Posting Autopilot — {{ ui("pricing_title") }}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .pricing-hero{text-align:center;padding:60px 20px 40px}
+    .pricing-hero h1{font-size:2.4em;margin-bottom:12px}
+    .pricing-hero p{font-size:1.15em;color:var(--muted);max-width:600px;margin:0 auto}
+    .plans{display:flex;justify-content:center;gap:24px;padding:20px;flex-wrap:wrap;max-width:1100px;margin:0 auto}
+    .plan{background:var(--card);border:1px solid var(--border-light);border-radius:var(--radius);padding:32px 28px;width:320px;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+    .plan.highlight{border-color:var(--accent);box-shadow:0 0 24px rgba(0,113,227,.1)}
+    .plan .pop-badge{background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px;display:inline-block;margin-bottom:12px}
+    .plan h2{font-size:1.4em;margin-bottom:8px}
+    .plan .price{font-size:2.2em;font-weight:700;margin:8px 0;color:var(--fg)}
+    .plan .price .note{font-size:.4em;color:var(--muted);font-weight:400}
+    .plan ul{list-style:none;margin:20px 0;flex-grow:1;padding:0}
+    .plan ul li{padding:8px 0;border-bottom:1px solid var(--border-light);font-size:.95em}
+    .plan ul li::before{content:"\2713 ";color:var(--success)}
+    .plan .cta{display:block;text-align:center;padding:14px;border-radius:999px;font-weight:600;font-size:1em;text-decoration:none;margin-top:16px;transition:all .15s}
+    .plan .cta.primary{background:var(--accent);color:#fff}
+    .plan .cta.primary:hover{background:var(--accent-hover)}
+    .plan .cta.secondary{background:var(--bg);color:var(--fg);border:1px solid var(--border)}
+    .plan .cta.secondary:hover{border-color:var(--accent);color:var(--accent)}
+    .faq{max-width:700px;margin:60px auto;padding:0 20px}
+    .faq h2{text-align:center;margin-bottom:24px}
+    .faq-item{border-bottom:1px solid var(--border-light);padding:16px 0}
+    .faq-item strong{display:block;margin-bottom:6px}
+    .faq-item p{color:var(--muted);font-size:.95em;line-height:1.6}
+    @media(max-width:720px){.plans{flex-direction:column;align-items:center}}
+  </style>
+  {% if is_rtl %}<style>body{direction:rtl;text-align:right}.plan ul li::before{content:"\2713 ";float:right;margin-left:6px}</style>{% endif %}
+</head>
+<body style="background:var(--bg)">
+  <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-light)">
+    <a href="/" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:4px">
+        {% for l in (supported_langs or ['en','ru','he']) %}
+          {% if l == (ui_lang or 'he') %}
+            <span class="pill" style="background:var(--accent);color:#fff;border-color:var(--accent);padding:4px 10px;font-size:12px">{{ l.upper() }}</span>
+          {% else %}
+            <a class="pill" href="/set-lang/{{ l }}" style="padding:4px 10px;font-size:12px">{{ l.upper() }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <a href="/login" class="btn" style="font-size:13px;padding:8px 20px">{{ ui("sign_in") }}</a>
+    </div>
+  </div>
+
+  <div class="pricing-hero">
+    <h1>{{ ui("pricing_title") }}</h1>
+    <p>{{ ui("pricing_subtitle") }}</p>
+  </div>
+
+  <div class="plans">
+    {% for plan in plans %}
+    <div class="plan {{ 'highlight' if plan.highlight }}">
+      {% if plan.highlight %}<span class="pop-badge">{{ ui("most_popular") }}</span>{% endif %}
+      <h2>{{ plan.name }}</h2>
+      <div class="price">{{ plan.price }} <span class="note">{{ plan.price_note }}</span></div>
+      <ul>
+        {% for feat in plan.features %}
+        <li>{{ feat }}</li>
+        {% endfor %}
+      </ul>
+      <a class="cta {{ 'primary' if plan.highlight else 'secondary' }}" href="{{ plan.checkout_url or '/register' }}">{{ plan.cta }}</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="faq">
+    <h2>{{ ui("faq_title") }}</h2>
+    <div class="faq-item">
+      <strong>How does the AI screening work?</strong>
+      <p>Candidates click "Apply" on your job posting in Telegram. The bot conducts a short interview (3-5 questions), evaluates answers with AI, and gives each candidate a score. You only see qualified candidates.</p>
+    </div>
+    <div class="faq-item">
+      <strong>What languages are supported?</strong>
+      <p>Russian, Hebrew, and English. The bot auto-detects the candidate's language from their Telegram settings.</p>
+    </div>
+    <div class="faq-item">
+      <strong>Can I try it for free?</strong>
+      <p>Yes! Free 2-week trial. Create one vacancy, post to a Telegram group, and see candidates flowing in.</p>
+    </div>
+    <div class="faq-item">
+      <strong>Do I need technical skills?</strong>
+      <p>No. Everything is managed through a web dashboard. Set up a vacancy, write screening questions, and the AI handles the rest.</p>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+    {{ ui("landing_footer") }}
+  </div>
+</body>
+</html>

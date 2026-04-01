@@ -1,0 +1,17 @@
+{
+  "candidate_name": "",
+  "vacancy_title": "",
+  "source_name": "",
+  "scores": {
+    "location_commute": 0,
+    "relevant_experience": 0,
+    "legal_documents": 0,
+    "start_timing": 0,
+    "schedule_fit": 0
+  },
+  "total_score": 0,
+  "fit_decision": "pending",
+  "critical_blockers": [],
+  "next_action": "",
+  "notes": ""
+}

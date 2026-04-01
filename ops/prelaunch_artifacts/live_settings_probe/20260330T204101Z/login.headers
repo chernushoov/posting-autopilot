@@ -1,0 +1,13 @@
+HTTP/2 302 
+cache-control: public, max-age=0, must-revalidate
+content-type: text/html; charset=utf-8
+date: Mon, 30 Mar 2026 20:41:01 GMT
+location: /facebook-connect
+server: Vercel
+set-cookie: session=eyJ1c2VyX2lkIjoxLCJ1c2VyX25hbWUiOiJRQSBTbW9rZSAxNzc0OTAzMjU3In0.acrf3Q.b3lNkAWJ4T11dv8K5IqUb1iBGLU; HttpOnly; Path=/
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+vary: Cookie
+x-vercel-cache: MISS
+x-vercel-id: fra1::iad1::pdl4d-1774903260981-8b385fc61793
+content-length: 221
+

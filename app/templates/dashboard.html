@@ -1,0 +1,100 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div class="page-hero">
+  <div>
+    <div class="eyebrow">{{ ui("control_center") }}</div>
+    <h1>{{ ui("welcome_back") }}</h1>
+    <p class="muted" style="margin-top:6px">{{ ui("setup_subtitle") }}</p>
+  </div>
+</div>
+
+<div class="progress-bar" style="max-width:400px">
+  <div class="progress-fill" style="width:{{ progress_pct }}%"></div>
+</div>
+<p class="small muted" style="margin-bottom:24px">{{ steps_done }}/{{ steps_total }} {{ ui("steps_completed") }}</p>
+
+<div class="setup-grid">
+  <a href="/profile/" class="setup-card {{ 'done' if has_company else 'active' }}" style="text-decoration:none;color:inherit">
+    <div class="setup-step">
+      <span class="num">1</span>
+      <span>{{ ui("completed") if has_company else ui("required") }}</span>
+    </div>
+    <h3>{{ ui("company_profile") }}</h3>
+    <p>{% if has_company %}{{ company_name }}{% if company_phone %} · {{ company_phone }}{% endif %}{% else %}{{ ui("create_company_prompt") }}{% endif %}</p>
+    {% if has_company %}<span class="pill" style="align-self:flex-start;margin-top:4px">{{ ui("open") }}</span>{% else %}<span class="btn" style="align-self:flex-start;margin-top:4px">{{ ui("create_company_btn") }}</span>{% endif %}
+  </a>
+
+  <a href="/vacancies/" class="setup-card {{ 'done' if has_vacancy else ('active' if has_company else '') }}" style="text-decoration:none;color:inherit">
+    <div class="setup-step">
+      <span class="num">2</span>
+      <span>{{ ui("completed") if has_vacancy else ui("job_vacancy") }}</span>
+    </div>
+    <h3>{{ ui("job_vacancy") }}</h3>
+    <p>{{ '%d %s' % (vacancy_count, ui("active_vacancies_count")) if has_vacancy else ui("create_vacancy_prompt") }}</p>
+    {% if has_company and not has_vacancy %}<span class="btn" style="align-self:flex-start;margin-top:4px">{{ ui("new_vacancy") }}</span>{% endif %}
+  </a>
+
+  <a href="/connect/telegram" class="setup-card {{ 'done' if has_telegram else ('active' if has_vacancy else '') }}" style="text-decoration:none;color:inherit">
+    <div class="setup-step">
+      <span class="num">3</span>
+      <span>{{ ui("connected") if has_telegram else ui("connect_telegram_title") }}</span>
+    </div>
+    <h3>{{ ui("telegram_channels") }}</h3>
+    <p>{{ '%d %s' % (telegram_count, ui("tg_destinations_ready")) if has_telegram else ui("connect_telegram_desc") }}</p>
+    {% if has_vacancy and not has_telegram %}<span class="btn" style="align-self:flex-start;margin-top:4px">{{ ui("connect_telegram_title") }}</span>{% endif %}
+  </a>
+
+  <a href="/connect/facebook" class="setup-card {{ 'done' if has_facebook else ('active' if has_telegram else '') }}" style="text-decoration:none;color:inherit">
+    <div class="setup-step">
+      <span class="num">4</span>
+      <span>{{ ui("connected") if has_facebook else ui("connect_facebook_title") }}</span>
+    </div>
+    <h3>{{ ui("facebook_groups") }}</h3>
+    <p>{{ '%d %s' % (facebook_count, ui("fb_destinations_ready")) if has_facebook else ui("connect_facebook_desc") }}</p>
+    {% if has_telegram and not has_facebook %}<span class="btn" style="align-self:flex-start;margin-top:4px">{{ ui("connect_facebook_title") }}</span>{% endif %}
+  </a>
+
+  <a href="/campaigns/" class="setup-card {{ 'done' if has_campaign else ('active' if (has_telegram or has_facebook) else '') }}" style="text-decoration:none;color:inherit">
+    <div class="setup-step">
+      <span class="num">5</span>
+      <span>{{ ui("completed") if has_campaign else ui("posting_campaign") }}</span>
+    </div>
+    <h3>{{ ui("posting_campaign") }}</h3>
+    <p>{{ '%d %s' % (campaign_count, ui("campaigns_configured")) if has_campaign else ui("create_campaign_prompt") }}</p>
+    {% if (has_telegram or has_facebook) and not has_campaign %}<span class="btn" style="align-self:flex-start;margin-top:4px">{{ ui("new_campaign") }}</span>{% endif %}
+  </a>
+
+  <div class="setup-card {{ 'done' if has_posted else ('active' if has_campaign else '') }}">
+    <div class="setup-step">
+      <span class="num">6</span>
+      <span>{{ ui("running") if has_posted else ui("launch") }}</span>
+    </div>
+    <h3>{{ ui("first_posting_run") }}</h3>
+    <p>{{ ui("pilot_live_msg") if has_posted else ui("run_now_prompt") }}</p>
+    {% if has_campaign %}<a href="/campaigns/" class="btn" style="align-self:flex-start;margin-top:4px;text-decoration:none">{{ ui("go_to_campaigns") }}</a>{% endif %}
+  </div>
+</div>
+
+{% if has_posted %}
+<div style="margin-top:32px">
+  <div class="section-head">
+    <h2>{{ ui("recent_activity") }}</h2>
+    <a href="/campaigns/" class="pill">{{ ui("view_all") }}</a>
+  </div>
+  <div class="grid3">
+    <div class="card card-flat" style="text-align:center">
+      <div class="eyebrow">{{ ui("nav_candidates") }}</div>
+      <div style="font-size:32px;font-weight:700;color:var(--fg)">{{ candidate_count }}</div>
+    </div>
+    <div class="card card-flat" style="text-align:center">
+      <div class="eyebrow">{{ ui("postings") }}</div>
+      <div style="font-size:32px;font-weight:700;color:var(--accent)">{{ posting_count }}</div>
+    </div>
+    <div class="card card-flat" style="text-align:center">
+      <div class="eyebrow">{{ ui("active_campaigns") }}</div>
+      <div style="font-size:32px;font-weight:700;color:var(--success)">{{ active_campaign_count }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

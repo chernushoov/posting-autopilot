@@ -1,0 +1,43 @@
+{% extends "_layout.html" %}
+{% block content %}
+<a href="/candidates/" class="small muted" style="display:inline-block;margin-bottom:12px">&larr; {{ ui("candidates_title") }}</a>
+<h1>{{ c.full_name or (ui("candidate_heading") + ' #' + (c.id|string)) }}</h1>
+<div class="card">
+  <div class="grid2">
+    <div class="info-list">
+      <div><span class="muted">{{ ui("name_label") }}:</span> {{ c.full_name or "-" }}</div>
+      <div><span class="muted">{{ ui("tg_label") }}:</span> {{ c.tg_username or c.tg_user_id or "-" }}</div>
+      <div><span class="muted">{{ ui("status_label") }}:</span> <span class="status status-{{ c.status.value }}">{{ c.status.value }}</span></div>
+      <div><span class="muted">{{ ui("score_label") }}:</span> {{ c.score or "-" }}</div>
+    </div>
+    <div class="info-list">
+      <div><span class="muted">{{ ui("vacancy_label") }}:</span> {% if v %}#{{ v.id }} {{ v.title }}{% else %}-{% endif %}</div>
+      <div><span class="muted">{{ ui("summary_label") }}:</span></div>
+      <pre class="pre compact">{{ c.summary or "" }}</pre>
+    </div>
+  </div>
+  <form method="post" action="/candidates/set_status/{{ c.id }}" class="row" style="margin-top:12px">
+    <select name="status" style="max-width:200px">
+      {% for s in ["new","qualifying","interviewing","passed","rejected","hired"] %}
+        <option value="{{ s }}" {% if c.status.value==s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">{{ ui("save_btn") }}</button>
+  </form>
+</div>
+
+<h2 style="margin-top:24px">{{ ui("chat_log") }}</h2>
+<div class="chat">
+  {% for m in chat %}
+    <div class="msg {{ 'me' if m.role=='assistant' else 'them' }}">
+      <div class="bubble">
+        <div class="muted small">{{ m.role }} · {{ m.ts }}</div>
+        <div>{{ m.text }}</div>
+      </div>
+    </div>
+  {% endfor %}
+  {% if not chat %}
+  <div class="empty-state">{{ ui("no_data") }}</div>
+  {% endif %}
+</div>
+{% endblock %}

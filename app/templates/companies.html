@@ -1,0 +1,49 @@
+{% extends "_layout.html" %}
+{% block content %}
+<a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:12px">&larr; {{ ui("nav_dashboard") }}</a>
+
+<div class="row" style="margin-bottom:24px">
+  <div>
+    <h1>{{ ui("companies_title") }}</h1>
+    <p class="small muted">Pro / Agency: manage multiple accounts</p>
+  </div>
+  <a class="btn" href="/companies/new">{{ ui("new_btn") }}</a>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;max-width:600px">
+{% for c in companies %}
+  <div class="card" style="flex-direction:row;align-items:center;gap:16px;padding:20px;{% if current_company_id == c.id %}border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,113,227,.1){% endif %}">
+    <div style="width:48px;height:48px;border-radius:14px;background:{% if c.is_active %}var(--accent-light){% else %}var(--bg){% endif %};display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">
+      {{ (c.business_type or 'company')[0]|upper }}
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:15px">{{ c.name }}</div>
+      <div class="small muted" style="margin-top:2px">
+        {% if c.contact_person %}{{ c.contact_person }} · {% endif %}
+        {% if c.phone %}{{ c.phone }} · {% endif %}
+        {% if c.is_active %}<span style="color:var(--success)">active</span>{% else %}<span style="color:var(--muted)">disabled</span>{% endif %}
+        {% if current_company_id == c.id %} · <span style="color:var(--accent);font-weight:600">current</span>{% endif %}
+      </div>
+    </div>
+    <div class="actions" style="flex-shrink:0">
+      {% if c.is_active %}
+        {% if current_company_id != c.id %}
+          <a class="pill success" href="/companies/switch/{{ c.id }}">{{ ui("select_btn") }}</a>
+        {% endif %}
+        <a class="pill" href="/profile/">{{ ui("open") }}</a>
+        <form method="post" action="/companies/disable/{{ c.id }}" style="display:inline">
+          <button class="pill danger" type="submit" title="Disable">Disable</button>
+        </form>
+      {% else %}
+        <form method="post" action="/companies/enable/{{ c.id }}" style="display:inline">
+          <button class="pill" type="submit">Enable</button>
+        </form>
+        <form method="post" action="/companies/delete/{{ c.id }}" style="display:inline" onsubmit="return confirm('Delete this company permanently?')">
+          <button class="pill danger" type="submit" title="Delete permanently">Delete</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

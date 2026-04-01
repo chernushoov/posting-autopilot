@@ -1,0 +1,18 @@
+[ROLE TITLE] | [CITY]
+
+Нужны 4 человека на [ROLE TITLE].
+Локация: [CITY]
+Оплата: [PAY]
+График: [SCHEDULE]
+
+Требования:
+- [REQ 1]
+- [REQ 2]
+- [REQ 3]
+
+Преимущества:
+- [BENEFIT 1]
+- [BENEFIT 2]
+
+Старт: [URGENCY]
+Отклик: [APPLY LINK OR CONTACT]

@@ -1,0 +1,20 @@
+{% extends "_layout.html" %}
+{% block content %}
+<a href="/companies/" class="small muted" style="display:inline-block;margin-bottom:12px">&larr; {{ ui("companies_title") }}</a>
+<h1>{{ ui("new_company_title") }}</h1>
+<form method="post" class="card" style="max-width:480px">
+  <label>{{ ui("name") }}</label>
+  <input name="name" placeholder="Your business name" required>
+
+  <label>Type</label>
+  <select name="business_type">
+    <option value="company">Company</option>
+    <option value="individual">Individual</option>
+  </select>
+
+  <label>{{ ui("description_label") }}</label>
+  <textarea name="description" rows="3" placeholder="What does your business do?"></textarea>
+
+  <button class="btn" type="submit">{{ ui("create_btn") }}</button>
+</form>
+{% endblock %}

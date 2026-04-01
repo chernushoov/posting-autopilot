@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Posting Autopilot Next</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="shell">
+    
+    <aside class="sidebar">
+      <div class="brand-block">
+        <div class="eyebrow">Simple Posting Control</div>
+        <div class="brand">Posting Autopilot</div>
+        <div class="muted small">Built for fast daily operator work.</div>
+      </div>
+      <nav class="nav">
+        <a class="active" href="/facebook-connect">
+          <span>Connect</span>
+          <small>Facebook and Telegram</small>
+        </a>
+        <a class="" href="/ads/new">
+          <span>Create</span>
+          <small>Ad and destinations</small>
+        </a>
+        <a class="" href="/schedule">
+          <span>Schedule</span>
+          <small>Run setup</small>
+        </a>
+        <a class="" href="/history">
+          <span>History</span>
+          <small>Posts CRM</small>
+        </a>
+        <a class="" href="/settings">
+          <span>Settings</span>
+          <small>Profile defaults</small>
+        </a>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="muted small">QA Smoke 1774904480</div>
+        <a class="ghost-link" href="/logout">Logout</a>
+      </div>
+    </aside>
+    
+    <main class="main">
+      <div class="page-shell">
+        
+          
+        
+        
+        
+<section class="page-head">
+  <div>
+    <div class="eyebrow">Step 1 of 5</div>
+    <h1>Channel Connect</h1>
+    <p class="muted">Keep channels simple. Facebook and Telegram live in the same clean workspace, but each keeps its own state and safety rules.</p>
+  </div>
+</section>
+
+<section class="grid two-col">
+  <div class="stack">
+    <div class="card stack">
+      <div class="inline-toolbar">
+        <h2>Facebook</h2>
+        <span class="status-pill">connected</span>
+      </div>
+      <form method="post" class="stack">
+        <input type="hidden" name="provider" value="facebook">
+        <label>Account Name</label>
+        <input name="account_name" value="Demo Meta Account">
+        <label>Page / Business Label</label>
+        <input name="page_name" value="Founders Demo Page">
+        <label>Status</label>
+        <select name="connection_status">
+          <option value="connected" selected>Connected</option>
+          <option value="attention" >Needs Attention</option>
+          <option value="disconnected" >Disconnected</option>
+        </select>
+        <button class="btn" type="submit">Save Facebook State</button>
+      </form>
+    </div>
+
+    <div class="card stack">
+      <div class="inline-toolbar">
+        <h2>Telegram</h2>
+        <span class="status-pill">attention</span>
+      </div>
+      <form method="post" class="stack">
+        <input type="hidden" name="provider" value="telegram">
+        <div class="field-grid">
+          <div>
+            <label>Bot Name</label>
+            <input name="bot_name" value="Posting Autopilot Bot">
+          </div>
+          <div>
+            <label>Bot Username</label>
+            <input name="bot_username" value="@posting_autopilot_bot">
+          </div>
+        </div>
+        <label>Default Chat Ref</label>
+        <input name="default_chat_ref" value="@startup_hiring_alerts" placeholder="@channelname or -100123...">
+        <label>Status</label>
+        <select name="connection_status">
+          <option value="connected" >Connected</option>
+          <option value="attention" selected>Needs Attention</option>
+          <option value="disconnected" >Disconnected</option>
+        </select>
+        <button class="btn" type="submit">Save Telegram State</button>
+      </form>
+      <div class="helper-card">
+        <div class="small muted">Bot token</div>
+        <strong>Missing</strong>
+      </div>
+      <form method="post" action="/telegram/test-message" class="stack">
+        <label>Test Destination</label>
+        <input name="chat_ref" value="@startup_hiring_alerts" placeholder="@channelname or -100123...">
+        <label>Test Message</label>
+        <textarea name="text" rows="4" placeholder="Manual test message only. No automatic Telegram posting is enabled.">Test message from Posting Autopilot.</textarea>
+        <button class="ghost-btn" type="submit">Send Telegram Test</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="card stack">
+      <h2>Workspace Read</h2>
+      <div class="metric">
+        <span class="muted">Facebook</span>
+        <strong>Demo Meta Account</strong>
+      </div>
+      <div class="metric">
+        <span class="muted">Telegram</span>
+        <strong>@posting_autopilot_bot</strong>
+      </div>
+      <div class="metric">
+        <span class="muted">Next</span>
+        <strong><a href="/ads/new">Create an ad</a></strong>
+      </div>
+    </div>
+    <div class="card subtle-card stack">
+      <h2>Telegram Destinations</h2>
+      <div class="list">
+        
+        <div>Startup Hiring Alerts <span class="muted small">· channel · @startup_hiring_alerts</span></div>
+        
+        <div>Remote Ops Broadcast <span class="muted small">· channel · @remote_ops_broadcast</span></div>
+        
+        <div>Tel Aviv Job Drops <span class="muted small">· group · @telaviv_job_drops</span></div>
+        
+      </div>
+    </div>
+  </div>
+</section>
+
+      </div>
+    </main>
+  </div>
+</body>
+</html>

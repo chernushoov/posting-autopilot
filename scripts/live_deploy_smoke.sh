@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_URL="${1:-${POSTING_AUTOPILOT_BASE_URL:-https://posting-autopilot-next.vercel.app}}"
+TMPDIR="$(mktemp -d)"
+COOKIE_JAR="${TMPDIR}/cookies.txt"
+STAMP="$(date +%s)"
+AD_TITLE="QA Launch Ad ${STAMP}"
+SETTINGS_NAME="QA Smoke ${STAMP}"
+SETTINGS_CTA="Reply ${STAMP}"
+SETTINGS_WINDOW="11:00-17:00"
+
+pass() { printf 'PASS %s\n' "$1"; }
+fail() { printf 'FAIL %s\n' "$1"; exit 1; }
+
+fetch_status() {
+  curl -s -o /dev/null -w '%{http_code}' "$1"
+}
+
+body_contains() {
+  local file="$1"
+  local needle="$2"
+  grep -Fq "$needle" "$file"
+}
+
+LOGIN_GET_BODY="${TMPDIR}/login_get.html"
+curl -s "${BASE_URL}/login?next=/settings" -o "${LOGIN_GET_BODY}"
+[[ "$(fetch_status "${BASE_URL}/login?next=/settings")" == "200" ]] || fail "login page unavailable"
+body_contains "${LOGIN_GET_BODY}" "Seeded demo account" || fail "login page missing demo account copy"
+pass "login page available"
+
+LOGIN_HEADERS="${TMPDIR}/login_post.headers"
+curl -s -D "${LOGIN_HEADERS}" -o /dev/null -c "${COOKIE_JAR}" -b "${COOKIE_JAR}" \
+  -X POST "${BASE_URL}/login?next=/settings" \
+  -d "email=demo@postingautopilot.local" \
+  -d "password=demo123"
+grep -Fq "location: /facebook-connect" "${LOGIN_HEADERS}" || fail "login did not redirect to /facebook-connect"
+pass "demo login works"
+
+CONNECT_BODY="${TMPDIR}/facebook_connect.html"
+curl -s -b "${COOKIE_JAR}" "${BASE_URL}/facebook-connect" -o "${CONNECT_BODY}"
+body_contains "${CONNECT_BODY}" "Step 1 of 5" || fail "facebook connect step missing after login"
+pass "facebook connect page reachable"
+
+SETTINGS_POST_STATUS="$(
+  curl -s -o /dev/null -w '%{http_code}' -b "${COOKIE_JAR}" \
+    -X POST "${BASE_URL}/settings" \
+    -d "full_name=${SETTINGS_NAME// /+}" \
+    -d "timezone=Asia/Jerusalem" \
+    -d "default_cta=${SETTINGS_CTA// /+}" \
+    -d "posting_window=${SETTINGS_WINDOW}" \
+    -d "notifications_enabled=on"
+)"
+[[ "${SETTINGS_POST_STATUS}" == "200" || "${SETTINGS_POST_STATUS}" == "302" ]] || fail "settings save failed with status ${SETTINGS_POST_STATUS}"
+SETTINGS_BODY="${TMPDIR}/settings.html"
+curl -s -b "${COOKIE_JAR}" "${BASE_URL}/settings" -o "${SETTINGS_BODY}"
+body_contains "${SETTINGS_BODY}" "${SETTINGS_NAME}" || fail "settings value did not persist"
+pass "settings save works"
+
+AD_HEADERS="${TMPDIR}/ad_post.headers"
+curl -s -D "${AD_HEADERS}" -o /dev/null -b "${COOKIE_JAR}" \
+  -X POST "${BASE_URL}/ads/new" \
+  -d "title=${AD_TITLE// /+}" \
+  -d "primary_text=Need+candidate+flow" \
+  -d "cta_text=Reply+here" \
+  -d "audience=Recruiters" \
+  -d "group_ids=1" \
+  -d "group_ids=2"
+AD_LOCATION="$(grep -i '^location:' "${AD_HEADERS}" | tr -d '\r' | awk '{print $2}')"
+[[ "${AD_LOCATION}" == /schedule* ]] || fail "ad creation did not redirect to schedule"
+AD_ID="$(printf '%s' "${AD_LOCATION}" | sed -n 's/.*ad_id=\([0-9][0-9]*\).*/\1/p')"
+[[ -n "${AD_ID}" ]] || fail "could not parse ad_id from schedule redirect"
+pass "ad creation works"
+
+SCHEDULE_HEADERS="${TMPDIR}/schedule_post.headers"
+curl -s -D "${SCHEDULE_HEADERS}" -o /dev/null -b "${COOKIE_JAR}" \
+  -X POST "${BASE_URL}/schedule" \
+  -d "ad_id=${AD_ID}" \
+  -d "title=QA+Morning+Run" \
+  -d "start_at=2026-03-31T09:00" \
+  -d "cadence=daily" \
+  -d "timezone=Asia/Jerusalem" \
+  -d "notes=qa"
+grep -Fq "location: /history" "${SCHEDULE_HEADERS}" || fail "schedule creation did not redirect to history"
+pass "schedule creation works"
+
+HISTORY_BODY="${TMPDIR}/history.html"
+curl -s -b "${COOKIE_JAR}" "${BASE_URL}/history" -o "${HISTORY_BODY}"
+body_contains "${HISTORY_BODY}" "${AD_TITLE}" || fail "history does not show created ad"
+STATUS_PATH="$(grep -oE '/history/[0-9]+/status' "${HISTORY_BODY}" | head -n 1 || true)"
+[[ -n "${STATUS_PATH}" ]] || fail "history status action not found"
+pass "history displays created run"
+
+curl -s -o /dev/null -b "${COOKIE_JAR}" \
+  -X POST "${BASE_URL}${STATUS_PATH}" \
+  -d "status=posted" \
+  -d "operator_note=qa-check"
+
+UPDATED_HISTORY="${TMPDIR}/history_updated.html"
+curl -s -b "${COOKIE_JAR}" "${BASE_URL}/history" -o "${UPDATED_HISTORY}"
+body_contains "${UPDATED_HISTORY}" "posted" || fail "history status update did not persist"
+pass "history status update works"
+
+printf 'SMOKE OK %s\n' "${BASE_URL}"

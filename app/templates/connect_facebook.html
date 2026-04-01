@@ -1,0 +1,74 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div class="connect-shell">
+  <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
+  <div class="connect-card">
+    <div class="eyebrow">{{ ui("step_n_of_m", n=4, m=6) }}</div>
+    <h2>{{ ui("connect_facebook_title") }}</h2>
+    <p class="muted">{{ ui("connect_facebook_desc") }}</p>
+
+    <div class="alert" style="margin-top:20px">
+      <strong>{{ ui("assisted_mode_title") }}</strong> &mdash; {{ ui("assisted_mode_desc") }}
+    </div>
+
+    <div class="connect-steps">
+      <div class="connect-step">
+        <div class="connect-step-content">
+          <h4>{{ ui("add_fb_groups_title") }}</h4>
+          <p>{{ ui("add_fb_groups_desc") }}</p>
+        </div>
+      </div>
+      <div class="connect-step">
+        <div class="connect-step-content">
+          <h4>{{ ui("generate_asset_title") }}</h4>
+          <p>{{ ui("generate_asset_desc") }}</p>
+        </div>
+      </div>
+      <div class="connect-step">
+        <div class="connect-step-content">
+          <h4>{{ ui("use_queue_title") }}</h4>
+          <p>{{ ui("use_queue_desc") }}</p>
+        </div>
+      </div>
+    </div>
+
+    <form method="post" action="/sources/new" class="stack" style="margin-top:28px">
+      <input type="hidden" name="platform" value="facebook">
+      <input type="hidden" name="posting_mode" value="assisted_manual">
+      <input type="hidden" name="destination_kind" value="group">
+      <input type="hidden" name="tg_ref" value="">
+      <div>
+        <label>{{ ui("group_name") }}</label>
+        <input name="label" placeholder="" required>
+      </div>
+      <div>
+        <label>{{ ui("fb_group_url") }}</label>
+        <input name="destination_url" placeholder="https://facebook.com/groups/..." required>
+      </div>
+      <button type="submit" class="btn">{{ ui("add_fb_group_btn") }}</button>
+    </form>
+
+    {% if facebook_sources %}
+    <div style="margin-top:28px">
+      <h3 style="margin-bottom:12px">{{ ui("your_fb_dests") }}</h3>
+      <div class="stack tight">
+        {% for s in facebook_sources %}
+        <div class="card card-flat" style="padding:16px;flex-direction:row;align-items:center;justify-content:space-between">
+          <div>
+            <strong>{{ s.label or ui("facebook_groups") }}</strong>
+            <div class="small muted">{{ s.destination_url or ui("no_url_set") }} &middot; {{ ui("assisted_manual") }}</div>
+          </div>
+          <span class="status status-posted">{{ ui("ready") }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center">
+      <a href="/connect/telegram" class="btn-outline" style="padding:10px 24px;border-radius:999px;text-decoration:none">&larr; Telegram</a>
+      <a href="/campaigns/new" class="btn" style="text-decoration:none">{{ ui("create_campaign_link") }} &rarr;</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+Нам не хватает нескольких полей, чтобы запустить вакансию без задержек:
+
+- Название вакансии / role title
+- Город / location city
+- Оплата / salary or pay
+- Тип смены / shift type
+- Дни работы / working days
+- Часы работы / working hours
+- Дата старта или срочность / start date or urgency
+- Ключевые требования / must-have requirements
+- Основной путь отклика / primary apply path
+- Ответственный рекрутер / recruiter owner
+
+Как только пришлёте это, я сразу финализирую тексты и подготовлю запуск.

@@ -1,0 +1,8 @@
+{
+  "base_url": "https://posting-autopilot-next.vercel.app",
+  "status_code": 500,
+  "ok": false,
+  "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_probe/20260330T205853Z/settings_post.headers",
+  "body_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_probe/20260330T205853Z/settings_post.body.html",
+  "run_dir": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_probe/20260330T205853Z"
+}

@@ -1,0 +1,40 @@
+{
+  "client": {
+    "name": "",
+    "type": ""
+  },
+  "vacancy": {
+    "title": "",
+    "city": "",
+    "hires_needed": 4,
+    "pay": "",
+    "schedule": "",
+    "language_requirement": ""
+  },
+  "campaign_window": {
+    "launch_date": "",
+    "reporting_cutoff": ""
+  },
+  "channels_used": [],
+  "totals": {
+    "posts_sent": 0,
+    "responses_received": 0,
+    "screenings_started": 0,
+    "screenings_completed": 0,
+    "qualified_candidates": 0,
+    "interviews_arranged": 0,
+    "hires_made": 0,
+    "estimated_recruiter_minutes_saved": 0
+  },
+  "speed": {
+    "time_to_first_response_hours": null,
+    "time_to_first_qualified_candidate_hours": null
+  },
+  "proof_notes": {
+    "what_worked": [],
+    "what_failed": [],
+    "manual_steps_required": [],
+    "objections_or_friction": []
+  },
+  "last_updated_at": "2026-03-30T21:37:30.386657+00:00"
+}

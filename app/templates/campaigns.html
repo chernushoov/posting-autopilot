@@ -1,0 +1,74 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div class="row">
+  <h1>{{ ui("campaigns_title") }}</h1>
+  <a class="btn" href="/campaigns/new">{{ ui("new_campaign") }}</a>
+</div>
+<table class="table">
+  <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("interval") }}</th><th>{{ ui("running") }}</th><th>{{ ui("actions") }}</th></tr>
+  {% for c in campaigns %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td>{{ c.name }}</td>
+    <td>#{{ c.vacancy_id }}</td>
+    <td>{{ c.interval_minutes }} min</td>
+    <td>{{ ui("yes") if c.is_running else ui("no") }}</td>
+    <td class="actions">
+      <form method="post" action="/campaigns/run/{{ c.id }}">
+        <button class="pill" type="submit">{{ ui("run_now") }}</button>
+      </form>
+      <form method="post" action="/campaigns/toggle/{{ c.id }}">
+        <button class="pill" type="submit">{{ ui("pause") if c.is_running else ui("start") }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div style="height:16px"></div>
+
+<div class="card">
+  <div class="row">
+    <h2 style="margin:0">{{ ui("dest_log") }}</h2>
+    <span class="muted small">pending · scheduled · manual_action_required · posted · failed · blocked_or_suspected</span>
+  </div>
+  <table class="table">
+    <tr><th>{{ ui("when") }}</th><th>{{ ui("platform") }}</th><th>{{ ui("destination") }}</th><th>{{ ui("asset") }}</th><th>{{ ui("action") }}</th><th>{{ ui("status") }}</th><th>{{ ui("error_notes") }}</th><th>{{ ui("manual_result") }}</th></tr>
+    {% for attempt in recent_attempts %}
+    <tr>
+      <td>{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
+      <td>{{ attempt.platform }}</td>
+      <td>
+        <strong>{{ attempt.destination }}</strong>
+        <div class="small muted">{{ attempt.destination_ref }}</div>
+      </td>
+      <td>
+        <strong>{{ attempt.asset_title }}</strong>
+        <div class="small muted">{{ attempt.asset_body[:120] }}{% if attempt.asset_body|length > 120 %}...{% endif %}</div>
+      </td>
+      <td>{{ attempt.action_taken }}</td>
+      <td><span class="status status-{{ attempt.result_status }}">{{ attempt.result_status }}</span></td>
+      <td>
+        {% if attempt.error_message %}<div>{{ attempt.error_message }}</div>{% endif %}
+        {% if attempt.operator_notes %}<div class="small muted">{{ attempt.operator_notes }}</div>{% endif %}
+      </td>
+      <td>
+        {% if attempt.result_status == "manual_action_required" %}
+          <form method="post" action="/campaigns/attempt/{{ attempt.id }}/result" class="list">
+            <select name="result_status">
+              <option value="posted">posted</option>
+              <option value="failed">failed</option>
+              <option value="blocked_or_suspected">blocked_or_suspected</option>
+            </select>
+            <textarea name="operator_notes" rows="2" placeholder="Paste operator notes or failure details"></textarea>
+            <button class="pill" type="submit">{{ ui("save_result") }}</button>
+          </form>
+        {% else %}
+          <span class="small muted">n/a</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

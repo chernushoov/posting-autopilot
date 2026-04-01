@@ -1,0 +1,6 @@
+Нужны 4 человека на [ROLE TITLE], [CITY].
+Оплата: [PAY]
+График: [SCHEDULE]
+Требования: [REQ 1], [REQ 2], [REQ 3]
+Старт: [URGENCY]
+Отклик: [APPLY LINK OR CONTACT]

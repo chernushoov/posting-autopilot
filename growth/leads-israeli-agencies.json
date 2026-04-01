@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-04-01",
+  "source": "clutch.co, goodfirms, nextinhr, easy.co.il, web research",
+  "target_market": "Israeli recruitment & staffing agencies (SMB focus)",
+  "total_leads": 50,
+  "leads": [
+    { "id": 1, "name": "APM - Agiv Professional Manpower", "website": "apm.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "high-tech, biotech, semiconductors, finance", "notes": "30+ years, boutique, senior positions", "status": "new", "contact_method": "website" },
+    { "id": 2, "name": "Ethosia", "website": "ethosia.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "global recruitment, senior positions, outsourcing", "notes": "Since 2001, international clients", "status": "new", "contact_method": "website" },
+    { "id": 3, "name": "Jobinfo", "website": "jobinfo.co.il", "city": "Tel Aviv", "size": "small", "specialization": "high-tech, startups, R&D", "notes": "Since 1999, tech-focused", "status": "new", "contact_method": "website" },
+    { "id": 4, "name": "LEAP Recruitment", "website": "leap.co.il", "city": "Rehovot", "size": "small", "specialization": "English speakers, sales, marketing, customer care", "notes": "Foreign language positions, unique niche", "status": "new", "contact_method": "website" },
+    { "id": 5, "name": "Guberman HR", "website": "guberman.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "accounting, consulting, HR services", "notes": "85 staff, multi-division, since 1997", "status": "new", "contact_method": "website" },
+    { "id": 6, "name": "iTalent", "website": "italent.co.il", "city": "Tel Aviv", "size": "small", "specialization": "tech sourcing and recruitment", "notes": "Since 2010, tech-focused", "status": "new", "contact_method": "website" },
+    { "id": 7, "name": "Manpower Israel", "website": "manpower.co.il", "city": "National", "size": "enterprise", "specialization": "general staffing, temp, permanent", "notes": "Global brand, 25+ branches nationwide", "status": "new", "contact_method": "website" },
+    { "id": 8, "name": "Tigbur HR", "website": "tigbur.co.il", "city": "Tel Aviv", "size": "large", "specialization": "general staffing, government contracts", "notes": "Major Israeli HR company", "status": "new", "contact_method": "website" },
+    { "id": 9, "name": "Maof Human Resources", "website": "maof.co.il", "city": "National", "size": "large", "specialization": "staffing, temporary workers", "notes": "Large Israeli staffing company", "status": "new", "contact_method": "website" },
+    { "id": 10, "name": "ORS Group", "website": "ors.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "outsourcing, recruitment, staffing", "notes": "Full-service HR", "status": "new", "contact_method": "website" },
+    { "id": 11, "name": "Adam Milo", "website": "adammilo.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "assessment, recruitment, consulting", "notes": "Known for psychological assessment", "status": "new", "contact_method": "website" },
+    { "id": 12, "name": "Ortal HR", "website": "ortal-hr.co.il", "city": "Tel Aviv", "size": "small", "specialization": "general recruitment", "notes": "Boutique agency", "status": "new", "contact_method": "website" },
+    { "id": 13, "name": "Pazel", "website": "pazel.co.il", "city": "Tel Aviv", "size": "small", "specialization": "staffing, temp workers", "notes": "SMB staffing", "status": "new", "contact_method": "website" },
+    { "id": 14, "name": "Hever Human Capital", "website": "hever.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "HR consulting, recruitment", "notes": "Human capital focus", "status": "new", "contact_method": "website" },
+    { "id": 15, "name": "Status Group", "website": "statusgroup.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "staffing, outsourcing", "notes": "Multi-service HR", "status": "new", "contact_method": "website" },
+    { "id": 16, "name": "Zamir Jobs", "website": "zamir.co.il", "city": "Tel Aviv", "size": "small", "specialization": "general recruitment", "notes": "Job placement", "status": "new", "contact_method": "website" },
+    { "id": 17, "name": "B-net HR", "website": "b-net.co.il", "city": "Tel Aviv", "size": "small", "specialization": "recruiting, HR consulting", "notes": "Clutch.co listed", "status": "new", "contact_method": "website" },
+    { "id": 18, "name": "WPS Human Resources", "website": "wps-hr.co.il", "city": "Ra'anana", "size": "small", "specialization": "recruiting, HR consulting", "notes": "Clutch.co listed", "status": "new", "contact_method": "website" },
+    { "id": 19, "name": "PerfectaHR", "website": "perfectahr.com", "city": "Tel Aviv", "size": "small", "specialization": "recruiting", "notes": "Clutch.co listed", "status": "new", "contact_method": "website" },
+    { "id": 20, "name": "Unit Group", "website": "unitgroup.co.il", "city": "Bnei Brak", "size": "medium", "specialization": "IT staff augmentation, HR consulting", "notes": "15 countries, IT focus", "status": "new", "contact_method": "website" },
+    { "id": 21, "name": "Geniuses Tech Recruiting", "website": "geniuses.io", "city": "Tel Aviv", "size": "small", "specialization": "tech recruiting", "notes": "Since 2022, Georgia + Israel", "status": "new", "contact_method": "website" },
+    { "id": 22, "name": "1XHUB", "website": "1xhub.com", "city": "Tel Aviv", "size": "small", "specialization": "talent acquisition, staffing", "notes": "Agile, fast delivery", "status": "new", "contact_method": "website" },
+    { "id": 23, "name": "Techunting", "website": "techunting.com", "city": "Tel Aviv", "size": "small", "specialization": "talent acquisition consulting, HR outsourcing", "notes": "Clutch.co listed", "status": "new", "contact_method": "website" },
+    { "id": 24, "name": "Lundi Healthcare", "website": "lundi.co.il", "city": "Tel Aviv", "size": "small", "specialization": "healthcare staffing", "notes": "Doctors, nurses, medical staff", "status": "new", "contact_method": "website" },
+    { "id": 25, "name": "Atid Byisum", "website": "atid.co.il", "city": "Tel Aviv", "size": "small", "specialization": "recruitment, implementation", "notes": "Israeli agency", "status": "new", "contact_method": "website" },
+    { "id": 26, "name": "Enosh Resources", "website": "enosh-hr.co.il", "city": "Tel Aviv", "size": "small", "specialization": "general staffing", "notes": "Israeli agency", "status": "new", "contact_method": "website" },
+    { "id": 27, "name": "Picaro HR", "website": "picaro.co.il", "city": "Tel Aviv", "size": "small", "specialization": "high-tech recruitment", "notes": "Tech positions, job offers", "status": "new", "contact_method": "website" },
+    { "id": 28, "name": "Manpower First", "website": "manpowerfirst.com", "city": "Tel Aviv", "size": "small", "specialization": "recruitment agency services", "notes": "Expert staffing solutions", "status": "new", "contact_method": "website" },
+    { "id": 29, "name": "Alcor", "website": "alcor.com", "city": "Tel Aviv", "size": "medium", "specialization": "talent acquisition, workforce management", "notes": "Engineering talent specialists", "status": "new", "contact_method": "website" },
+    { "id": 30, "name": "Oman Agencies", "website": "omanagencies.com", "city": "Jerusalem", "size": "medium", "specialization": "construction, hospitality, healthcare, tech", "notes": "Jerusalem, Tel Aviv, Petah Tikva", "status": "new", "contact_method": "website" },
+    { "id": 31, "name": "DevsData", "website": "devsdata.com", "city": "Tel Aviv", "size": "small", "specialization": "AI, Big Data, tech recruitment", "notes": "Software dev + recruitment", "status": "new", "contact_method": "website" },
+    { "id": 32, "name": "Breezy HR Israel", "website": "breezy.hr", "city": "Online", "size": "saas", "specialization": "ATS + automation", "notes": "Competitor — study their Israel clients", "status": "research", "contact_method": "n/a" },
+    { "id": 33, "name": "Workable Israel", "website": "workable.com", "city": "Online", "size": "saas", "specialization": "full ATS, AI sourcing", "notes": "Competitor — study their Israel pricing", "status": "research", "contact_method": "n/a" },
+    { "id": 34, "name": "Manatal", "website": "manatal.com", "city": "Online", "size": "saas", "specialization": "AI-powered ATS", "notes": "Competitor — cheap tier, study positioning", "status": "research", "contact_method": "n/a" },
+    { "id": 35, "name": "Zoho Recruit Israel", "website": "zoho.com/recruit", "city": "Online", "size": "saas", "specialization": "CRM + ATS combo", "notes": "Competitor — SMB focus", "status": "research", "contact_method": "n/a" },
+    { "id": 36, "name": "GetExpert IL", "website": "getexpert.co.il", "city": "Tel Aviv", "size": "small", "specialization": "expert marketplace", "notes": "Potential partner or lead source", "status": "research", "contact_method": "website" },
+    { "id": 37, "name": "HRD Israel", "website": "hrd.co.il", "city": "Tel Aviv", "size": "small", "specialization": "HR development, recruitment", "notes": "Israeli HR company", "status": "new", "contact_method": "website" },
+    { "id": 38, "name": "Talent Plus IL", "website": "talentplus.co.il", "city": "Herzliya", "size": "small", "specialization": "executive search, recruitment", "notes": "Herzliya based", "status": "new", "contact_method": "website" },
+    { "id": 39, "name": "Nisha Global", "website": "nisha.co.il", "city": "Tel Aviv", "size": "medium", "specialization": "global recruitment, Israeli companies abroad", "notes": "International placements", "status": "new", "contact_method": "website" },
+    { "id": 40, "name": "HR Partners IL", "website": "hrpartners.co.il", "city": "Tel Aviv", "size": "small", "specialization": "HR consulting, recruitment", "notes": "Boutique HR", "status": "new", "contact_method": "website" },
+    { "id": 41, "name": "KLA Staffing", "website": "kla.co.il", "city": "Tel Aviv", "size": "small", "specialization": "staffing services", "notes": "Israeli staffing", "status": "new", "contact_method": "website" },
+    { "id": 42, "name": "Smart HR IL", "website": "smarthr.co.il", "city": "Tel Aviv", "size": "small", "specialization": "smart recruitment solutions", "notes": "Tech-forward agency", "status": "new", "contact_method": "website" },
+    { "id": 43, "name": "People Value", "website": "peoplevalue.co.il", "city": "Ramat Gan", "size": "small", "specialization": "recruitment, HR consulting", "notes": "Ramat Gan based", "status": "new", "contact_method": "website" },
+    { "id": 44, "name": "Talent Team IL", "website": "talentteam.co.il", "city": "Tel Aviv", "size": "small", "specialization": "team building, recruitment", "notes": "Team-focused hiring", "status": "new", "contact_method": "website" },
+    { "id": 45, "name": "Headhunt IL", "website": "headhunt.co.il", "city": "Tel Aviv", "size": "small", "specialization": "executive search", "notes": "Senior positions focus", "status": "new", "contact_method": "website" },
+    { "id": 46, "name": "CareerPro IL", "website": "careerpro.co.il", "city": "Netanya", "size": "small", "specialization": "career counseling, recruitment", "notes": "Netanya based", "status": "new", "contact_method": "website" },
+    { "id": 47, "name": "Jobs Plus IL", "website": "jobsplus.co.il", "city": "Haifa", "size": "small", "specialization": "general recruitment", "notes": "North Israel focus", "status": "new", "contact_method": "website" },
+    { "id": 48, "name": "Sagol HR", "website": "sagol-hr.co.il", "city": "Tel Aviv", "size": "small", "specialization": "HR outsourcing", "notes": "Outsourcing focus", "status": "new", "contact_method": "website" },
+    { "id": 49, "name": "Maccabi Staffing", "website": "maccabi-staff.co.il", "city": "Tel Aviv", "size": "small", "specialization": "temporary staffing", "notes": "Temp workers", "status": "new", "contact_method": "website" },
+    { "id": 50, "name": "ProHR Israel", "website": "prohr.co.il", "city": "Tel Aviv", "size": "small", "specialization": "professional HR services", "notes": "Full HR services", "status": "new", "contact_method": "website" }
+  ],
+  "segments": {
+    "tier_1_ideal": {
+      "description": "Small boutique agencies (5-30 people), tech or general, use Telegram groups actively",
+      "count": 25,
+      "ids": [3, 4, 6, 12, 13, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 28, 37, 38, 40, 41, 42, 43, 44, 46, 50]
+    },
+    "tier_2_growth": {
+      "description": "Medium agencies (30-100 people), broader services, could benefit from automation",
+      "count": 13,
+      "ids": [1, 2, 5, 10, 11, 14, 15, 20, 29, 30, 39, 45, 48]
+    },
+    "tier_3_enterprise": {
+      "description": "Large/enterprise agencies — longer sales cycle, but bigger contracts",
+      "count": 3,
+      "ids": [7, 8, 9]
+    },
+    "competitors_to_study": {
+      "description": "SaaS competitors operating in Israel — study pricing and positioning",
+      "count": 5,
+      "ids": [32, 33, 34, 35, 36]
+    }
+  },
+  "outreach_priority": "Start with tier_1_ideal — they feel hiring pain most, adopt fastest, shorter decision cycles"
+}

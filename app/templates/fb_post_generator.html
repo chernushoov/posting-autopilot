@@ -1,0 +1,143 @@
+{% extends "_layout.html" %}
+{% block content %}
+<section class="page-hero">
+  <div>
+    <div class="eyebrow">Facebook Safe Workflow</div>
+    <h1>Post Generator</h1>
+    <p class="muted">Generate Hebrew post drafts, edit one, approve it, and move straight into group selection.</p>
+  </div>
+  <div class="actions">
+    <a class="pill" href="{{ url_for('vacancies.list_vacancies') }}">Back to Vacancies</a>
+  </div>
+</section>
+
+<section
+  class="fb-workflow-page panel-grid"
+  data-page="post-generator"
+  data-vacancy-id="{{ vacancy.id }}"
+  data-group-selector-url="{{ url_for('fb_ui.group_selector', vacancy_id=vacancy.id) }}"
+>
+  <aside class="card stack">
+    {% if continuity and continuity.unfinished_run_id %}
+    <div class="alert">
+      Unfinished run detected for this vacancy.
+      <a href="{{ url_for('fb_ui.posting_queue', run_id=continuity.unfinished_run_id) }}">Resume queue</a>
+    </div>
+    {% elif continuity and continuity.latest_approved_variant %}
+    <div class="alert">
+      A saved approved variant already exists.
+      <a href="{{ url_for('fb_ui.group_selector', vacancy_id=vacancy.id, variant_id=continuity.latest_approved_variant.id) }}">Continue to groups</a>
+    </div>
+    {% endif %}
+
+    <div class="section-head">
+      <h2>Vacancy Context</h2>
+      <span class="badge">{{ vacancy.city or "No city" }}</span>
+    </div>
+    <div class="info-list">
+      <div><span class="muted">Title</span><strong>{{ vacancy.title }}</strong></div>
+      <div><span class="muted">Language</span><strong>{{ vacancy.language.value if vacancy.language else "-" }}</strong></div>
+      <div><span class="muted">Body</span><div class="pre compact">{{ vacancy.body }}</div></div>
+    </div>
+
+    <div class="stack tight">
+      {% if continuity and continuity.latest_run %}
+      <div class="small muted">
+        Latest run: {{ continuity.latest_run.status.replace("_"," ") }} ·
+        {{ continuity.latest_run.counts.posted or 0 }}/{{ continuity.latest_run.counts.total or continuity.latest_run.group_count }} posted
+      </div>
+      {% endif %}
+      <label for="tone">Style</label>
+      <select id="tone">
+        <option value="professional">Professional</option>
+        <option value="casual">Casual</option>
+        <option value="urgent">Urgent</option>
+      </select>
+
+      <label for="length_mode">Length</label>
+      <select id="length_mode">
+        <option value="medium">Medium</option>
+        <option value="short">Short</option>
+        <option value="long">Long</option>
+      </select>
+
+      <label for="cta_mode">CTA</label>
+      <select id="cta_mode">
+        <option value="dm_cv">Send CV in DM</option>
+        <option value="comment_interested">Comment Interested</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="apply_link">Apply Link</option>
+      </select>
+
+      <label for="cta_value">CTA Value</label>
+      <input id="cta_value" placeholder="WhatsApp number or apply link">
+
+      <label for="salary_hint">Salary Hint</label>
+      <input id="salary_hint" placeholder="e.g. 30-35K">
+
+      <label for="employment_type">Employment Type</label>
+      <input id="employment_type" placeholder="e.g. Full-time">
+
+      <label for="requirements">Requirements (one per line)</label>
+      <textarea id="requirements" rows="4" placeholder="Java&#10;Spring Boot&#10;Microservices"></textarea>
+
+      <label for="benefits">Benefits (one per line)</label>
+      <textarea id="benefits" rows="3" placeholder="Hybrid work&#10;Stock options"></textarea>
+
+      <label class="checkbox">
+        <input id="allow_company_name" type="checkbox">
+        <span>Allow company name in generated post</span>
+      </label>
+
+      <button class="btn" id="generate-variant-btn" type="button">Generate Variant</button>
+      <div class="small muted" id="generator-status">No variant generated yet.</div>
+    </div>
+  </aside>
+
+  <section class="stack">
+    <div class="card stack">
+      <div class="section-head">
+        <h2>Generated Variants</h2>
+        <span class="badge" id="variant-count-badge">0 drafts</span>
+      </div>
+      <div id="variant-list" class="variant-list empty-state">
+        Generate a first draft to start the flow.
+      </div>
+    </div>
+
+    <div class="card stack" id="variant-editor-card">
+      <div class="section-head">
+        <h2>Selected Variant</h2>
+        <span class="badge" id="editor-variant-meta">No selection</span>
+      </div>
+      <label for="editor-headline">Headline</label>
+      <input id="editor-headline" placeholder="Generated headline">
+
+      <label for="editor-full-text">Editable Post</label>
+      <textarea id="editor-full-text" rows="14" placeholder="Generated post will appear here"></textarea>
+
+      <label for="editor-cta">CTA</label>
+      <input id="editor-cta" placeholder="CTA">
+
+      <div class="row">
+        <div class="small muted" id="editor-char-count">0 chars</div>
+        <div class="actions">
+          <button class="pill" id="copy-variant-btn" type="button">Copy Text</button>
+          <button class="pill" id="continue-variant-btn" type="button">Continue to Groups</button>
+          <button class="btn" id="approve-variant-btn" type="button">Approve & Select Groups</button>
+        </div>
+      </div>
+
+      <div class="fb-preview" id="variant-preview">Preview will appear here.</div>
+    </div>
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.fbWorkflowInitialVariants = {{ recent_variants|tojson }};
+  window.fbWorkflowInitialSelectedVariant = {{ selected_variant|tojson if selected_variant else 'null' }};
+</script>
+<script src="{{ url_for('static', filename='fb_safe_workflow.js') }}"></script>
+{% endblock %}

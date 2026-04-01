@@ -1,0 +1,31 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div class="row">
+  <h1>{{ ui("candidates_title") }}</h1>
+  <div style="display:flex;gap:8px;align-items:center">
+    <form method="get">
+      <select name="status" onchange="this.form.submit()">
+        <option value="">{{ ui("all") }}</option>
+        {% for s in statuses %}
+          <option value="{{ s }}" {% if current==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <a href="/candidates/export" class="pill" style="white-space:nowrap">Export CSV</a>
+  </div>
+</div>
+<table class="table">
+  <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("phone_label_full") }}</th><th>{{ ui("status") }}</th><th>Class</th><th>{{ ui("score") }}</th><th></th></tr>
+  {% for c in candidates %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td>{{ c.full_name or c.tg_username or c.tg_user_id or "-" }}</td>
+    <td>{{ c.phone or "-" }}</td>
+    <td>{{ c.status.value }}</td>
+    <td>{% if c.classification %}<span class="pill {% if c.classification == 'hot' %}hot{% elif c.classification == 'cold' %}cold{% endif %}">{{ c.classification }}</span>{% else %}-{% endif %}</td>
+    <td>{{ c.score or "-" }}</td>
+    <td><a class="pill" href="/candidates/{{ c.id }}">{{ ui("open") }}</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

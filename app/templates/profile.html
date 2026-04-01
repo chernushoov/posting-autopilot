@@ -1,0 +1,70 @@
+{% extends "_layout.html" %}
+{% block content %}
+<a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:12px">&larr; {{ ui("nav_dashboard") }}</a>
+
+<div style="max-width:600px">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px">
+    <div style="width:56px;height:56px;border-radius:16px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">
+      {{ c.name[0]|upper if c.name else 'P' }}
+    </div>
+    <div>
+      <h1 style="margin:0">{{ c.name }}</h1>
+      <span class="badge" style="margin-top:4px">{{ c.business_type or 'company' }}</span>
+    </div>
+  </div>
+
+  {% if request.args.get('message') == 'saved' %}
+  <div class="alert success">Saved</div>
+  {% endif %}
+
+  <form method="post" class="card">
+    <div class="grid2">
+      <div>
+        <label>{{ ui("name") }}</label>
+        <input name="name" value="{{ c.name }}" required>
+      </div>
+      <div>
+        <label>Type</label>
+        <select name="business_type">
+          <option value="company" {% if c.business_type == 'company' %}selected{% endif %}>Company</option>
+          <option value="individual" {% if c.business_type == 'individual' %}selected{% endif %}>Individual</option>
+        </select>
+      </div>
+    </div>
+
+    <label>{{ ui("description_label") }}</label>
+    <textarea name="description" rows="3" placeholder="What does your business do?">{{ c.description or '' }}</textarea>
+
+    <label>Contact Person</label>
+    <input name="contact_person" value="{{ c.contact_person or '' }}" placeholder="Full name">
+
+    <div class="grid2">
+      <div>
+        <label>{{ ui("phone_label_full") }}</label>
+        <input name="phone" type="tel" value="{{ c.phone or '' }}" placeholder="054-1234567">
+      </div>
+      <div>
+        <label>{{ ui("email_label") }}</label>
+        <input name="email" type="email" value="{{ c.email or '' }}" placeholder="you@company.com">
+      </div>
+    </div>
+
+    <label>Website</label>
+    <input name="website" value="{{ c.website or '' }}" placeholder="https://...">
+
+    <input type="hidden" name="logo_emoji" value="">
+
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button class="btn" type="submit">{{ ui("save_btn") }}</button>
+      <a href="/dashboard" class="pill" style="text-decoration:none">{{ ui("back_btn") }}</a>
+    </div>
+  </form>
+
+  {% if c.tg_api_id %}
+  <div class="card" style="margin-top:20px">
+    <div class="eyebrow">Telegram</div>
+    <p class="small muted">Telegram client connected (API ID: {{ c.tg_api_id[:6] }}...)</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

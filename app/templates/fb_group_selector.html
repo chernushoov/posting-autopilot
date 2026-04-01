@@ -1,0 +1,141 @@
+{% extends "_layout.html" %}
+{% block content %}
+<section class="page-hero">
+  <div>
+    <div class="eyebrow">Facebook Safe Workflow</div>
+    <h1>Group Selector</h1>
+    <p class="muted">Pick the best groups for this vacancy, then create a posting run in one step.</p>
+  </div>
+  <div class="actions">
+    <a class="pill" href="{{ url_for('fb_ui.post_generator', vacancy_id=vacancy.id) }}">Back to Generator</a>
+    {% if latest_unfinished_run %}
+    <a class="pill" href="{{ url_for('fb_ui.posting_queue', run_id=latest_unfinished_run.id) }}">Resume Queue</a>
+    {% endif %}
+  </div>
+</section>
+
+<section
+  class="fb-workflow-page panel-grid"
+  data-page="group-selector"
+  data-vacancy-id="{{ vacancy.id }}"
+  data-variant-id="{{ variant.id if variant else '' }}"
+  data-queue-base-url="{{ url_for('fb_ui.posting_queue', run_id=0)[:-1] }}"
+>
+  <aside class="card stack">
+    <div class="section-head">
+      <h2>Posting Context</h2>
+      <span class="badge">{{ vacancy.title }}</span>
+    </div>
+    <div class="info-list">
+      <div><span class="muted">Vacancy</span><strong>{{ vacancy.title }}</strong></div>
+      <div><span class="muted">City</span><strong>{{ vacancy.city or "-" }}</strong></div>
+      <div><span class="muted">Variant status</span><strong>{{ variant.status if variant else "missing" }}</strong></div>
+    </div>
+
+    {% if variant %}
+    <div class="fb-preview compact">{{ variant.full_text }}</div>
+    {% else %}
+    <div class="alert error">No saved variant found yet. Go back and approve one first.</div>
+    {% endif %}
+
+    {% if latest_unfinished_run %}
+    <div class="alert">
+      There is already an unfinished run for this vacancy.
+      <a href="{{ url_for('fb_ui.posting_queue', run_id=latest_unfinished_run.id) }}">Jump back into queue</a>
+    </div>
+    {% endif %}
+
+    <div class="stack tight">
+      <label for="group-search">Search</label>
+      <input id="group-search" placeholder="Group name, city, slug">
+
+      <label for="group-category">Category</label>
+      <select id="group-category">
+        <option value="">All categories</option>
+        <option value="tech">Tech</option>
+        <option value="finance">Finance</option>
+        <option value="sales">Sales</option>
+        <option value="customer_service">Customer service</option>
+        <option value="blue_collar">Blue collar</option>
+        <option value="operations">Operations</option>
+        <option value="general_jobs">General jobs</option>
+        <option value="city_jobs">City jobs</option>
+        <option value="students_juniors">Students & juniors</option>
+        <option value="executive">Executive</option>
+      </select>
+
+      <label for="group-city">Location</label>
+      <input id="group-city" placeholder="Tel Aviv / Haifa / Jerusalem">
+
+      <label for="group-min-activity">Min activity</label>
+      <select id="group-min-activity">
+        <option value="">Any</option>
+        <option value="5">5</option>
+        <option value="4">4+</option>
+        <option value="3">3+</option>
+        <option value="2">2+</option>
+      </select>
+
+      <label class="checkbox">
+        <input id="group-is-active" type="checkbox" checked>
+        <span>Active groups only</span>
+      </label>
+
+      <button class="btn" id="load-groups-btn" type="button">Load Groups</button>
+      <div class="small muted" id="group-load-status">Waiting to load groups.</div>
+    </div>
+  </aside>
+
+  <section class="stack">
+    <div class="card stack">
+      <div class="section-head">
+        <h2>Available Groups</h2>
+        <span class="badge" id="selected-groups-count">0 selected</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="groups-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>City</th>
+              <th>Language</th>
+              <th>Activity</th>
+              <th>Last posted</th>
+            </tr>
+          </thead>
+          <tbody id="groups-table-body">
+            <tr><td colspan="7" class="muted">No groups loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <div class="section-head">
+        <h2>Create Posting Run</h2>
+        <span class="badge" id="group-run-preview">Choose groups first</span>
+      </div>
+      <label for="posting-run-name">Run name</label>
+      <input id="posting-run-name" value="FB manual run">
+
+      <label for="posting-run-notes">Run notes</label>
+      <textarea id="posting-run-notes" rows="3" placeholder="Optional operator note"></textarea>
+
+      <div class="actions">
+        <button class="btn" id="create-posting-run-btn" type="button" {% if not variant %}disabled{% endif %}>Create Queue</button>
+      </div>
+      <div class="small muted" id="create-run-status">Select at least one group to continue.</div>
+    </div>
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.fbWorkflowInitialVariant = {{ variant|tojson if variant else 'null' }};
+  window.fbWorkflowExistingRunGroupIds = {{ existing_run_group_ids|tojson if existing_run_group_ids else '[]' }};
+</script>
+<script src="{{ url_for('static', filename='fb_safe_workflow.js') }}"></script>
+{% endblock %}

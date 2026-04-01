@@ -1,0 +1,46 @@
+{% extends "_layout.html" %}
+{% block content %}
+<a href="/companies/" class="small muted" style="display:inline-block;margin-bottom:12px">&larr; {{ ui("companies_title") }}</a>
+<h1>{{ ui("ai_settings_title") }} — {{ company.name }}</h1>
+
+<form method="post" action="/ai/settings" class="card">
+  <div class="grid2">
+    <div>
+      <label>{{ ui("tone_label") }}</label>
+      <select name="ai_tone">
+        {% for t in tones %}<option value="{{ t }}" {% if company.ai_tone.value==t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>{{ ui("language") }}</label>
+      <select name="ai_language">
+        {% for l in langs %}<option value="{{ l }}" {% if company.ai_language.value==l %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <label>{{ ui("positive_prompt") }}</label>
+  <textarea name="ai_positive_prompt" rows="6">{{ company.ai_positive_prompt }}</textarea>
+
+  <label>{{ ui("negative_prompt") }}</label>
+  <textarea name="ai_negative_prompt" rows="6">{{ company.ai_negative_prompt }}</textarea>
+
+  <label>{{ ui("greeting_template") }}</label>
+  <textarea name="ai_greeting_template" rows="4">{{ company.ai_greeting_template }}</textarea>
+
+  <label>{{ ui("rejection_template") }}</label>
+  <textarea name="ai_rejection_template" rows="4">{{ company.ai_rejection_template }}</textarea>
+
+  <label>{{ ui("success_template") }}</label>
+  <textarea name="ai_success_template" rows="4">{{ company.ai_success_template }}</textarea>
+
+  <button class="btn" type="submit">{{ ui("save_btn") }}</button>
+</form>
+
+<h2 style="margin-top:24px">{{ ui("test_ai") }}</h2>
+<form method="post" action="/ai/test" class="card">
+  <label>{{ ui("test_message") }}</label>
+  <textarea name="test_text" rows="4" placeholder=""></textarea>
+  <button class="btn" type="submit">{{ ui("run_btn") }}</button>
+</form>
+{% endblock %}

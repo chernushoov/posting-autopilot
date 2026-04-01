@@ -1,0 +1,5 @@
+wave_order,source_name,platform,posting_mode,template_file,owner,planned_post_time,posted_at,result
+1,Recruiter personal Telegram account list,telegram,userbot-only,telegram_short.txt,recruiter,,,
+2,Manual Telegram job groups,telegram,manual-only,telegram_short.txt,recruiter,,,
+3,Facebook company page,facebook,manual-only,facebook_groups_compact.txt,recruiter,,,
+4,Facebook Israel job groups,facebook,manual-only,facebook_groups_compact.txt,recruiter,,,

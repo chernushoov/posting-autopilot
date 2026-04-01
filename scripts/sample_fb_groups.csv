@@ -1,0 +1,3 @@
+group_name,facebook_url,primary_category,country_code,language_code,source_type,import_batch_key,verification_status,city,region,member_count_estimate,activity_rating,audience_type,secondary_tags,posting_rules_summary,requires_membership,requires_admin_approval,last_verified_at,notes
+משרות הייטק תל אביב,https://www.facebook.com/groups/tech.jobs.tlv,tech,IL,he,seed_csv,il_fb_seed_2026_q2,verified,Tel Aviv,Center,85000,5,mixed,hebrew|startup|tel_aviv,מותר לפרסם משרות בלי כפילויות יומיות,true,false,2026-03-30,קבוצה פעילה מאוד
+דרושים חיפה והצפון,https://www.facebook.com/groups/jobs.haifa.north,city_jobs,IL,he,seed_csv,il_fb_seed_2026_q2,verified,Haifa,North,42000,4,job_seekers,hebrew|haifa|north,משרות מקומיות בלבד,true,true,2026-03-30,טובה לתפקידי שירות ותפעול

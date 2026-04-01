@@ -1,0 +1,94 @@
+{
+  "checked_at": "20260330T205527Z",
+  "base_url": "https://posting-autopilot-next.vercel.app",
+  "login_get_status": 0,
+  "login_post_status": 0,
+  "cases": [
+    {
+      "case": "full_payload",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "full_name": "QA Matrix 20260330T205527Z",
+        "timezone": "Asia/Jerusalem",
+        "default_cta": "Reply 20260330T205527Z",
+        "posting_window": "11:00-17:00",
+        "notifications_enabled": "on"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/full_payload/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/full_payload/headers.json"
+    },
+    {
+      "case": "full_name_only",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "full_name": "QA Matrix Name 20260330T205527Z"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/full_name_only/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/full_name_only/headers.json"
+    },
+    {
+      "case": "timezone_only",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "timezone": "Asia/Jerusalem"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/timezone_only/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/timezone_only/headers.json"
+    },
+    {
+      "case": "default_cta_only",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "default_cta": "Reply 20260330T205527Z"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/default_cta_only/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/default_cta_only/headers.json"
+    },
+    {
+      "case": "posting_window_only",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "posting_window": "11:00-17:00"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/posting_window_only/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/posting_window_only/headers.json"
+    },
+    {
+      "case": "notifications_only",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "notifications_enabled": "on"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/notifications_only/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/notifications_only/headers.json"
+    },
+    {
+      "case": "full_name_and_timezone",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "full_name": "QA Matrix Combo 20260330T205527Z",
+        "timezone": "Asia/Jerusalem"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/full_name_and_timezone/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/full_name_and_timezone/headers.json"
+    },
+    {
+      "case": "cta_and_window",
+      "status_code": 0,
+      "ok": false,
+      "payload": {
+        "default_cta": "Reply 20260330T205527Z",
+        "posting_window": "11:00-17:00"
+      },
+      "response_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/cta_and_window/response.html",
+      "headers_path": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/live_settings_matrix/20260330T205527Z/cta_and_window/headers.json"
+    }
+  ]
+}

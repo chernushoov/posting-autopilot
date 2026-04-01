@@ -1,0 +1,47 @@
+{% extends "_layout.html" %}
+{% block content %}
+<h1>{{ ui("new_campaign_title") }}</h1>
+<form method="post" class="card">
+  <label>{{ ui("name") }}</label>
+  <input name="name" value="{{ form_values.name }}" placeholder="e.g. Construction pilot week 1">
+  <label>{{ ui("vacancy") }}</label>
+  <select name="vacancy_id">
+    {% for v in vacancies %}<option value="{{ v.id }}" {% if form_values.vacancy_id == (v.id|string) %}selected{% endif %}>#{{ v.id }} — {{ v.title }}</option>{% endfor %}
+  </select>
+  <label>{{ ui("interval_minutes") }}</label>
+  <input name="interval_minutes" type="number" min="{{ interval_min }}" max="{{ interval_max }}" value="{{ form_values.interval_minutes }}">
+  <p class="muted">{{ ui("safe_range") }}: {{ interval_min }} to {{ interval_max }} minutes.</p>
+  <div class="grid2">
+    <div>
+      <label>{{ ui("active_start") }}</label>
+      <input name="active_start_hour" type="number" min="0" max="23" value="{{ form_values.active_start_hour }}">
+    </div>
+    <div>
+      <label>{{ ui("active_end") }}</label>
+      <input name="active_end_hour" type="number" min="1" max="24" value="{{ form_values.active_end_hour }}">
+    </div>
+  </div>
+  <label>{{ ui("weekdays") }}</label>
+  <div class="list">
+    {% for day_value, day_label in weekday_options %}
+      <label class="checkbox">
+        <input type="checkbox" name="days_of_week" value="{{ day_value }}" {% if day_value in selected_days %}checked{% endif %}>
+        {{ day_label }}
+      </label>
+    {% endfor %}
+  </div>
+  <label>{{ ui("max_posts_day") }}</label>
+  <input name="max_posts_per_day" type="number" min="{{ max_posts_min }}" max="{{ max_posts_max }}" value="{{ form_values.max_posts_per_day }}">
+  <label>{{ ui("destinations") }}</label>
+  <div class="list">
+    {% for s in sources %}
+      <label class="checkbox">
+        <input type="checkbox" name="source_ids" value="{{ s.id }}" {% if (s.id|string) in selected_source_ids %}checked{% endif %}>
+        {{ s.label or s.tg_ref }} <span class="muted">({{ s.platform or "telegram" }} · {{ s.destination_kind or s.source_type.value }} · {{ s.posting_mode or "auto" }})</span>
+      </label>
+    {% endfor %}
+  </div>
+  <p class="muted">{{ ui("tg_auto_note") }}</p>
+  <button class="btn" type="submit">{{ ui("create_campaign_btn") }}</button>
+</form>
+{% endblock %}

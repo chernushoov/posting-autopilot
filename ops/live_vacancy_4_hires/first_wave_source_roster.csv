@@ -1,0 +1,5 @@
+wave_order,source_name,platform,posting_mode,status,owner,planned_post_time,apply_path,recruiter_note,posted_at,result
+1,Recruiter personal Telegram account list,telegram,userbot-only,ready_now,recruiter,,manual,Fast manual fallback path,,
+2,Manual Telegram job groups,telegram,manual-only,ready_now,recruiter,,manual,Use first on Sunday if bot path is still blocked,,
+3,Facebook company page,facebook,manual-only,ready_now,recruiter,,manual,Good for controlled proof capture,,
+4,Facebook Israel job groups,facebook,manual-only,ready_now,recruiter,,manual,Expect moderation and source-by-source rules,,

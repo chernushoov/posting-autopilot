@@ -1,0 +1,157 @@
+{
+  "checked_at": "2026-03-30T20:40:59Z",
+  "base_url": "https://posting-autopilot-next.vercel.app",
+  "overall_status": "red",
+  "launch_ready": false,
+  "runtime": {
+    "status": "green",
+    "ok": true,
+    "command": "bash scripts/runtime_check_with_env.sh --json",
+    "summary": "6/6 containers running: postgres, redis, web, worker, scheduler, bot | web :8080",
+    "details": {
+      "baseline_status": "healthy",
+      "running_services": 6,
+      "total_services": 6,
+      "issues": [
+        {
+          "severity": "warning",
+          "code": "bot_runtime_error",
+          "message": "bot-1  | Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8786784416)"
+        }
+      ]
+    },
+    "stderr": ""
+  },
+  "local_guardrails": {
+    "status": "green",
+    "ok": true,
+    "command": "bash scripts/compose_with_runtime.sh exec -T web python scripts/launch_guardrail_check.py",
+    "stderr": "",
+    "details": [
+      {
+        "name": "campaign_requires_sources",
+        "passed": true,
+        "status_code": 200
+      },
+      {
+        "name": "campaign_rejects_bad_interval",
+        "passed": true,
+        "status_code": 200
+      },
+      {
+        "name": "source_rejects_invalid_ref",
+        "passed": true,
+        "status_code": 302,
+        "location": "/sources/?error=Telegram+ref+must+look+like+@username+or+-1001234567890."
+      },
+      {
+        "name": "source_test_requires_confirmation",
+        "passed": true,
+        "status_code": 302,
+        "location": "/sources/?error=Confirm+live+send+before+testing+a+source."
+      }
+    ]
+  },
+  "local_route_probe": {
+    "status": "green",
+    "ok": true,
+    "stderr": "",
+    "command": "route probe via compose web python",
+    "details": {
+      "settings_route_present": false,
+      "ai_settings_route_present": true,
+      "routes": [
+        {
+          "rule": "/ai/settings",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/ai/settings",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/campaigns/",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/campaigns/new",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/campaigns/new",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/campaigns/toggle/<int:campaign_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/sources/check/<int:source_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/new",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/test/<int:source_id>",
+          "methods": [
+            "POST"
+          ]
+        }
+      ]
+    }
+  },
+  "vercel_linkage": {
+    "status": "yellow",
+    "ok": false,
+    "details": {
+      "linked_files": []
+    },
+    "message": "no local Vercel linkage metadata found in this repo"
+  },
+  "source_alignment": {
+    "status": "red",
+    "ok": false,
+    "details": [
+      "local app exposes /ai/settings while live deploy operator flow uses /settings",
+      "local repo has no Vercel linkage metadata for posting-autopilot-next",
+      "live /settings save fails with 500 while controlled local settings flow is a different route family"
+    ]
+  },
+  "live_smoke": {
+    "status": "red",
+    "ok": false,
+    "command": "bash scripts/live_deploy_smoke.sh https://posting-autopilot-next.vercel.app",
+    "output": "PASS login page available\nPASS demo login works\nPASS facebook connect page reachable\nFAIL settings save failed with status 500",
+    "message": "settings save failed with status 500"
+  },
+  "blockers": [
+    "settings save failed with status 500",
+    "local app exposes /ai/settings while live deploy operator flow uses /settings",
+    "local repo has no Vercel linkage metadata for posting-autopilot-next",
+    "live /settings save fails with 500 while controlled local settings flow is a different route family"
+  ]
+}

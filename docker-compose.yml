@@ -1,0 +1,82 @@
+x-runtime-env: &runtime-env
+  RECRUITBOT_TELEGRAM_BOT_TOKEN: ${RECRUITBOT_TELEGRAM_BOT_TOKEN}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+  RECRUITBOT_AI_PROVIDER: ${RECRUITBOT_AI_PROVIDER}
+  RECRUITBOT_AI_API_KEY: ${RECRUITBOT_AI_API_KEY}
+  AI_PROVIDER: ${AI_PROVIDER}
+  AI_API_KEY: ${AI_API_KEY}
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ra
+    ports:
+      - "5432:5432"
+    volumes:
+      - ra_pg:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+
+  web:
+    build: .
+    command: ["bash", "-lc", "python -m app.web"]
+    env_file:
+      - .env
+      - .env.runtime
+    environment: *runtime-env
+    ports:
+      - "8080:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./:/app
+
+  worker:
+    build: .
+    command: ["bash", "-lc", "python -m worker.run_worker"]
+    env_file:
+      - .env
+      - .env.runtime
+    environment: *runtime-env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./:/app
+
+  scheduler:
+    build: .
+    command: ["bash", "-lc", "python -m worker.run_scheduler"]
+    env_file:
+      - .env
+      - .env.runtime
+    environment: *runtime-env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./:/app
+
+  bot:
+    build: .
+    command: ["bash", "-lc", "sleep 5 && python -u -m bot.run_bot"]
+    restart: "no"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file:
+      - .env
+      - .env.runtime
+    environment: *runtime-env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./:/app
+
+volumes:
+  ra_pg:

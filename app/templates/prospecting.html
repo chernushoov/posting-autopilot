@@ -1,0 +1,108 @@
+{% extends "_layout.html" %}
+{% block content %}
+
+<div class="row">
+  <h1>{{ ui("prospecting_title") }}</h1>
+</div>
+
+<!-- Stats -->
+<div style="display:flex;gap:16px;margin:12px 0">
+  <div class="card" style="text-align:center;padding:16px;flex:1">
+    <div style="font-size:2em;font-weight:bold">{{ stats.total }}</div>
+    <div class="muted">{{ ui("total_prospects") }}</div>
+  </div>
+  <div class="card" style="text-align:center;padding:16px;flex:1">
+    <div style="font-size:2em;font-weight:bold;color:#3fb950">{{ stats.with_email }}</div>
+    <div class="muted">{{ ui("with_email") }}</div>
+  </div>
+  <div class="card" style="text-align:center;padding:16px;flex:1">
+    <div style="font-size:2em;font-weight:bold;color:#58a6ff">{{ stats.contacted }}</div>
+    <div class="muted">{{ ui("contacted") }}</div>
+  </div>
+  <div class="card" style="text-align:center;padding:16px;flex:1">
+    <div style="font-size:2em;font-weight:bold;color:#d29922">{{ stats.converted }}</div>
+    <div class="muted">{{ ui("converted") }}</div>
+  </div>
+</div>
+
+<!-- Scrape form -->
+<div class="card" style="padding:16px;margin:12px 0">
+  <h2>{{ ui("find_businesses") }}</h2>
+  <form method="post" action="/prospecting/scrape" style="display:flex;gap:8px">
+    <input name="query" placeholder="{{ ui('scrape_placeholder') }}" style="flex:1" value="">
+    <button type="submit" class="btn">{{ ui("scrape_btn") }}</button>
+  </form>
+</div>
+
+<!-- Manual add -->
+<details style="margin:12px 0">
+  <summary class="muted" style="cursor:pointer">{{ ui("add_manual") }}</summary>
+  <form method="post" action="/prospecting/add" class="card" style="margin-top:8px">
+    <div class="grid2">
+      <div><label>{{ ui("name") }}</label><input name="name" required></div>
+      <div><label>{{ ui("city") }}</label><input name="city"></div>
+    </div>
+    <div class="grid2">
+      <div><label>Email</label><input name="email" type="email"></div>
+      <div><label>{{ ui("phone_label") }}</label><input name="phone"></div>
+    </div>
+    <div class="grid2">
+      <div><label>{{ ui("dest_url") }}</label><input name="website"></div>
+      <div><label>{{ ui("category") }}</label><input name="category"></div>
+    </div>
+    <button type="submit">{{ ui("add_dest_btn") }}</button>
+  </form>
+</details>
+
+<!-- Filter -->
+<form method="get" style="margin:12px 0">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">{{ ui("all") }}</option>
+    {% for s in statuses %}
+      <option value="{{ s }}" {% if current_status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<!-- Prospects table -->
+<table class="table">
+  <tr>
+    <th>{{ ui("name") }}</th>
+    <th>{{ ui("city") }}</th>
+    <th>Email</th>
+    <th>{{ ui("phone_label") }}</th>
+    <th>{{ ui("rating_label") }}</th>
+    <th>{{ ui("status") }}</th>
+    <th>{{ ui("actions") }}</th>
+  </tr>
+  {% for p in prospects %}
+  <tr>
+    <td>
+      <strong>{{ p.name }}</strong>
+      {% if p.website %}<div class="small muted"><a href="{{ p.website }}" target="_blank">{{ p.website[:40] }}{% if p.website|length > 40 %}...{% endif %}</a></div>{% endif %}
+      {% if p.category %}<div class="small muted">{{ p.category }}</div>{% endif %}
+    </td>
+    <td>{{ p.city or "-" }}</td>
+    <td>{{ p.email or "-" }}</td>
+    <td>{{ p.phone or "-" }}</td>
+    <td>{{ p.rating or "-" }}{% if p.review_count %} ({{ p.review_count }}){% endif %}</td>
+    <td><span class="status status-{{ p.status.value }}">{{ p.status.value }}</span></td>
+    <td>
+      {% if p.email and p.status.value == "new" %}
+        <form method="post" action="/prospecting/{{ p.id }}/send" style="display:inline">
+          <button class="pill" type="submit">{{ ui("send_email_btn") }}</button>
+        </form>
+      {% elif p.status.value == "contacted" %}
+        <span class="small muted">{{ ui("sent_label") }}</span>
+      {% else %}
+        <span class="small muted">-</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  {% if not prospects %}
+  <tr><td colspan="7" class="muted" style="text-align:center;padding:24px">{{ ui("no_data") }}</td></tr>
+  {% endif %}
+</table>
+
+{% endblock %}

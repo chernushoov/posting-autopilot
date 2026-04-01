@@ -1,0 +1,66 @@
+{
+  "client_name": "",
+  "client_type": "",
+  "vacancy_title": "",
+  "hires_needed": 4,
+  "location": {
+    "city": "",
+    "area_or_site": "",
+    "full_address_if_needed": "",
+    "transport_notes": ""
+  },
+  "compensation": {
+    "salary_or_pay": "",
+    "pay_period": "",
+    "overtime_available": "",
+    "bonus_or_allowances": ""
+  },
+  "schedule": {
+    "shift_type": "",
+    "days": "",
+    "hours": "",
+    "start_date_or_urgency": ""
+  },
+  "requirements": {
+    "must_have": [
+      "",
+      "",
+      ""
+    ],
+    "nice_to_have": [
+      ""
+    ],
+    "physical_or_role_limits": ""
+  },
+  "documents_and_legal": {
+    "work_permit_required": "",
+    "required_documents": [
+      ""
+    ],
+    "legal_notes": ""
+  },
+  "benefits": [
+    "",
+    ""
+  ],
+  "language_requirements": {
+    "candidate_languages": [
+      "ru"
+    ],
+    "manager_language": ""
+  },
+  "response_path": {
+    "primary_apply_path": "",
+    "fallback_contact_name": "",
+    "fallback_contact_phone_or_telegram": ""
+  },
+  "recruiter_owner": "",
+  "client_priority_note": "",
+  "operator_notes": "",
+  "status": {
+    "intake_complete": false,
+    "posting_copy_ready": false,
+    "screening_ready": false,
+    "sources_selected": false
+  }
+}

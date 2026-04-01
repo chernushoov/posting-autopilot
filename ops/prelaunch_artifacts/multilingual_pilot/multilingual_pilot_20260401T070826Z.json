@@ -1,0 +1,123 @@
+{
+  "checked_at": "20260401T070826Z",
+  "overall_ok": true,
+  "translation_issues": [],
+  "language_map_checks": [
+    {
+      "incoming": "ru",
+      "expected": "ru",
+      "actual": "ru",
+      "passed": true
+    },
+    {
+      "incoming": "uk",
+      "expected": "ru",
+      "actual": "ru",
+      "passed": true
+    },
+    {
+      "incoming": "be",
+      "expected": "ru",
+      "actual": "ru",
+      "passed": true
+    },
+    {
+      "incoming": "he",
+      "expected": "he",
+      "actual": "he",
+      "passed": true
+    },
+    {
+      "incoming": "iw",
+      "expected": "he",
+      "actual": "he",
+      "passed": true
+    },
+    {
+      "incoming": "en",
+      "expected": "en",
+      "actual": "en",
+      "passed": true
+    },
+    {
+      "incoming": "en-US",
+      "expected": "en",
+      "actual": "en",
+      "passed": true
+    },
+    {
+      "incoming": "fr",
+      "expected": "ru",
+      "actual": "ru",
+      "passed": true
+    },
+    {
+      "incoming": null,
+      "expected": "ru",
+      "actual": "ru",
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "lang": "ru",
+      "welcome": "Привет! Я помогаю найти работу в строительстве 🏗\n\nВыбери язык / בחר שפה / Choose language:",
+      "language_set": "✅ Язык: Русский\n\nЧто хочешь сделать?",
+      "default_questions": [
+        "Какой у тебя опыт работы? (кратко)",
+        "В каком ты городе сейчас?",
+        "Есть ли документы/разрешение на работу?"
+      ],
+      "custom_questions": [
+        "Custom Q1 ru",
+        "Custom Q2 ru"
+      ],
+      "prompt_contains_language": true,
+      "positive_score": 100,
+      "negative_score": 44,
+      "positive_provider": "rule-based",
+      "negative_provider": "rule-based",
+      "positive_beats_negative": true
+    },
+    {
+      "lang": "he",
+      "welcome": "שלום! אני עוזר למצוא עבודה בבנייה 🏗\n\nבחר שפה / Выбери язык / Choose language:",
+      "language_set": "✅ שפה: עברית\n\nמה תרצה לעשות?",
+      "default_questions": [
+        "מה הניסיון שלך בעבודה? (בקצרה)",
+        "באיזו עיר את/ה נמצא/ת כרגע?",
+        "יש לך אישור עבודה/מסמכים?"
+      ],
+      "custom_questions": [
+        "Custom Q1 he",
+        "Custom Q2 he"
+      ],
+      "prompt_contains_language": true,
+      "positive_score": 58,
+      "negative_score": 40,
+      "positive_provider": "rule-based",
+      "negative_provider": "rule-based",
+      "positive_beats_negative": true
+    },
+    {
+      "lang": "en",
+      "welcome": "Hi! I help find construction jobs 🏗\n\nChoose language / Выбери язык / בחר שפה:",
+      "language_set": "✅ Language: English\n\nWhat would you like to do?",
+      "default_questions": [
+        "What is your work experience? (briefly)",
+        "What city are you in right now?",
+        "Do you have work permit/documents?"
+      ],
+      "custom_questions": [
+        "Custom Q1 en",
+        "Custom Q2 en"
+      ],
+      "prompt_contains_language": true,
+      "positive_score": 82,
+      "negative_score": 36,
+      "positive_provider": "rule-based",
+      "negative_provider": "rule-based",
+      "positive_beats_negative": true
+    }
+  ]
+}

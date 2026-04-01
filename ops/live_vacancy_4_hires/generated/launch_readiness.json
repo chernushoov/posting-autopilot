@@ -1,0 +1,24 @@
+{
+  "status": "needs_input",
+  "missing_fields": [
+    "vacancy_title",
+    "location.city",
+    "compensation.salary_or_pay",
+    "schedule.shift_type",
+    "schedule.days",
+    "schedule.hours",
+    "schedule.start_date_or_urgency",
+    "requirements.must_have",
+    "response_path.primary_apply_path",
+    "recruiter_owner"
+  ],
+  "generated_files": [
+    "facebook_groups_compact.txt",
+    "facebook_standard.txt",
+    "final_launch_packet.md",
+    "final_vacancy_card.md",
+    "missing_fields_message.txt",
+    "operator_start_brief.md",
+    "telegram_short.txt"
+  ]
+}

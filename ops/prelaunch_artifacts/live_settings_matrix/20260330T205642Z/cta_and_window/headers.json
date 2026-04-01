@@ -1,0 +1,12 @@
+{
+  "cache-control": "public, max-age=0, must-revalidate",
+  "content-length": "265",
+  "content-type": "text/html; charset=utf-8",
+  "date": "Mon, 30 Mar 2026 20:56:49 GMT",
+  "server": "Vercel",
+  "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
+  "vary": "Cookie",
+  "x-vercel-cache": "MISS",
+  "x-vercel-id": "fra1::iad1::7wwnq-1774904209045-993d51107cec",
+  "connection": "close"
+}

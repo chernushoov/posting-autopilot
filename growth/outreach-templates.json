@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-04-01",
+  "templates": {
+    "cold_email_en": {
+      "subject_lines": [
+        "Your Telegram groups could screen candidates automatically",
+        "We built what Breezy HR can't do — Telegram-native hiring",
+        "70% less time screening candidates — free pilot for Israeli agencies"
+      ],
+      "body": "Hi {{contact_name}},\n\nI noticed {{agency_name}} recruits in {{specialization}}. Quick question — how much time does your team spend screening candidates that don't fit?\n\nWe built Recruit Autopilot — a Telegram bot that:\n• Posts vacancies to your Telegram groups/channels on schedule\n• Automatically screens candidates in Hebrew, Russian & English\n• AI scores each candidate and flags red flags\n• You only see the shortlist in your dashboard\n\nAgencies using it cut screening time by 70%. The bot does the first interview, you close the deal.\n\nWe're offering a free 2-week pilot for Israeli agencies. Want me to set up a 15-min demo?\n\n{{sender_name}}\nRecruit Autopilot",
+      "follow_up_1": "Hi {{contact_name}},\n\nFollowing up on my note about automating candidate screening via Telegram.\n\nHere's a 2-min demo video: {{demo_url}}\n\nThe bot screens in 3 languages and scores candidates — your recruiters only see qualified ones.\n\nFree pilot, no commitment. Worth a quick look?\n\n{{sender_name}}",
+      "follow_up_2": "Hi {{contact_name}},\n\nLast note — just wanted to share that {{social_proof}} are already piloting with us.\n\nIf timing isn't right now, totally understand. Happy to reconnect whenever hiring volume picks up.\n\n{{sender_name}}"
+    },
+    "cold_email_he": {
+      "subject_lines": [
+        "הבוט שלנו סורק מועמדים בטלגרם — בשבילכם",
+        "70% פחות זמן על סינון מועמדים — פיילוט חינם",
+        "אוטומציה של גיוס בטלגרם — מתאים לסוכנויות ישראליות"
+      ],
+      "body": "שלום {{contact_name}},\n\nראיתי ש{{agency_name}} מתמחים ב{{specialization}}. שאלה קצרה — כמה זמן הצוות שלכם מבזבז על סינון מועמדים שלא מתאימים?\n\nבנינו את Recruit Autopilot — בוט טלגרם ש:\n• מפרסם משרות בקבוצות/ערוצי טלגרם לפי לו\"ז\n• סורק מועמדים אוטומטית בעברית, רוסית ואנגלית\n• AI מדרג כל מועמד ומסמן דגלים אדומים\n• אתם רואים רק את הרשימה המקוצרת בדשבורד\n\nסוכנויות שמשתמשות חוסכות 70% מזמן הסינון. הבוט עושה את הראיון הראשון, אתם סוגרים את העסקה.\n\nאנחנו מציעים פיילוט חינם ל-2 שבועות לסוכנויות ישראליות. רוצים דמו של 15 דקות?\n\n{{sender_name}}\nRecruit Autopilot",
+      "follow_up_1": "שלום {{contact_name}},\n\nחוזר לגבי ההצעה לאוטומציה של סינון מועמדים בטלגרם.\n\nהנה סרטון דמו של 2 דקות: {{demo_url}}\n\nהבוט סורק ב-3 שפות ומדרג מועמדים — המגייסים שלכם רואים רק מתאימים.\n\nפיילוט חינם, בלי התחייבות. שווה מבט?\n\n{{sender_name}}"
+    },
+    "telegram_dm_en": {
+      "message": "Hi! I see you run a recruitment agency. We built a Telegram bot that screens candidates automatically in Hebrew, Russian & English. Cuts 70% of screening time. Offering free pilots to Israeli agencies. Interested in a quick demo? 🎯"
+    },
+    "telegram_dm_he": {
+      "message": "היי! ראיתי שיש לכם סוכנות גיוס. בנינו בוט טלגרם שסורק מועמדים אוטומטית בעברית, רוסית ואנגלית. חוסך 70% מזמן הסינון. מציעים פיילוט חינם לסוכנויות ישראליות. מעוניינים בדמו קצר? 🎯"
+    },
+    "linkedin_connection_note": {
+      "message_en": "Hi {{contact_name}} — I noticed you lead recruitment at {{agency_name}}. We've built an AI-powered Telegram bot that automates candidate screening in Hebrew, Russian & English. Would love to show you a quick demo. Happy to connect!",
+      "message_he": "שלום {{contact_name}} — ראיתי שאתה מוביל גיוס ב{{agency_name}}. בנינו בוט AI בטלגרם שעושה סינון מועמדים אוטומטי ב-3 שפות. אשמח להראות לך דמו קצר."
+    }
+  },
+  "outreach_sequence": {
+    "day_1": "cold_email (subject A/B test)",
+    "day_3": "linkedin_connection_note",
+    "day_5": "follow_up_1 (with demo video link)",
+    "day_8": "telegram_dm (if found their Telegram)",
+    "day_12": "follow_up_2 (social proof)",
+    "day_20": "break — revisit in 30 days"
+  },
+  "key_value_props": [
+    "Telegram-native (where Israeli agencies already work)",
+    "3 languages: Hebrew + Russian + English",
+    "AI screening saves 70% of recruiter time",
+    "Automated posting schedule to multiple groups",
+    "₪299/mo starting — cheaper than any ATS",
+    "Free 2-week pilot, no credit card"
+  ],
+  "objection_handlers": {
+    "we_use_excel": "Perfect — Recruit Autopilot replaces the manual screening, not your workflow. Bot handles first contact, you get a scored shortlist.",
+    "we_have_ats": "Great — we complement your ATS. Bot does top-of-funnel screening in Telegram, qualified candidates go into your existing system.",
+    "too_expensive": "Our Solo plan is ₪299/mo — less than one recruiter-hour per day. And the pilot is completely free.",
+    "we_dont_use_telegram": "Many Israeli agencies are discovering that their candidate pool is already on Telegram. We help you tap into that channel.",
+    "ai_cant_replace_human": "Totally agree — that's why our AI only does the first screening. Your recruiters still make the final call, just with better data."
+  }
+}

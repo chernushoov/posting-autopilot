@@ -1,0 +1,27 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div class="row">
+  <h1>{{ ui("vacancies_title") }}</h1>
+  <a class="btn" href="/vacancies/new">{{ ui("new_vacancy") }}</a>
+</div>
+<table class="table">
+  <tr><th>ID</th><th>{{ ui("title") }}</th><th>{{ ui("city") }}</th><th>{{ ui("posting_asset") }}</th><th>{{ ui("active") }}</th><th>{{ ui("actions") }}</th></tr>
+  {% for v in vacancies %}
+  <tr>
+    <td>{{ v.id }}</td>
+    <td>{{ v.title }}</td>
+    <td>{{ v.city or "-" }}</td>
+    <td>
+      <strong>{{ v.final_post_title or v.title }}</strong>
+      <div class="small muted">{{ (v.final_post_body or v.body)[:180] }}{% if (v.final_post_body or v.body)|length > 180 %}...{% endif %}</div>
+    </td>
+    <td>{{ ui("yes") if v.is_active else ui("no") }}</td>
+    <td>
+      <form method="post" action="/vacancies/toggle/{{ v.id }}">
+        <button class="pill" type="submit">{{ ui("toggle") }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

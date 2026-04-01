@@ -1,0 +1,129 @@
+{% extends "_layout.html" %}
+{% block content %}
+<section class="page-hero">
+  <div>
+    <div class="eyebrow">Facebook Safe Workflow</div>
+    <h1>Posting Queue</h1>
+    <p class="muted">Manual Facebook posting only. Copy, open group, mark posted or skipped, then store result notes.</p>
+  </div>
+  <div class="actions">
+    <a class="pill" href="{{ url_for('vacancies.list_vacancies') }}">Back to Vacancies</a>
+  </div>
+</section>
+
+<section class="fb-workflow-page queue-layout" data-page="posting-queue" data-run-id="{{ run_id }}">
+  <aside class="stack">
+    <div class="card stack">
+      <div class="section-head">
+        <h2>Approved Post</h2>
+        <span class="badge" id="queue-progress-badge">Loading…</span>
+      </div>
+      <div class="fb-preview" id="queue-post-preview">Loading posting content…</div>
+      <div class="actions">
+        <button class="pill" id="queue-copy-post-btn" type="button">Copy Post</button>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <div class="section-head">
+        <h2>Current Group</h2>
+        <span class="badge" id="queue-current-status">Waiting</span>
+      </div>
+      <div id="queue-current-group" class="info-list">
+        <div class="muted">Queue data will appear here.</div>
+      </div>
+
+      <label for="queue-post-url">Manual post URL</label>
+      <input id="queue-post-url" placeholder="Optional post URL">
+
+      <label for="queue-group-note">Operator note</label>
+      <textarea id="queue-group-note" rows="3" placeholder="Optional note about this group"></textarea>
+
+      <label for="queue-skip-reason">Skip reason</label>
+      <input id="queue-skip-reason" placeholder="Optional reason if skipped">
+
+      <div class="actions wrap">
+        <button class="pill" id="queue-open-group-btn" type="button">Open Group</button>
+        <button class="pill" id="queue-mark-posted-btn" type="button">Mark Posted</button>
+        <button class="pill danger" id="queue-skip-btn" type="button">Skip</button>
+      </div>
+      <div class="small muted" id="queue-action-status">Select or load a queue item.</div>
+    </div>
+
+    <div class="card stack">
+      <div class="section-head">
+        <h2>Result Snapshot</h2>
+        <span class="badge" id="queue-result-status-badge">Optional</span>
+      </div>
+      <label for="result-status">Result status</label>
+      <select id="result-status">
+        <option value="posted">Posted</option>
+        <option value="got_responses">Got responses</option>
+        <option value="got_cvs">Got CVs</option>
+        <option value="interview_scheduled">Interview scheduled</option>
+        <option value="hired">Hired</option>
+        <option value="rejected_by_group">Rejected by group</option>
+        <option value="no_signal">No signal</option>
+      </select>
+
+      <div class="grid2">
+        <div>
+          <label for="response-count">Responses</label>
+          <input id="response-count" type="number" min="0" placeholder="0">
+        </div>
+        <div>
+          <label for="cv-count">CVs</label>
+          <input id="cv-count" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label for="interview-count">Interviews</label>
+          <input id="interview-count" type="number" min="0" placeholder="0">
+        </div>
+        <div>
+          <label for="hire-count">Hires</label>
+          <input id="hire-count" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+
+      <label for="result-note">Result note</label>
+      <textarea id="result-note" rows="3" placeholder="Latest result note"></textarea>
+
+      <button class="btn" id="save-result-btn" type="button">Save Result</button>
+      <div class="small muted" id="result-save-status">Save a note for the selected queue item.</div>
+    </div>
+  </aside>
+
+  <section class="card stack">
+    <div class="section-head">
+      <h2>Queue Items</h2>
+      <span class="badge" id="queue-run-name">Loading…</span>
+    </div>
+    <div class="small muted" id="queue-run-context">Loading queue context…</div>
+    <div class="actions wrap" id="queue-run-signals"></div>
+    <div class="table-wrap">
+      <table class="table" id="queue-items-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Group</th>
+            <th>Status</th>
+            <th>City</th>
+            <th>Activity</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody id="queue-items-table-body">
+          <tr><td colspan="6" class="muted">Loading queue…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='fb_safe_workflow.js') }}"></script>
+{% endblock %}
