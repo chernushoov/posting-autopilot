@@ -73,12 +73,18 @@
     </div>
     {% if facebook_sources %}
     <div class="card" style="padding:6px;max-height:calc(100vh - 220px);overflow-y:auto">
-      {% for s in facebook_sources %}
-      <div class="dest-fb">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
-        <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label or 'Group' }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
-        <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
-      </div>
+      {% set ns = namespace(cf='__none__') %}
+      {% for s in facebook_sources|sort(attribute='folder') %}
+        {% set f = s.folder or 'groups' %}
+        {% if f != ns.cf %}
+          {% set ns.cf = f %}
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--light);padding:10px 14px 3px">{{ f }}</div>
+        {% endif %}
+        <div class="dest-fb">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+          <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label or 'Group' }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+          <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+        </div>
       {% endfor %}
     </div>
     {% else %}
@@ -102,75 +108,142 @@
       </div>
     </div>
 
-    <!-- Tabs: Groups / Marketplace -->
-    {% if fb_groups %}
+    <!-- Tabs -->
     <div class="card">
       <div class="tab-bar">
-        <button class="tab-btn active" onclick="showTab('groups')">
+        <button class="tab-btn active" onclick="showTab('groups',this)">
           {% if ui_lang == 'ru' %}Группы{% elif ui_lang == 'he' %}קבוצות{% else %}Groups{% endif %}
-          ({{ fb_groups|selectattr('type', 'equalto', 'group')|list|length or fb_groups|length }})
         </button>
-        <button class="tab-btn" onclick="showTab('pages')">
-          {% if ui_lang == 'ru' %}Сообщества{% elif ui_lang == 'he' %}דפים{% else %}Pages{% endif %}
-          ({{ fb_groups|selectattr('type', 'equalto', 'page')|list|length or 0 }})
+        <button class="tab-btn" onclick="showTab('pages',this)">
+          {% if ui_lang == 'ru' %}Сообщества{% elif ui_lang == 'he' %}קהילות{% else %}Communities{% endif %}
         </button>
-        <button class="tab-btn" onclick="showTab('marketplace')">
+        <button class="tab-btn" onclick="showTab('marketplace',this)">
           {% if ui_lang == 'ru' %}Маркетплейс{% elif ui_lang == 'he' %}שוק{% else %}Marketplace{% endif %}
         </button>
       </div>
 
-      <!-- Groups tab -->
+      <!-- ─── Groups tab ─── -->
       <div class="tab-content active" id="tab-groups">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <p class="small muted">{{ ui("fb_groups_desc") }}</p>
-          <form method="post" action="/connect/facebook/add-selected">
-            <input type="hidden" name="group_ids" id="fb-selected" value="">
-            <button class="btn" type="submit" id="fb-add-btn" disabled>{{ ui("fb_add_selected") }} (0)</button>
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Добавьте Facebook-группы для публикации объявлений.{% elif ui_lang == 'he' %}הוסף קבוצות פייסבוק לפרסום מודעות.{% else %}Add Facebook groups where your listings will be posted.{% endif %}
+        </p>
+        <!-- Synced groups -->
+        {% if fb_groups %}
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="small" style="font-weight:600">{% if ui_lang == 'ru' %}Найденные группы ({{ fb_groups|length }}){% elif ui_lang == 'he' %}קבוצות שנמצאו ({{ fb_groups|length }}){% else %}Found groups ({{ fb_groups|length }}){% endif %}</span>
+            <form method="post" action="/connect/facebook/add-selected">
+              <input type="hidden" name="group_ids" id="fb-selected" value="">
+              <button class="btn" type="submit" id="fb-add-btn" disabled style="font-size:12px;padding:6px 14px">{{ ui("fb_add_selected") }} (0)</button>
+            </form>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:4px">
+            {% for g in fb_groups %}
+            <label class="fg">
+              <input type="checkbox" class="fb-gc" value="{{ g.id }}" {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}checked disabled{% endif %}>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500">{{ g.name }}</div>
+                <div style="font-size:11px;color:var(--muted)">{{ g.member_count or 0 }} {{ ui("fb_members") }} · {{ g.privacy or '' }}</div>
+              </div>
+              {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}<span style="font-size:10px;color:var(--success);font-weight:600">{{ ui("fb_added") }}</span>{% endif %}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <!-- Manual add group -->
+        <div style="border-top:1px solid var(--border-light);padding-top:16px">
+          <span class="small" style="font-weight:600;display:block;margin-bottom:10px">{% if ui_lang == 'ru' %}Добавить вручную{% elif ui_lang == 'he' %}הוסף ידנית{% else %}Add manually{% endif %}</span>
+          <form method="post" action="/sources/new" style="display:flex;gap:8px;align-items:flex-end">
+            <input type="hidden" name="platform" value="facebook">
+            <input type="hidden" name="posting_mode" value="assisted_manual">
+            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="tg_ref" value="">
+            <input type="hidden" name="folder" value="groups">
+            <div style="flex:1"><label class="small">{% if ui_lang == 'ru' %}Название{% elif ui_lang == 'he' %}שם{% else %}Name{% endif %}</label><input name="label" required placeholder=""></div>
+            <div style="flex:1"><label class="small">URL</label><input name="destination_url" required placeholder="https://facebook.com/groups/..."></div>
+            <button type="submit" class="btn" style="padding:10px 16px;white-space:nowrap">+</button>
           </form>
         </div>
-        <div style="display:flex;flex-direction:column;gap:2px;max-height:400px;overflow-y:auto">
-          {% for g in fb_groups %}
-          <label class="fg">
-            <input type="checkbox" class="fb-gc" value="{{ g.id }}" {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}checked disabled{% endif %}>
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:500">{{ g.name }}</div>
-              <div style="font-size:11px;color:var(--muted)">
-                {{ g.member_count or 0 }} {{ ui("fb_members") }} · {{ g.privacy or '' }}
-                {% if g.is_admin %} · <span style="color:#1877F2;font-weight:600">{{ ui("fb_admin") }}</span>{% endif %}
-              </div>
-            </div>
-            {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}
-            <span style="font-size:10px;color:var(--success);font-weight:600">{{ ui("fb_added") }}</span>
-            {% endif %}
-          </label>
+      </div>
+
+      <!-- ─── Communities/Pages tab ─── -->
+      <div class="tab-content" id="tab-pages">
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Добавьте сообщества, открытые страницы и доски объявлений.{% elif ui_lang == 'he' %}הוסף קהילות, דפים פתוחים ולוחות מודעות.{% else %}Add communities, open pages and bulletin boards.{% endif %}
+        </p>
+        <!-- List existing community destinations -->
+        {% set community_sources = facebook_sources|selectattr('folder', 'equalto', 'communities')|list %}
+        {% if community_sources %}
+        <div style="margin-bottom:16px;display:flex;flex-direction:column;gap:4px">
+          {% for s in community_sources %}
+          <div class="dest-fb">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+            <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">{{ s.label }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+            <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+          </div>
           {% endfor %}
         </div>
-      </div>
-
-      <!-- Pages tab -->
-      <div class="tab-content" id="tab-pages">
-        <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
-          {% if ui_lang == 'ru' %}Сообщества и страницы будут здесь после синхронизации.{% elif ui_lang == 'he' %}דפים וקהילות יופיעו כאן לאחר סנכרון.{% else %}Pages and communities will appear here after sync.{% endif %}
+        {% endif %}
+        <!-- Add community -->
+        <div style="border-top:1px solid var(--border-light);padding-top:16px">
+          <form method="post" action="/sources/new" style="display:flex;gap:8px;align-items:flex-end">
+            <input type="hidden" name="platform" value="facebook">
+            <input type="hidden" name="posting_mode" value="assisted_manual">
+            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="tg_ref" value="">
+            <input type="hidden" name="folder" value="communities">
+            <div style="flex:1"><label class="small">{% if ui_lang == 'ru' %}Название{% elif ui_lang == 'he' %}שם{% else %}Name{% endif %}</label><input name="label" required placeholder=""></div>
+            <div style="flex:1"><label class="small">URL</label><input name="destination_url" required placeholder="https://facebook.com/..."></div>
+            <button type="submit" class="btn" style="padding:10px 16px;white-space:nowrap">+</button>
+          </form>
         </div>
       </div>
 
-      <!-- Marketplace tab -->
+      <!-- ─── Marketplace tab ─── -->
       <div class="tab-content" id="tab-marketplace">
-        <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
-          {% if ui_lang == 'ru' %}Facebook Marketplace. Публикация объявлений о продаже (авто, недвижимость, товары).
-          <br><br>Будет доступно в следующем обновлении.
-          {% elif ui_lang == 'he' %}Facebook Marketplace. פרסום מודעות מכירה (רכב, נדל"ן, מוצרים).
-          <br><br>יהיה זמין בעדכון הבא.
-          {% else %}Facebook Marketplace. Post listings for sale (cars, real estate, items).
-          <br><br>Coming in the next update.{% endif %}
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Публикуйте на Facebook Marketplace: авто, недвижимость, товары, услуги. Создайте объявление — система подготовит текст для размещения.{% elif ui_lang == 'he' %}פרסם ב-Facebook Marketplace: רכב, נדל"ן, מוצרים, שירותים. צור מודעה והמערכת תכין את הטקסט.{% else %}Post to Facebook Marketplace: cars, real estate, items, services. Create a listing and the system prepares the text.{% endif %}
+        </p>
+        <!-- List existing marketplace destinations -->
+        {% set mp_sources = facebook_sources|selectattr('folder', 'equalto', 'marketplace')|list %}
+        {% if mp_sources %}
+        <div style="margin-bottom:16px;display:flex;flex-direction:column;gap:4px">
+          {% for s in mp_sources %}
+          <div class="dest-fb">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+            <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">{{ s.label }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+            <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <!-- Add marketplace entry -->
+        <div style="border-top:1px solid var(--border-light);padding-top:16px">
+          <span class="small" style="font-weight:600;display:block;margin-bottom:10px">{% if ui_lang == 'ru' %}Добавить Marketplace{% elif ui_lang == 'he' %}הוסף Marketplace{% else %}Add Marketplace{% endif %}</span>
+          <form method="post" action="/sources/new" class="stack" style="gap:10px">
+            <input type="hidden" name="platform" value="facebook">
+            <input type="hidden" name="posting_mode" value="assisted_manual">
+            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="tg_ref" value="">
+            <input type="hidden" name="folder" value="marketplace">
+            <div class="grid2">
+              <div><label class="small">{% if ui_lang == 'ru' %}Город / Регион{% elif ui_lang == 'he' %}עיר / אזור{% else %}City / Region{% endif %}</label><input name="label" required placeholder="{% if ui_lang == 'ru' %}Тель-Авив{% elif ui_lang == 'he' %}תל אביב{% else %}Tel Aviv{% endif %}"></div>
+              <div><label class="small">{% if ui_lang == 'ru' %}Категория{% elif ui_lang == 'he' %}קטגוריה{% else %}Category{% endif %}</label>
+                <select name="destination_url" style="width:100%">
+                  <option value="https://facebook.com/marketplace/telaviv/vehicles">{% if ui_lang == 'ru' %}Авто{% elif ui_lang == 'he' %}רכב{% else %}Vehicles{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/propertyrentals">{% if ui_lang == 'ru' %}Недвижимость{% elif ui_lang == 'he' %}נדל"ן{% else %}Property{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/jobs">{% if ui_lang == 'ru' %}Вакансии{% elif ui_lang == 'he' %}משרות{% else %}Jobs{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/search">{% if ui_lang == 'ru' %}Товары{% elif ui_lang == 'he' %}מוצרים{% else %}Items{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/services">{% if ui_lang == 'ru' %}Услуги{% elif ui_lang == 'he' %}שירותים{% else %}Services{% endif %}</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn" style="align-self:flex-start">{% if ui_lang == 'ru' %}Добавить{% elif ui_lang == 'he' %}הוסף{% else %}Add{% endif %}</button>
+          </form>
         </div>
       </div>
     </div>
-    {% else %}
-    <div class="card" style="padding:28px;text-align:center;color:var(--muted)">
-      {% if ui_lang == 'ru' %}Нажмите "Синхронизировать группы" чтобы загрузить список.{% elif ui_lang == 'he' %}לחץ על סנכרון קבוצות כדי לטעון את הרשימה.{% else %}Click Sync groups to load the list.{% endif %}
-    </div>
-    {% endif %}
   </div>
 </div>
 
@@ -202,12 +275,12 @@
 {% block scripts %}
 <script>
 // Tab switching
-function showTab(name){
+function showTab(name,btn){
   document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
   var tab=document.getElementById('tab-'+name);
   if(tab)tab.classList.add('active');
-  event.target.classList.add('active');
+  if(btn)btn.classList.add('active');
 }
 
 // Group selection
