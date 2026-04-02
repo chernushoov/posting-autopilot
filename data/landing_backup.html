@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang or 'he' }}" {% if is_rtl %}dir="rtl"{% endif %}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Posting Autopilot</title>
+<link rel="stylesheet" href="/static/app.css">
+<style>
+/* ── Landing: 7-layer scroll experience ─────────────────────────────────── */
+*{box-sizing:border-box}
+
+/* Scroll-triggered animations */
+.reveal{opacity:0;transform:translateY(60px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-80px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(80px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal-right.visible{opacity:1;transform:translateX(0)}
+.reveal-scale{opacity:0;transform:scale(.85);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal-scale.visible{opacity:1;transform:scale(1)}
+.stagger-1{transition-delay:.1s}
+.stagger-2{transition-delay:.2s}
+.stagger-3{transition-delay:.3s}
+.stagger-4{transition-delay:.4s}
+.stagger-5{transition-delay:.5s}
+
+/* ── Layer 0: Nav ─────────────────────────────────────────────────────── */
+.l-nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0);backdrop-filter:blur(0);transition:all .4s}
+.l-nav.scrolled{background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-light);box-shadow:0 1px 12px rgba(0,0,0,.04)}
+.l-nav .brand{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.l-nav .brand em{font-style:normal;color:var(--accent)}
+.l-nav-links{display:flex;gap:8px;align-items:center}
+.l-nav-links a{font-size:13px;font-weight:500;padding:8px 16px;border-radius:999px;color:var(--muted);transition:all .2s;text-decoration:none}
+.l-nav-links a:hover{color:var(--accent);background:var(--accent-light)}
+.l-nav-links .btn{color:#fff}
+.lang-dots{display:flex;gap:4px}
+.lang-dots span,.lang-dots a{font-size:11px;padding:4px 10px;border-radius:999px;text-decoration:none}
+.lang-dots .active-lang{background:var(--accent);color:#fff}
+.lang-dots a{color:var(--muted);border:1px solid var(--border-light)}
+.lang-dots a:hover{border-color:var(--accent)}
+
+/* ── Layer 1: Hero — fullscreen, animated gradient ────────────────────── */
+.l-hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden;background:#fff}
+.l-hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(0,113,227,.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(88,86,214,.05) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(0,113,227,.03) 0%,transparent 70%);animation:aurora 20s ease-in-out infinite alternate;pointer-events:none}
+@keyframes aurora{0%{transform:translate(0,0) rotate(0deg)}50%{transform:translate(-3%,2%) rotate(1deg)}100%{transform:translate(2%,-3%) rotate(-1deg)}}
+
+.hero-eyebrow{font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:20px;position:relative}
+.hero-eyebrow::after{content:'';display:block;width:40px;height:3px;background:var(--accent);margin:12px auto 0;border-radius:2px}
+.hero-h1{font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-.04em;line-height:1.05;max-width:800px;margin:0 auto 24px;position:relative}
+.hero-h1 .accent{color:var(--accent);position:relative;display:inline-block}
+.hero-h1 .accent::after{content:'';position:absolute;bottom:4px;left:0;right:0;height:8px;background:rgba(0,113,227,.12);border-radius:4px;z-index:-1}
+.hero-sub{font-size:clamp(17px,2.4vw,22px);color:var(--muted);line-height:1.55;max-width:580px;margin:0 auto 40px;font-weight:400}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
+.hero-ctas .btn{padding:16px 40px;font-size:17px;border-radius:999px;box-shadow:0 4px 20px rgba(0,113,227,.3);transition:all .2s}
+.hero-ctas .btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,113,227,.35)}
+.hero-ctas .btn-ghost{background:none;border:2px solid var(--border);color:var(--fg);font-size:17px;padding:16px 36px;border-radius:999px;text-decoration:none;font-weight:600;transition:all .2s}
+.hero-ctas .btn-ghost:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.hero-scroll{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--light);font-size:12px;font-weight:500;animation:bounce 2s ease-in-out infinite}
+.hero-scroll .arrow{width:24px;height:24px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+
+/* ── Layer 2: Social proof bar ────────────────────────────────────────── */
+.l-proof{padding:48px 24px;background:var(--bg);border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light)}
+.proof-inner{max-width:900px;margin:0 auto;display:flex;justify-content:center;gap:48px;flex-wrap:wrap;align-items:center}
+.proof-item{text-align:center}
+.proof-num{font-size:36px;font-weight:800;letter-spacing:-.03em;color:var(--fg)}
+.proof-num .accent{color:var(--accent)}
+.proof-label{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* ── Layer 3: How it works — 4 steps with floating cards ──────────────── */
+.l-how{padding:100px 24px;background:#fff;position:relative;overflow:hidden}
+.l-how::before{content:'';position:absolute;top:0;right:-10%;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,113,227,.04) 0%,transparent 70%);pointer-events:none}
+.section-label{text-align:center;margin-bottom:60px}
+.section-label .eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px}
+.section-label h2{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.03em}
+.section-label p{color:var(--muted);font-size:17px;margin-top:12px;max-width:500px;margin-left:auto;margin-right:auto}
+
+.steps-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:900px;margin:0 auto}
+.step-card{background:var(--card);border:1px solid var(--border-light);border-radius:20px;padding:36px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:all .3s}
+.step-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--accent)}
+.step-num{position:absolute;top:-12px;{% if is_rtl %}left{% else %}right{% endif %}:20px;font-size:80px;font-weight:900;color:rgba(0,113,227,.06);line-height:1;pointer-events:none}
+.step-icon{font-size:40px;margin-bottom:16px}
+.step-card h3{font-size:20px;font-weight:700;margin-bottom:8px}
+.step-card p{color:var(--muted);font-size:15px;line-height:1.6}
+
+/* ── Layer 4: Live demo — chat mockup ─────────────────────────────────── */
+.l-demo{padding:100px 24px;background:var(--bg);position:relative}
+.demo-layout{display:grid;grid-template-columns:1fr 1fr;gap:60px;max-width:1000px;margin:0 auto;align-items:center}
+.demo-text h2{font-size:clamp(26px,3.5vw,40px);font-weight:800;letter-spacing:-.03em;margin-bottom:16px}
+.demo-text p{color:var(--muted);font-size:16px;line-height:1.65;margin-bottom:24px}
+.demo-features{display:flex;flex-direction:column;gap:16px}
+.demo-feat{display:flex;gap:12px;align-items:flex-start}
+.demo-feat .ico{width:36px;height:36px;border-radius:10px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.demo-feat div h4{font-size:15px;font-weight:600;margin:0 0 2px}
+.demo-feat div p{font-size:13px;color:var(--muted);margin:0}
+
+.chat-phone{background:var(--card);border-radius:28px;border:1px solid var(--border-light);box-shadow:var(--shadow-lg);padding:20px;max-width:360px;margin:0 auto}
+.chat-header{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border-light);margin-bottom:14px}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.chat-name{font-weight:600;font-size:14px}
+.chat-status{font-size:11px;color:var(--success)}
+.chat-msgs{display:flex;flex-direction:column;gap:8px}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.45;animation:msgIn .5s cubic-bezier(.16,1,.3,1) both}
+.chat-msg.bot{background:var(--bg);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.hot{background:var(--success-light);color:var(--success);font-weight:600;align-self:flex-start;border-bottom-left-radius:4px}
+@keyframes msgIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.msg-delay-1{animation-delay:.3s}
+.msg-delay-2{animation-delay:.8s}
+.msg-delay-3{animation-delay:1.3s}
+.msg-delay-4{animation-delay:1.8s}
+.msg-delay-5{animation-delay:2.3s}
+.msg-delay-6{animation-delay:2.8s}
+.msg-delay-7{animation-delay:3.3s}
+
+/* ── Layer 5: Verticals — pill cloud ──────────────────────────────────── */
+.l-verticals{padding:100px 24px;background:#fff;text-align:center}
+.vert-cloud{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;max-width:700px;margin:0 auto}
+.vert-pill{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:999px;background:var(--card);border:1px solid var(--border-light);font-size:16px;font-weight:600;box-shadow:var(--shadow);transition:all .3s;cursor:default}
+.vert-pill:hover{transform:translateY(-3px) scale(1.03);box-shadow:var(--shadow-lg);border-color:var(--accent)}
+.vert-pill .vert-ico{font-size:24px}
+
+/* ── Layer 6: Pricing teaser ──────────────────────────────────────────── */
+.l-pricing{padding:100px 24px;background:var(--bg);position:relative;overflow:hidden}
+.l-pricing::before{content:'';position:absolute;bottom:-20%;left:10%;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(0,113,227,.04) 0%,transparent 70%);pointer-events:none}
+.price-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:0 auto}
+.price-card{background:var(--card);border:2px solid var(--border-light);border-radius:24px;padding:36px 28px;display:flex;flex-direction:column;transition:all .3s;position:relative}
+.price-card:hover{transform:translateY(-4px)}
+.price-card.pop{border-color:var(--accent);box-shadow:0 8px 40px rgba(0,113,227,.12)}
+.price-card.pop::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent);border-radius:24px 24px 0 0}
+.price-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:5px 16px;border-radius:999px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.price-name{font-size:18px;font-weight:700;margin-bottom:8px}
+.price-amount{font-size:42px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+.price-amount span{font-size:16px;font-weight:400;color:var(--muted)}
+.price-list{list-style:none;padding:0;margin:20px 0;flex-grow:1}
+.price-list li{padding:8px 0;border-bottom:1px solid var(--border-light);font-size:14px;color:var(--muted)}
+.price-list li::before{content:"✓ ";color:var(--success);font-weight:700}
+.price-cta{display:block;text-align:center;padding:14px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;transition:all .2s}
+.price-cta.primary{background:var(--accent);color:#fff}
+.price-cta.primary:hover{background:var(--accent-hover);text-decoration:none}
+.price-cta.outline{border:2px solid var(--border);color:var(--fg)}
+.price-cta.outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+
+/* ── Layer 7: Final CTA — gradient close ──────────────────────────────── */
+.l-final{padding:120px 24px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(170deg,#fff 0%,#f0f4ff 40%,#e8efff 100%)}
+.l-final::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(0,113,227,.06) 0%,transparent 60%);pointer-events:none;animation:pulse 6s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:translateX(-50%) scale(1);opacity:.6}50%{transform:translateX(-50%) scale(1.1);opacity:1}}
+.final-h2{font-size:clamp(32px,5vw,52px);font-weight:800;letter-spacing:-.04em;margin-bottom:16px;position:relative}
+.final-sub{font-size:18px;color:var(--muted);margin-bottom:36px;position:relative}
+.final-btn{padding:18px 48px;font-size:18px;border-radius:999px;box-shadow:0 4px 24px rgba(0,113,227,.3);transition:all .2s;position:relative}
+.final-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,113,227,.4)}
+.final-links{margin-top:20px;position:relative}
+.final-links a{color:var(--muted);font-size:14px;margin:0 8px}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.l-footer{text-align:center;padding:24px;color:var(--light);font-size:12px;background:#fff;border-top:1px solid var(--border-light)}
+
+/* ── RTL ──────────────────────────────────────────────────────────────── */
+{% if is_rtl %}
+body{direction:rtl;text-align:right}
+.demo-layout{direction:rtl}
+.chat-msg.user{align-self:flex-start;border-bottom-left-radius:4px;border-bottom-right-radius:16px}
+.chat-msg.bot{align-self:flex-end;border-bottom-right-radius:4px;border-bottom-left-radius:16px}
+{% endif %}
+
+/* ── Mobile ───────────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .l-nav-links a:not(.btn){display:none}
+  .steps-grid{grid-template-columns:1fr}
+  .demo-layout{grid-template-columns:1fr;gap:40px}
+  .demo-text{order:1}
+  .chat-phone{order:2}
+  .price-cards{grid-template-columns:1fr;max-width:400px}
+  .proof-inner{gap:24px}
+  .l-hero{padding:100px 20px 60px;min-height:90vh}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LAYER 0: Floating Nav ═══ -->
+<nav class="l-nav" id="nav">
+  <a href="/" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+  <div class="l-nav-links">
+    <div class="lang-dots">
+      {% for l in (supported_langs or ['en','ru','he']) %}
+        {% if l == (ui_lang or 'he') %}<span class="active-lang">{{ l.upper() }}</span>
+        {% else %}<a href="/set-lang/{{ l }}">{{ l.upper() }}</a>{% endif %}
+      {% endfor %}
+    </div>
+    <a href="#how">{% if ui_lang == 'he' %}איך זה עובד{% elif ui_lang == 'ru' %}Как это работает{% else %}How it works{% endif %}</a>
+    <a href="/pricing">{% if ui_lang == 'he' %}מחירים{% elif ui_lang == 'ru' %}Цены{% else %}Pricing{% endif %}</a>
+    <a href="/user-login">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
+    <a href="/register" class="btn" style="border-radius:999px">{% if ui_lang == 'he' %}התחל בחינם{% elif ui_lang == 'ru' %}Начать{% else %}Start Free{% endif %}</a>
+  </div>
+</nav>
+
+<!-- ═══ LAYER 1: Hero ═══ -->
+<section class="l-hero">
+  <div class="hero-eyebrow reveal">{% if ui_lang == 'he' %}פלטפורמת פרסום + AI{% elif ui_lang == 'ru' %}Платформа постинга + AI{% else %}Posting + AI Platform{% endif %}</div>
+  <h1 class="hero-h1 reveal stagger-1">
+    {% if ui_lang == 'he' %}פרסם פעם אחת.<br>ה<span class="accent">בוט</span> מטפל בכל השאר.
+    {% elif ui_lang == 'ru' %}Опубликуй один раз.<br><span class="accent">Бот</span> сделает остальное.
+    {% else %}Post once.<br>The <span class="accent">bot</span> handles the rest.{% endif %}
+  </h1>
+  <p class="hero-sub reveal stagger-2">
+    {% if ui_lang == 'he' %}מודעה אחת → 50+ קבוצות טלגרם ופייסבוק → בוט AI עונה, מסנן, אוסף טלפונים → אתה מקבל רק לידים חמים.
+    {% elif ui_lang == 'ru' %}Одно объявление → 50+ групп Telegram и Facebook → AI-бот отвечает, фильтрует, собирает телефоны → ты получаешь только горячих лидов.
+    {% else %}One listing → 50+ Telegram & Facebook groups → AI bot answers, filters, collects phones → you only get hot leads.{% endif %}
+  </p>
+  <div class="hero-ctas reveal stagger-3">
+    <a href="/register" class="btn">{% if ui_lang == 'he' %}14 ימים חינם →{% elif ui_lang == 'ru' %}14 дней бесплатно →{% else %}14 Days Free →{% endif %}</a>
+    <a href="#demo" class="btn-ghost">{% if ui_lang == 'he' %}ראה דמו{% elif ui_lang == 'ru' %}Смотреть демо{% else %}See Demo{% endif %}</a>
+  </div>
+  <div class="hero-scroll"><div class="arrow">↓</div></div>
+</section>
+
+<!-- ═══ LAYER 2: Social Proof Bar ═══ -->
+<section class="l-proof">
+  <div class="proof-inner">
+    <div class="proof-item reveal stagger-1"><div class="proof-num"><span class="accent">50</span>+</div><div class="proof-label">{% if ui_lang == 'he' %}קבוצות בפרסום אחד{% elif ui_lang == 'ru' %}групп за один запуск{% else %}groups per campaign{% endif %}</div></div>
+    <div class="proof-item reveal stagger-2"><div class="proof-num"><span class="accent">3</span></div><div class="proof-label">{% if ui_lang == 'he' %}שפות: עברית · רוסית · אנגלית{% elif ui_lang == 'ru' %}языка: иврит · русский · English{% else %}languages: HE · RU · EN{% endif %}</div></div>
+    <div class="proof-item reveal stagger-3"><div class="proof-num"><span class="accent">70</span>%</div><div class="proof-label">{% if ui_lang == 'he' %}פחות זמן על סינון{% elif ui_lang == 'ru' %}меньше времени на скрининг{% else %}less time screening{% endif %}</div></div>
+    <div class="proof-item reveal stagger-4"><div class="proof-num"><span class="accent">0</span></div><div class="proof-label">{% if ui_lang == 'he' %}ספאם. עיכובים אקראיים.{% elif ui_lang == 'ru' %}спама. Случайные задержки.{% else %}spam. Random delays.{% endif %}</div></div>
+  </div>
+</section>
+
+<!-- ═══ LAYER 3: How It Works ═══ -->
+<section class="l-how" id="how">
+  <div class="section-label">
+    <div class="eyebrow reveal">{% if ui_lang == 'he' %}איך זה עובד?{% elif ui_lang == 'ru' %}Как это работает?{% else %}How it works{% endif %}</div>
+    <h2 class="reveal stagger-1">{% if ui_lang == 'he' %}4 צעדים. אפס מאמץ.{% elif ui_lang == 'ru' %}4 шага. Ноль усилий.{% else %}4 steps. Zero effort.{% endif %}</h2>
+  </div>
+  <div class="steps-grid">
+    <div class="step-card reveal stagger-1"><div class="step-num">01</div><div class="step-icon">✏️</div><h3>{% if ui_lang == 'he' %}צור מודעה{% elif ui_lang == 'ru' %}Создай объявление{% else %}Create listing{% endif %}</h3><p>{% if ui_lang == 'he' %}בחר תבנית (משרה, רכב, דירה, שירות) או מאפס. הגדר FAQ ושאלות סינון לבוט.{% elif ui_lang == 'ru' %}Выбери шаблон (вакансия, авто, квартира, услуга) или с нуля. Настрой FAQ и вопросы для бота.{% else %}Pick a template (job, car, apartment, service) or start blank. Set FAQ and bot screening questions.{% endif %}</p></div>
+    <div class="step-card reveal stagger-2"><div class="step-num">02</div><div class="step-icon">🚀</div><h3>{% if ui_lang == 'he' %}פרסם ב-50+ קבוצות{% elif ui_lang == 'ru' %}Размести в 50+ группах{% else %}Post to 50+ groups{% endif %}</h3><p>{% if ui_lang == 'he' %}אוטומטי בטלגרם. בפייסבוק — מעתיקים טקסט מוכן. עיכובים אקראיים, בלי באנים.{% elif ui_lang == 'ru' %}Автоматически в Telegram. Facebook — копируешь готовый текст. Рандомные задержки, без банов.{% else %}Auto in Telegram. Facebook — copy prepared text. Random delays, no bans.{% endif %}</p></div>
+    <div class="step-card reveal stagger-3"><div class="step-num">03</div><div class="step-icon">🤖</div><h3>{% if ui_lang == 'he' %}בוט AI מטפל{% elif ui_lang == 'ru' %}AI-бот обрабатывает{% else %}AI bot handles{% endif %}</h3><p>{% if ui_lang == 'he' %}עונה לשאלות, שואל שאלות סינון, אוסף טלפון. ספאם ולידים קרים — אוטומטית.{% elif ui_lang == 'ru' %}Отвечает на вопросы, задаёт скрининг, собирает телефон. Спам и холод — автоматически.{% else %}Answers questions, runs screening, collects phone. Spam and cold leads — automatic.{% endif %}</p></div>
+    <div class="step-card reveal stagger-4"><div class="step-num">04</div><div class="step-icon">🔥</div><h3>{% if ui_lang == 'he' %}קבל לידים חמים{% elif ui_lang == 'ru' %}Получай горячих{% else %}Get hot leads{% endif %}</h3><p>{% if ui_lang == 'he' %}התראה מיידית: שם, טלפון, סיכום, לינק לוואטסאפ. במקום 30 שיחות — 3-5 מוכנים.{% elif ui_lang == 'ru' %}Мгновенное уведомление: имя, телефон, саммари, WhatsApp. Вместо 30 чатов — 3-5 готовых.{% else %}Instant alert: name, phone, summary, WhatsApp. Instead of 30 chats — 3-5 ready.{% endif %}</p></div>
+  </div>
+</section>
+
+<!-- ═══ LAYER 4: Live Demo — Chat Mockup ═══ -->
+<section class="l-demo" id="demo">
+  <div class="demo-layout">
+    <div class="demo-text reveal-left">
+      <div class="eyebrow">{% if ui_lang == 'he' %}הבוט בפעולה{% elif ui_lang == 'ru' %}Бот в деле{% else %}Bot in action{% endif %}</div>
+      <h2>{% if ui_lang == 'he' %}הוא מנהל את השיחה.<br>אתה סוגר עסקאות.{% elif ui_lang == 'ru' %}Он ведёт разговор.<br>Ты закрываешь сделки.{% else %}It runs the conversation.<br>You close deals.{% endif %}</h2>
+      <p>{% if ui_lang == 'he' %}הבוט מזהה שפה אוטומטית, עונה מה-FAQ, שואל שאלות סינון ואוסף טלפון. אתה מקבל התראה רק כשהליד חם.{% elif ui_lang == 'ru' %}Бот определяет язык автоматически, отвечает из FAQ, задаёт вопросы скрининга и собирает телефон. Ты получаешь уведомление только когда лид горячий.{% else %}Bot detects language, answers from FAQ, asks screening questions, collects phone. You get notified only when the lead is hot.{% endif %}</p>
+      <div class="demo-features">
+        <div class="demo-feat reveal stagger-1"><div class="ico">🌍</div><div><h4>{% if ui_lang == 'he' %}3 שפות{% elif ui_lang == 'ru' %}3 языка{% else %}3 Languages{% endif %}</h4><p>{% if ui_lang == 'he' %}עברית, רוסית, אנגלית — אוטומטי{% elif ui_lang == 'ru' %}Иврит, русский, English — автоматически{% else %}Hebrew, Russian, English — auto{% endif %}</p></div></div>
+        <div class="demo-feat reveal stagger-2"><div class="ico">📞</div><div><h4>{% if ui_lang == 'he' %}איסוף טלפון{% elif ui_lang == 'ru' %}Сбор телефонов{% else %}Phone collection{% endif %}</h4><p>{% if ui_lang == 'he' %}טקסט או שיתוף איש קשר{% elif ui_lang == 'ru' %}Текстом или контакт Telegram{% else %}Text or Telegram contact share{% endif %}</p></div></div>
+        <div class="demo-feat reveal stagger-3"><div class="ico">🔥</div><div><h4>{% if ui_lang == 'he' %}סיווג חם/קר{% elif ui_lang == 'ru' %}HOT/COLD классификация{% else %}HOT/COLD classification{% endif %}</h4><p>{% if ui_lang == 'he' %}ספאם מסונן. רק מוכנים מגיעים אליך.{% elif ui_lang == 'ru' %}Спам отфильтрован. Только готовые доходят до тебя.{% else %}Spam filtered. Only ready leads reach you.{% endif %}</p></div></div>
+      </div>
+    </div>
+    <div class="chat-phone reveal-right">
+      <div class="chat-header">
+        <div class="chat-avatar">PA</div>
+        <div><div class="chat-name">Posting Autopilot</div><div class="chat-status">● online</div></div>
+      </div>
+      <div class="chat-msgs" id="chat-demo"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LAYER 5: Verticals ═══ -->
+<section class="l-verticals">
+  <div class="section-label">
+    <div class="eyebrow reveal">{% if ui_lang == 'he' %}לא רק גיוס{% elif ui_lang == 'ru' %}Не только рекрутинг{% else %}Not just recruitment{% endif %}</div>
+    <h2 class="reveal stagger-1">{% if ui_lang == 'he' %}לכל עסק. לכל תחום.{% elif ui_lang == 'ru' %}Для любого бизнеса.{% else %}For any business.{% endif %}</h2>
+    <p class="reveal stagger-2">{% if ui_lang == 'he' %}כל מי שמפרסם בקבוצות — יכול להשתמש{% elif ui_lang == 'ru' %}Любой, кто публикует в группах{% else %}Anyone who posts in groups{% endif %}</p>
+  </div>
+  <div class="vert-cloud">
+    <div class="vert-pill reveal-scale stagger-1"><span class="vert-ico">👷</span>{% if ui_lang == 'he' %}גיוס עובדים{% elif ui_lang == 'ru' %}Рекрутинг{% else %}Recruitment{% endif %}</div>
+    <div class="vert-pill reveal-scale stagger-2"><span class="vert-ico">🚗</span>{% if ui_lang == 'he' %}מכירת רכב{% elif ui_lang == 'ru' %}Продажа авто{% else %}Car Sales{% endif %}</div>
+    <div class="vert-pill reveal-scale stagger-3"><span class="vert-ico">🏠</span>{% if ui_lang == 'he' %}השכרת דירות{% elif ui_lang == 'ru' %}Аренда квартир{% else %}Apartment Rental{% endif %}</div>
+    <div class="vert-pill reveal-scale stagger-4"><span class="vert-ico">🔧</span>{% if ui_lang == 'he' %}שירותים{% elif ui_lang == 'ru' %}Услуги{% else %}Services{% endif %}</div>
+    <div class="vert-pill reveal-scale stagger-5"><span class="vert-ico">🛒</span>{% if ui_lang == 'he' %}מכירות{% elif ui_lang == 'ru' %}Продажи{% else %}Sales{% endif %}</div>
+    <div class="vert-pill reveal-scale stagger-1"><span class="vert-ico">📚</span>{% if ui_lang == 'he' %}קורסים{% elif ui_lang == 'ru' %}Курсы{% else %}Courses{% endif %}</div>
+    <div class="vert-pill reveal-scale stagger-2"><span class="vert-ico">🎉</span>{% if ui_lang == 'he' %}אירועים{% elif ui_lang == 'ru' %}Мероприятия{% else %}Events{% endif %}</div>
+  </div>
+</section>
+
+<!-- ═══ LAYER 6: Pricing Teaser ═══ -->
+<section class="l-pricing">
+  <div class="section-label">
+    <div class="eyebrow reveal">{% if ui_lang == 'he' %}תוכניות{% elif ui_lang == 'ru' %}Тарифы{% else %}Plans{% endif %}</div>
+    <h2 class="reveal stagger-1">{% if ui_lang == 'he' %}פשוט. שקוף. בלי הפתעות.{% elif ui_lang == 'ru' %}Просто. Прозрачно. Без сюрпризов.{% else %}Simple. Transparent. No surprises.{% endif %}</h2>
+  </div>
+  <div class="price-cards">
+    <div class="price-card reveal stagger-1">
+      <div class="price-name">{% if ui_lang == 'he' %}סטארטר{% elif ui_lang == 'ru' %}Стартер{% else %}Starter{% endif %}</div>
+      <div class="price-amount">299₪ <span>/{% if ui_lang == 'he' %}חודש{% elif ui_lang == 'ru' %}мес{% else %}mo{% endif %}</span></div>
+      <ul class="price-list">
+        <li>{% if ui_lang == 'he' %}1 מודעה{% elif ui_lang == 'ru' %}1 объявление{% else %}1 listing{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}10 קבוצות{% elif ui_lang == 'ru' %}10 групп{% else %}10 groups{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}בוט AI{% elif ui_lang == 'ru' %}AI-бот{% else %}AI bot{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}3 שפות{% elif ui_lang == 'ru' %}3 языка{% else %}3 languages{% endif %}</li>
+      </ul>
+      <a href="/register" class="price-cta outline">{% if ui_lang == 'he' %}נסה בחינם{% elif ui_lang == 'ru' %}Попробовать{% else %}Try Free{% endif %}</a>
+    </div>
+    <div class="price-card pop reveal stagger-2">
+      <div class="price-badge">{% if ui_lang == 'he' %}הפופולרי{% elif ui_lang == 'ru' %}Популярный{% else %}Most Popular{% endif %}</div>
+      <div class="price-name">{% if ui_lang == 'he' %}פרו{% elif ui_lang == 'ru' %}Про{% else %}Pro{% endif %}</div>
+      <div class="price-amount">899₪ <span>/{% if ui_lang == 'he' %}חודש{% elif ui_lang == 'ru' %}мес{% else %}mo{% endif %}</span></div>
+      <ul class="price-list">
+        <li>{% if ui_lang == 'he' %}5 מודעות{% elif ui_lang == 'ru' %}5 объявлений{% else %}5 listings{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}50 קבוצות{% elif ui_lang == 'ru' %}50 групп{% else %}50 groups{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}אנליטיקה{% elif ui_lang == 'ru' %}Аналитика{% else %}Analytics{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}תמיכה בעדיפות{% elif ui_lang == 'ru' %}Приоритетная поддержка{% else %}Priority support{% endif %}</li>
+      </ul>
+      <a href="/register" class="price-cta primary">{% if ui_lang == 'he' %}התחל עכשיו{% elif ui_lang == 'ru' %}Начать сейчас{% else %}Start Now{% endif %}</a>
+    </div>
+    <div class="price-card reveal stagger-3">
+      <div class="price-name">{% if ui_lang == 'he' %}סוכנות{% elif ui_lang == 'ru' %}Агентство{% else %}Agency{% endif %}</div>
+      <div class="price-amount">1999₪ <span>/{% if ui_lang == 'he' %}חודש{% elif ui_lang == 'ru' %}мес{% else %}mo{% endif %}</span></div>
+      <ul class="price-list">
+        <li>{% if ui_lang == 'he' %}ללא הגבלה{% elif ui_lang == 'ru' %}Безлимит{% else %}Unlimited{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}API{% elif ui_lang == 'ru' %}API{% else %}API{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}ריבוי חברות{% elif ui_lang == 'ru' %}Мульти-компания{% else %}Multi-company{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}מנהל אישי{% elif ui_lang == 'ru' %}Личный менеджер{% else %}Dedicated manager{% endif %}</li>
+      </ul>
+      <a href="/register" class="price-cta outline">{% if ui_lang == 'he' %}צור קשר{% elif ui_lang == 'ru' %}Связаться{% else %}Contact Us{% endif %}</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LAYER 7: Final CTA ═══ -->
+<section class="l-final">
+  <h2 class="final-h2 reveal">{% if ui_lang == 'he' %}מוכן להפסיק לבזבז זמן?{% elif ui_lang == 'ru' %}Готов перестать тратить время?{% else %}Ready to stop wasting time?{% endif %}</h2>
+  <p class="final-sub reveal stagger-1">{% if ui_lang == 'he' %}14 ימי ניסיון חינם. ללא כרטיס אשראי. הגדרה ב-5 דקות.{% elif ui_lang == 'ru' %}14 дней бесплатно. Без кредитной карты. Настройка за 5 минут.{% else %}14-day free trial. No credit card. Setup in 5 minutes.{% endif %}</p>
+  <a href="/register" class="btn final-btn reveal stagger-2">{% if ui_lang == 'he' %}הרשם עכשיו{% elif ui_lang == 'ru' %}Зарегистрироваться{% else %}Sign Up Now{% endif %}</a>
+  <div class="final-links reveal stagger-3">
+    <a href="/pricing">{% if ui_lang == 'he' %}מחירים{% elif ui_lang == 'ru' %}Цены{% else %}Pricing{% endif %}</a>
+    <a href="/terms">{% if ui_lang == 'he' %}תנאי שימוש{% elif ui_lang == 'ru' %}Условия{% else %}Terms{% endif %}</a>
+  </div>
+</section>
+
+<footer class="l-footer">Posting Autopilot &copy; 2026</footer>
+
+<!-- ═══ Scripts ═══ -->
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(el => observer.observe(el));
+
+// Nav scroll effect
+let lastScroll = 0;
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('nav');
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// Chat demo animation
+const lang = '{{ ui_lang or "en" }}';
+const chats = {
+  he: [
+    {who:'user',text:'הרכב עדיין זמין?'},
+    {who:'bot',text:'היי! 🚗 כן, Toyota Camry 2022 זמינה! 85,000 ק"מ, בעלים אחד. מה התקציב שלך?'},
+    {who:'user',text:'90-95'},
+    {who:'bot',text:'מעולה, זה בטווח! מתי נוח לבוא לראות?'},
+    {who:'user',text:'מחר אחרי 17'},
+    {who:'bot',text:'סבבה! השאר מספר טלפון — נאשר את הזמן.'},
+    {who:'user',text:'054-1234567'},
+    {who:'hot',text:'🔥 ליד חם! טלפון: 054-1234567\nתקציב: 90-95K, צפייה מחר 17:00'}
+  ],
+  ru: [
+    {who:'user',text:'Машина ещё есть?'},
+    {who:'bot',text:'Привет! 🚗 Да, Toyota Camry 2022 доступна! 85К км, один владелец. Какой у вас бюджет?'},
+    {who:'user',text:'90-95'},
+    {who:'bot',text:'Отлично, это в рамках! Когда удобно приехать?'},
+    {who:'user',text:'Завтра после 17'},
+    {who:'bot',text:'Записал! Оставьте номер — менеджер подтвердит.'},
+    {who:'user',text:'054-1234567'},
+    {who:'hot',text:'🔥 HOT LEAD! Тел: 054-1234567\nБюджет: 90-95K, осмотр завтра 17:00'}
+  ],
+  en: [
+    {who:'user',text:'Is the car still available?'},
+    {who:'bot',text:'Hi! 🚗 Yes, Toyota Camry 2022 is available! 85K km, one owner. What\'s your budget?'},
+    {who:'user',text:'90-95'},
+    {who:'bot',text:'Great, that\'s in range! When would you like to see it?'},
+    {who:'user',text:'Tomorrow after 5pm'},
+    {who:'bot',text:'Perfect! Leave your phone — we\'ll confirm the time.'},
+    {who:'user',text:'054-1234567'},
+    {who:'hot',text:'🔥 HOT LEAD! Phone: 054-1234567\nBudget: 90-95K, viewing tomorrow 5pm'}
+  ]
+};
+const msgs = chats[lang] || chats.en;
+const container = document.getElementById('chat-demo');
+let chatObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      chatObserver.unobserve(e.target);
+      msgs.forEach((m, i) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.className = 'chat-msg ' + m.who;
+          div.textContent = m.text;
+          div.style.animation = 'msgIn .5s cubic-bezier(.16,1,.3,1) both';
+          container.appendChild(div);
+          container.scrollTop = container.scrollHeight;
+        }, i * 600);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+chatObserver.observe(container);
+</script>
+</body>
+</html>
