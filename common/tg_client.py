@@ -221,21 +221,70 @@ NIGHT_END = 7           # no posting before 07:00
 FLOOD_WAIT_PAUSE = 1800 # 30 min pause on FloodWait
 MAX_RETRIES = 3
 
-# Track posting rate per company (in-memory, resets on restart)
+# Track posting rate per company.
+# Primary store: Redis (shared across worker restarts and worker replicas).
+# Fallback: in-memory dict (degraded — resets on restart, but keeps the
+# anti-spam guard online if Redis is unreachable).
 _posting_log: dict[int, list[float]] = {}
+_RATE_KEY_PREFIX = "posting_log"
+# TTL slightly longer than the longest cooldown window (24h) so per-post
+# entries auto-expire and we don't grow the sorted set unbounded.
+_RATE_TTL_SECONDS = 86400 + 3600
+
+
+def _redis():
+    """Return a redis client or None on failure. Cached on the function object."""
+    cached = getattr(_redis, "_cached", None)
+    if cached is not None:
+        return cached
+    try:
+        from redis import Redis
+        url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        client = Redis.from_url(url, socket_connect_timeout=2, socket_timeout=2)
+        # Probe so we fall back fast if redis is down.
+        client.ping()
+        _redis._cached = client
+        return client
+    except Exception as e:
+        logger.warning(f"[tg_client] Redis unavailable, falling back to in-memory rate limit: {e}")
+        _redis._cached = False  # negative cache (don't retry every call)
+        return None
+
+
+def _rate_key(company_id: int) -> str:
+    return f"{_RATE_KEY_PREFIX}:{company_id}"
 
 
 def _check_rate_limit(company_id: int) -> tuple[bool, str]:
-    """Check if company is within posting rate limits. Returns (ok, reason)."""
+    """Check if company is within posting rate limits. Returns (ok, reason).
+
+    Uses Redis sorted set keyed by posting_log:{company_id} with score=epoch
+    and member=epoch (uuid suffix added on write). Falls back to in-memory
+    list if redis is down so behaviour stays observable.
+    """
     now = time.time()
+    r = _redis()
+    if r:
+        try:
+            key = _rate_key(company_id)
+            # Trim entries older than 24h
+            r.zremrangebyscore(key, 0, now - 86400)
+            daily = r.zcard(key)
+            hourly = r.zcount(key, now - 3600, now)
+            if hourly >= MAX_POSTS_PER_HOUR:
+                return False, f"Hourly limit reached ({hourly}/{MAX_POSTS_PER_HOUR})"
+            if daily >= MAX_POSTS_PER_DAY:
+                return False, f"Daily limit reached ({daily}/{MAX_POSTS_PER_DAY})"
+            return True, ""
+        except Exception as e:
+            logger.warning(f"[tg_client] Redis rate-check failed, using fallback: {e}")
+            # fall through to in-memory
+
     log = _posting_log.get(company_id, [])
-    # Clean old entries (older than 24h)
     log = [t for t in log if now - t < 86400]
     _posting_log[company_id] = log
-
     hourly = sum(1 for t in log if now - t < 3600)
     daily = len(log)
-
     if hourly >= MAX_POSTS_PER_HOUR:
         return False, f"Hourly limit reached ({hourly}/{MAX_POSTS_PER_HOUR})"
     if daily >= MAX_POSTS_PER_DAY:
@@ -254,8 +303,20 @@ def _is_night_hours() -> bool:
 
 
 def _record_post(company_id: int):
-    """Record a successful post for rate limiting."""
-    _posting_log.setdefault(company_id, []).append(time.time())
+    """Record a successful post for rate limiting (Redis-backed, in-mem fallback)."""
+    now = time.time()
+    r = _redis()
+    if r:
+        try:
+            key = _rate_key(company_id)
+            # Member must be unique; epoch+random suffix avoids clobber on rapid posts.
+            member = f"{now:.6f}:{random.randint(0, 1_000_000)}"
+            r.zadd(key, {member: now})
+            r.expire(key, _RATE_TTL_SECONDS)
+            return
+        except Exception as e:
+            logger.warning(f"[tg_client] Redis record-post failed, using fallback: {e}")
+    _posting_log.setdefault(company_id, []).append(now)
 
 
 async def _post_to_group_async(

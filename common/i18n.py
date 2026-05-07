@@ -2,6 +2,7 @@
 Multilingual messages for RecruitBot.
 Supports: Russian (ru), Hebrew (he), English (en).
 """
+import os
 
 MESSAGES = {
     # --- Onboarding ---
@@ -507,15 +508,22 @@ LANG_MAP = {
     "he": "he", "iw": "he",               # Hebrew (iw is legacy code)
     "en": "en",
 }
-DEFAULT_LANG = "he"
+# Safe fallback chain: explicit user lang -> mapped lang -> DEFAULT_LANG (env) -> "ru".
+# Operator can override via DEFAULT_LANG env var (set in docker-compose.yml runtime-env)
+# without code changes — useful for HE-first or EN-first pilots.
+DEFAULT_LANG = os.getenv("DEFAULT_LANG", "ru")
+_HARD_FALLBACK = "ru"
 
 
 def detect_language(telegram_language_code: str | None) -> str:
-    """Detect language from Telegram's language_code field."""
+    """Detect language from Telegram's language_code field.
+
+    Fallback chain: explicit user lang → mapped lang → DEFAULT_LANG (env) → "ru".
+    """
     if not telegram_language_code:
-        return DEFAULT_LANG
+        return DEFAULT_LANG or _HARD_FALLBACK
     code = telegram_language_code.lower().split("-")[0]  # "en-US" → "en"
-    return LANG_MAP.get(code, DEFAULT_LANG)
+    return LANG_MAP.get(code, DEFAULT_LANG or _HARD_FALLBACK)
 
 
 def t(key: str, lang: str = "ru", **kwargs) -> str:
