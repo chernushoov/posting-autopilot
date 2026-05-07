@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ title or 'Posting Autopilot' }}</title>
   <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="shortcut icon" href="/favicon.ico">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   {% if is_rtl %}
   <style>
@@ -63,6 +65,55 @@
     </div>
   </header>
   <main class="container" style="padding-top:28px;padding-bottom:40px">
+    {% if operator_copilot %}
+    <section class="copilot-panel">
+      <div class="copilot-header">
+        <div>
+          <div class="eyebrow">{{ operator_copilot.title }}</div>
+          <h2 class="copilot-title">{{ operator_copilot.page_label }}</h2>
+          <p class="muted">{{ operator_copilot.summary }}</p>
+        </div>
+        <span class="status status-{{ operator_copilot.state_tone }}">{{ operator_copilot.state_label }}</span>
+      </div>
+
+      {% if operator_copilot.actions %}
+      <div class="copilot-actions">
+        {% for action in operator_copilot.actions %}
+          {% if action.method == 'POST' %}
+          <form method="post" action="{{ action.href }}" class="copilot-action-form">
+            <button type="submit" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</button>
+          </form>
+          {% else %}
+          <a href="{{ action.href }}" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="copilot-grid">
+        {% if operator_copilot.facts %}
+        <div class="copilot-block">
+          <div class="small muted">{{ operator_copilot.context_label }}</div>
+          <ul class="copilot-list">
+            {% for fact in operator_copilot.facts %}
+            <li>{{ fact }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if operator_copilot.warnings %}
+        <div class="copilot-block">
+          <div class="small muted">{{ operator_copilot.warnings_label }}</div>
+          <ul class="copilot-list copilot-list-warn">
+            {% for warning in operator_copilot.warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
     {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
     {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
     {% block content %}{% endblock %}

@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+import json
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from redis import Redis
 from rq import Queue
@@ -8,7 +9,34 @@ from app.models import Campaign, CampaignSource, PostingAttempt, Source, Vacancy
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_conn = Redis.from_url(REDIS_URL)
-q_default = Queue(os.getenv("RQ_DEFAULT_QUEUE", "default"), connection=redis_conn)
+# Default job_timeout matches worker-level RQ_WORKER_TIMEOUT (see worker/run_worker.py).
+# Anti-spam delay in common/tg_client.py can run multi-minutes; default 900s avoids
+# silent job expiry mid-post. Override per-enqueue with `job_timeout=` if needed.
+RQ_DEFAULT_TIMEOUT = int(os.getenv("RQ_WORKER_TIMEOUT", "900"))
+q_default = Queue(
+    os.getenv("RQ_DEFAULT_QUEUE", "default"),
+    connection=redis_conn,
+    default_timeout=RQ_DEFAULT_TIMEOUT,
+)
+
+
+def _within_campaign_window(campaign: Campaign) -> bool:
+    try:
+        hours = json.loads(campaign.active_hours_json or '{"start":9,"end":19}')
+    except Exception:
+        hours = {"start": 9, "end": 19}
+    try:
+        days = json.loads(campaign.days_of_week_json or '[0,1,2,3,4,5]')
+    except Exception:
+        days = [0, 1, 2, 3, 4, 5]
+
+    israel_tz = timezone(timedelta(hours=3))
+    now = datetime.now(israel_tz)
+    if now.weekday() not in days:
+        return False
+    start_hour = int(hours.get("start", 9))
+    end_hour = int(hours.get("end", 19))
+    return start_hour <= now.hour < end_hour
 
 def enqueue_check_source(source_id: int):
     from .tasks import check_source_access
@@ -22,6 +50,9 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
     db = db_session()
     campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
     if not campaign:
+        db.close()
+        return None, None
+    if trigger == "scheduler_interval" and not _within_campaign_window(campaign):
         db.close()
         return None, None
 
