@@ -1,21 +1,34 @@
 {% extends "_layout.html" %}
 {% block content %}
 <style>
-  .tg-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  .tg-layout{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}
   .tg-sidebar{position:sticky;top:80px}
-  .dest-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);transition:background .15s}
+  .dest-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);transition:background .15s}
   .dest-item:hover{background:var(--bg)}
   .dest-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
   .dest-info{flex:1;min-width:0}
   .dest-name{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dest-meta{font-size:11px;color:var(--muted)}
-  .folder-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:12px 12px 4px}
-  .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+  .folder-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--light);padding:14px 14px 4px}
+  .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
   .modal-overlay.open{display:flex}
-  .modal-box{background:var(--card);border-radius:20px;padding:32px;width:90%;max-width:560px;box-shadow:0 16px 48px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto}
-  .sync-group{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;font-size:13px}
-  .sync-group:hover{background:var(--bg)}
-  .sync-group input{width:16px;height:16px;accent-color:var(--accent)}
+  .modal-box{background:var(--card);border-radius:20px;padding:32px;width:92%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.18);max-height:88vh;overflow-y:auto}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .modal-header h2{margin:0;font-size:20px}
+  .modal-close{background:none;border:1px solid var(--border-light);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .modal-close:hover{border-color:var(--fg);color:var(--fg)}
+  .sg{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;font-size:13px}
+  .sg:hover{background:var(--accent-light)}
+  .sg input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0}
+  .sg-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sg-meta{font-size:11px;color:var(--muted)}
+  .conv-item{padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--border)}
+  .conv-item.hot{border-left-color:var(--success)}
+  .conv-item.cold{border-left-color:var(--danger)}
+  .conv-item.warm{border-left-color:var(--accent)}
+  .sort-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .sort-btn{font-size:11px;padding:4px 12px;border-radius:999px;cursor:pointer;background:var(--bg);border:1px solid var(--border-light);color:var(--muted);transition:all .15s}
+  .sort-btn:hover{border-color:var(--accent);color:var(--accent)}
   @media(max-width:768px){.tg-layout{grid-template-columns:1fr}.tg-sidebar{position:static}}
 </style>
 
@@ -24,155 +37,140 @@
 
 {% if awaiting_code %}
 <!-- ═══ STEP 2: Verify Code ═══ -->
-<div style="max-width:480px;margin:40px auto">
-  <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; Back</a>
+<div style="max-width:440px;margin:40px auto">
+  <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
   <div class="card">
-    <div class="eyebrow">Step 2 -- Verification</div>
-    <p class="small muted" style="margin-bottom:16px">A code was sent to your Telegram app. Enter it below.</p>
+    <div class="eyebrow">{{ ui("tg_step2") }}</div>
+    <p class="small muted" style="margin-bottom:16px">{{ ui("tg_code_sent") }}</p>
     <form method="post" action="/connect/telegram/verify" class="stack">
       <input type="hidden" name="api_id" value="{{ tg_api_id }}">
       <input type="hidden" name="api_hash" value="{{ tg_api_hash }}">
       <input type="hidden" name="phone" value="{{ tg_phone }}">
       <input type="hidden" name="phone_code_hash" value="{{ phone_code_hash }}">
       <div>
-        <label>Verification code</label>
-        <input name="code" type="text" placeholder="12345" required autofocus
-               style="font-size:28px;text-align:center;letter-spacing:10px;max-width:260px;font-weight:700">
+        <label>{{ ui("tg_code_label") }}</label>
+        <input name="code" type="text" required autofocus
+               style="font-size:32px;text-align:center;letter-spacing:12px;max-width:240px;font-weight:700;padding:14px">
       </div>
       <div>
-        <label>Two-factor password (if enabled)</label>
-        <input name="password" type="password" placeholder="Leave empty if not set">
+        <label>{{ ui("tg_2fa_label") }}</label>
+        <input name="password" type="password" placeholder="{{ ui('tg_2fa_hint') }}">
       </div>
-      <button class="btn" type="submit">Verify</button>
+      <button class="btn" type="submit">{{ ui("tg_verify_btn") }}</button>
     </form>
   </div>
 </div>
 
 {% elif not tg_authorized %}
-<!-- ═══ STEP 1: Connect Account ═══ -->
-<div style="max-width:480px;margin:40px auto">
-  <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; Back</a>
-  <h1>Connect Telegram</h1>
-  <p class="muted" style="margin-bottom:24px">Connect your Telegram account to auto-post to groups and channels.</p>
+<!-- ═══ STEP 1: Connect ═══ -->
+<div style="max-width:440px;margin:40px auto">
+  <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
+  <h1>{{ ui("tg_connect_title") }}</h1>
+  <p class="muted" style="margin-bottom:24px">{{ ui("tg_connect_desc") }}</p>
   <div class="card">
-    <div class="eyebrow">Account credentials</div>
-    <p class="small muted" style="margin-bottom:16px">
-      Go to <a href="https://my.telegram.org" target="_blank" rel="noopener">my.telegram.org</a> &rarr;
-      API development tools &rarr; copy your API ID and API Hash.
-    </p>
+    <div class="eyebrow">{{ ui("tg_credentials") }}</div>
+    <p class="small muted" style="margin-bottom:16px">{{ ui("tg_credentials_desc") }}</p>
     <form method="post" action="/connect/telegram/send-code" class="stack">
       <div class="grid2">
-        <div><label>API ID</label><input name="api_id" type="number" placeholder="12345678" value="{{ tg_api_id or '' }}" required></div>
-        <div><label>API Hash</label><input name="api_hash" placeholder="a1b2c3d4e5f6..." value="{{ tg_api_hash or '' }}" required></div>
+        <div><label>API ID</label><input name="api_id" type="number" value="{{ tg_api_id or '' }}" required></div>
+        <div><label>API Hash</label><input name="api_hash" value="{{ tg_api_hash or '' }}" required></div>
       </div>
-      <div><label>Phone number</label><input name="phone" type="tel" placeholder="+972541234567" value="{{ tg_phone or '' }}" required></div>
-      <button class="btn" type="submit">Send verification code</button>
+      <div><label>{{ ui("tg_phone") }}</label><input name="phone" type="tel" placeholder="+972..." value="{{ tg_phone or '' }}" required></div>
+      <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>
     </form>
   </div>
 </div>
 
 {% else %}
-<!-- ═══ CONNECTED — Two-column workspace ═══ -->
+<!-- ═══ CONNECTED — Workspace ═══ -->
 <div class="tg-layout">
 
-  <!-- LEFT: Destinations sidebar -->
+  <!-- LEFT SIDEBAR -->
   <div class="tg-sidebar">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-weight:600;font-size:15px">Destinations</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-weight:700;font-size:15px">{{ ui("tg_destinations") }}</div>
       <div style="display:flex;gap:6px">
-        <form method="post" action="/connect/telegram/sync" style="display:inline">
-          <button class="pill" type="submit" style="font-size:11px;padding:5px 12px">Sync</button>
-        </form>
-        <button class="pill" onclick="document.getElementById('modal-add').classList.add('open')" style="font-size:11px;padding:5px 12px">+ Add</button>
+        <form method="post" action="/connect/telegram/sync" style="display:inline"><button class="pill" type="submit" style="font-size:11px;padding:5px 12px">{{ ui("tg_sync_btn") }}</button></form>
+        <button class="pill" onclick="document.getElementById('modal-add').classList.add('open')" style="font-size:11px;padding:5px 12px">+ {{ ui("tg_add_btn") }}</button>
       </div>
     </div>
 
     {% if telegram_sources %}
-    <div class="card" style="padding:8px;max-height:calc(100vh - 200px);overflow-y:auto">
-      <!-- Group by folder -->
-      {% set ns = namespace(current_folder='__none__') %}
+    <div class="card" style="padding:6px;max-height:calc(100vh - 220px);overflow-y:auto">
+      {% set ns = namespace(cf='__none__') %}
       {% for s in telegram_sources|sort(attribute='folder') %}
-        {% set f = s.folder or 'Ungrouped' %}
-        {% if f != ns.current_folder %}
-          {% set ns.current_folder = f %}
-          <div class="folder-label" style="display:flex;justify-content:space-between;align-items:center">
-            <span>{{ f }}</span>
-          </div>
+        {% set f = s.folder or ui('tg_ungrouped') %}
+        {% if f != ns.cf %}
+          {% set ns.cf = f %}
+          <div class="folder-label">{{ f }}</div>
         {% endif %}
         <div class="dest-item">
           <div class="dest-dot" style="background:{% if s.last_check_ok %}var(--success){% else %}var(--border){% endif %}"></div>
           <div class="dest-info">
-            <div class="dest-name">{{ s.label or s.tg_ref }}</div>
-            <div class="dest-meta">{{ s.tg_ref }} · {{ s.source_type.value if s.source_type else 'group' }}{% if s.last_post_at %} · {{ s.last_post_at.strftime('%d.%m') }}{% endif %}</div>
+            <div class="dest-name" title="{{ s.label or s.tg_ref }}">{{ s.label or s.tg_ref }}</div>
+            <div class="dest-meta">{{ s.source_type.value if s.source_type else 'group' }}{% if s.last_post_at %} · {{ s.last_post_at.strftime('%d.%m %H:%M') }}{% endif %}</div>
           </div>
-          <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove this destination?')">
-            <button type="submit" class="pill danger" style="font-size:10px;padding:3px 8px;border:none">x</button>
+          <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('{{ ui("tg_remove_confirm") }}')">
+            <button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--light)'">&times;</button>
           </form>
         </div>
       {% endfor %}
     </div>
     {% else %}
-    <div class="card" style="padding:24px;text-align:center;color:var(--muted)">
-      <p>No destinations yet. Click Sync or + Add.</p>
-    </div>
+    <div class="card" style="padding:28px;text-align:center;color:var(--muted);font-size:13px">{{ ui("tg_no_destinations") }}</div>
     {% endif %}
 
     <details style="margin-top:12px">
-      <summary class="small muted" style="cursor:pointer">Manage folders</summary>
-      <div style="margin-top:8px">
+      <summary class="small muted" style="cursor:pointer">{{ ui("tg_manage_folders") }}</summary>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
         {% for s in telegram_sources %}
-        <form method="post" action="/sources/folder/{{ s.id }}" style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
-          <span class="small" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.label or s.tg_ref }}</span>
-          <input name="folder" value="{{ s.folder or '' }}" placeholder="Folder" style="width:100px;padding:4px 8px;font-size:11px">
-          <button type="submit" class="pill" style="font-size:10px;padding:3px 8px">Set</button>
+        <form method="post" action="/sources/folder/{{ s.id }}" style="display:flex;gap:6px;align-items:center">
+          <span class="small" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">{{ s.label or s.tg_ref }}</span>
+          <input name="folder" value="{{ s.folder or '' }}" placeholder="{{ ui('tg_folder') }}" style="width:100px;padding:4px 8px;font-size:11px">
+          <button type="submit" class="pill" style="font-size:10px;padding:3px 10px">{{ ui("tg_set") }}</button>
         </form>
         {% endfor %}
       </div>
     </details>
   </div>
 
-  <!-- RIGHT: Main area -->
+  <!-- RIGHT MAIN -->
   <div>
-    <!-- Account status bar -->
     <div class="card" style="flex-direction:row;justify-content:space-between;align-items:center;padding:16px 20px;margin-bottom:20px;border-color:var(--success)">
       <div>
-        <div style="font-weight:600;color:var(--success)">Telegram connected</div>
-        {% if tg_user %}
-        <span class="small muted">{{ tg_user.get('first_name', '') }}{% if tg_user.get('username') %} (@{{ tg_user.username }}){% endif %}</span>
-        {% endif %}
+        <div style="font-weight:600;color:var(--success)">{{ ui("tg_connected") }}</div>
+        {% if tg_user %}<span class="small muted">{{ tg_user.get('first_name','') }}{% if tg_user.get('username') %} (@{{ tg_user.username }}){% endif %}</span>{% endif %}
       </div>
-      <button class="btn" onclick="document.getElementById('modal-vacancy').classList.add('open')">New listing</button>
+      <button class="btn" onclick="document.getElementById('modal-vacancy').classList.add('open')">{{ ui("tg_new_listing") }}</button>
     </div>
 
-    <!-- Synced groups to add -->
     {% if synced_groups %}
     <div class="card" style="margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div>
-          <div style="font-weight:600">Available groups ({{ synced_groups|length }})</div>
-          <p class="small muted">Select groups to add as posting destinations</p>
+          <div style="font-weight:600">{{ ui("tg_available_groups") }} ({{ synced_groups|length }})</div>
+          <p class="small muted">{{ ui("tg_select_groups_desc") }}</p>
         </div>
         <form method="post" action="/connect/telegram/add-selected">
           <input type="hidden" name="group_ids" id="selected-groups" value="">
-          <button class="btn" type="submit" id="add-selected-btn" disabled>Add selected (0)</button>
+          <button class="btn" type="submit" id="add-btn" disabled>{{ ui("tg_add_selected") }} (0)</button>
         </form>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:12px">
-        <button class="pill" style="font-size:11px;padding:4px 10px" onclick="sortGroups('name')">Sort: Name</button>
-        <button class="pill" style="font-size:11px;padding:4px 10px" onclick="sortGroups('members')">Sort: Members</button>
-        <button class="pill" style="font-size:11px;padding:4px 10px" onclick="toggleAll()">Select all</button>
+      <div class="sort-bar">
+        <button class="sort-btn" onclick="sortG('name')">{{ ui("tg_sort_name") }}</button>
+        <button class="sort-btn" onclick="sortG('members')">{{ ui("tg_sort_members") }}</button>
+        <button class="sort-btn" onclick="toggleAll()">{{ ui("tg_select_all") }}</button>
       </div>
-      <div id="groups-list" style="display:flex;flex-direction:column;gap:2px;max-height:350px;overflow-y:auto">
+      <div id="gl" style="display:flex;flex-direction:column;gap:2px;max-height:340px;overflow-y:auto">
         {% for g in synced_groups %}
-        <label class="sync-group" data-name="{{ g.name|lower }}" data-members="{{ g.members or 0 }}">
-          <input type="checkbox" class="group-check" value="{{ g.id }}"
-                 {% if g.id|string in existing_ids or ('@' ~ g.username) in existing_ids or g.id|string|string in existing_ids %}checked disabled{% endif %}>
+        <label class="sg" data-name="{{ g.name|lower }}" data-members="{{ g.members or 0 }}">
+          <input type="checkbox" class="gc" value="{{ g.id }}" {% if g.id|string in existing_ids or ('@' ~ (g.username or '')) in existing_ids %}checked disabled{% endif %}>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.name }}</div>
-            <div style="font-size:11px;color:var(--muted)">{{ g.type }}{% if g.username %} · @{{ g.username }}{% endif %}{% if g.members %} · {{ g.members }} members{% endif %}</div>
+            <div class="sg-name">{{ g.name }}</div>
+            <div class="sg-meta">{{ g.type }}{% if g.username %} · @{{ g.username }}{% endif %}{% if g.members %} · {{ g.members }}{% endif %}</div>
           </div>
-          {% if g.id|string in existing_ids or ('@' ~ g.username) in existing_ids %}
-          <span class="status status-posted" style="font-size:10px;flex-shrink:0">Added</span>
+          {% if g.id|string in existing_ids or ('@' ~ (g.username or '')) in existing_ids %}
+          <span style="font-size:10px;color:var(--success);font-weight:600;flex-shrink:0">{{ ui("tg_added") }}</span>
           {% endif %}
         </label>
         {% endfor %}
@@ -180,122 +178,113 @@
     </div>
     {% endif %}
 
-    <!-- Live conversations -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div>
-          <div style="font-weight:600">Recent bot conversations</div>
-          <p class="small muted">Live feed of bot interactions</p>
+          <div style="font-weight:600">{{ ui("tg_conversations") }}</div>
+          <p class="small muted">{{ ui("tg_conversations_desc") }}</p>
         </div>
-        <a href="/candidates/" class="pill" style="text-decoration:none">All candidates</a>
+        <a href="/candidates/" class="pill" style="text-decoration:none">{{ ui("tg_all_candidates") }}</a>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto">
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto">
         {% if recent_conversations %}
           {% for conv in recent_conversations %}
-          <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid {% if conv.classification == 'hot' %}var(--success){% elif conv.classification == 'cold' %}var(--danger){% else %}var(--accent){% endif %}">
+          <div class="conv-item {{ conv.classification or 'warm' }}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <span style="font-weight:600;font-size:13px">{{ conv.full_name or conv.tg_username or 'User' }}</span>
               <span class="small muted">{{ conv.created_at.strftime('%d.%m %H:%M') if conv.created_at else '' }}</span>
             </div>
-            <div class="small muted">{{ conv.vacancy_title or '' }} · {{ conv.status.value if conv.status else '' }}</div>
-            {% if conv.last_message %}<div style="font-size:12px;color:var(--fg);margin-top:3px">{{ conv.last_message[:100] }}{% if conv.last_message|length > 100 %}...{% endif %}</div>{% endif %}
-            {% if conv.phone %}<div style="font-size:12px;font-weight:500;margin-top:3px">Tel: {{ conv.phone }}</div>{% endif %}
+            <div class="small muted">{{ conv.vacancy_title or '' }}{% if conv.status %} · {{ conv.status.value }}{% endif %}</div>
+            {% if conv.last_message %}<div style="font-size:12px;color:var(--fg);margin-top:4px">{{ conv.last_message[:100] }}{% if conv.last_message|length > 100 %}...{% endif %}</div>{% endif %}
+            {% if conv.phone %}<div style="font-size:12px;font-weight:500;margin-top:4px">{{ conv.phone }}</div>{% endif %}
           </div>
           {% endfor %}
         {% else %}
-          <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No conversations yet.</div>
+          <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">{{ ui("tg_no_conversations") }}</div>
         {% endif %}
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ Modal: Add group manually ═══ -->
+<!-- Modal: Add manually -->
 <div class="modal-overlay" id="modal-add" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h2 style="margin:0">Add destination</h2>
-      <button class="pill" onclick="document.getElementById('modal-add').classList.remove('open')" style="border:none;font-size:16px;cursor:pointer">x</button>
-    </div>
+    <div class="modal-header"><h2>{{ ui("tg_add_dest_title") }}</h2><button class="modal-close" onclick="document.getElementById('modal-add').classList.remove('open')">&times;</button></div>
     <form method="post" action="/sources/new" class="stack">
       <input type="hidden" name="platform" value="telegram">
       <input type="hidden" name="posting_mode" value="auto">
       <div class="grid2">
-        <div><label>Type</label><select name="destination_kind"><option value="group">Group</option><option value="channel">Channel</option></select></div>
-        <div><label>Telegram @username or ID</label><input name="tg_ref" placeholder="@group_name" required></div>
+        <div><label>{{ ui("dest_type") }}</label><select name="destination_kind"><option value="group">{{ ui("group") }}</option><option value="channel">{{ ui("channel") }}</option></select></div>
+        <div><label>{{ ui("tg_username_label") }}</label><input name="tg_ref" placeholder="@group_name" required></div>
       </div>
       <div class="grid2">
-        <div><label>Label</label><input name="label" placeholder="Optional name"></div>
-        <div><label>Folder</label><input name="folder" placeholder="Optional folder"></div>
+        <div><label>{{ ui("label_optional") }}</label><input name="label"></div>
+        <div><label>{{ ui("tg_folder") }}</label><input name="folder"></div>
       </div>
-      <button class="btn" type="submit">Add</button>
+      <button class="btn" type="submit">{{ ui("tg_add_btn") }}</button>
     </form>
   </div>
 </div>
 
-<!-- ═══ Modal: Quick new listing ═══ -->
+<!-- Modal: New listing -->
 <div class="modal-overlay" id="modal-vacancy" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h2 style="margin:0">New listing</h2>
-      <button class="pill" onclick="document.getElementById('modal-vacancy').classList.remove('open')" style="border:none;font-size:16px;cursor:pointer">x</button>
-    </div>
-    <form method="post" action="/vacancies/new" class="stack">
-      <div><label>Title</label><input name="title" required placeholder="e.g. Warehouse worker -- Ashdod"></div>
-      <div><label>Post text</label><textarea name="body" rows="6" required placeholder="Full text of the post that will go to groups..."></textarea></div>
+    <div class="modal-header"><h2>{{ ui("tg_new_listing") }}</h2><button class="modal-close" onclick="document.getElementById('modal-vacancy').classList.remove('open')">&times;</button></div>
+    <form method="post" action="/vacancies/new" class="stack" enctype="multipart/form-data">
+      <div><label>{{ ui("title") }}</label><input name="title" required placeholder=""></div>
+      <div><label>{{ ui("tg_post_text") }}</label><textarea name="body" rows="6" required placeholder="{{ ui('tg_post_text_placeholder') }}"></textarea></div>
+      <div>
+        <label>{{ ui("photo_label") if ui("photo_label") != "photo_label" else "Photo" }}</label>
+        <input type="file" name="image" accept="image/*" style="font-size:13px">
+      </div>
       <input type="hidden" name="final_post_title" value="">
       <input type="hidden" name="final_post_body" value="">
       <input type="hidden" name="language" value="ru">
-      <div class="grid2">
-        <div><label>Start posting</label><select name="schedule_start"><option value="now">Immediately</option><option value="morning">Tomorrow morning (09:00)</option><option value="custom">Custom</option></select></div>
-        <div><label>Interval</label><select name="interval_hint"><option value="60">Every hour</option><option value="180">Every 3 hours</option><option value="360">Every 6 hours</option></select></div>
+      <div>
+        <label>{{ ui("interval") }}: <strong id="interval-val">180 min</strong></label>
+        <input type="range" name="interval_minutes" min="15" max="720" value="180" step="15" style="width:100%;accent-color:var(--accent)"
+               oninput="document.getElementById('interval-val').textContent=this.value+' min'">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--light)"><span>15 min</span><span>12 h</span></div>
       </div>
       <div class="grid2">
-        <div><label>Days</label><input name="days_hint" value="Sun-Thu" placeholder="Sun-Thu"></div>
-        <div><label>Active hours</label><input name="hours_hint" value="09:00-19:00" placeholder="09:00-19:00"></div>
+        <div>
+          <label>{{ ui("tg_active_hours") }}: <strong id="hours-val">09:00 - 19:00</strong></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="range" name="active_start" min="0" max="23" value="9" style="flex:1;accent-color:var(--accent)"
+                   oninput="updateHours()">
+            <input type="range" name="active_end" min="0" max="23" value="19" style="flex:1;accent-color:var(--accent)"
+                   oninput="updateHours()">
+          </div>
+        </div>
+        <div>
+          <label>{{ ui("tg_days") }}</label>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+            {% for d in [('0','Sun'),('1','Mon'),('2','Tue'),('3','Wed'),('4','Thu'),('5','Fri'),('6','Sat')] %}
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer">
+              <input type="checkbox" name="days" value="{{ d.0 }}" {% if d.0 in ['0','1','2','3','4'] %}checked{% endif %} style="width:14px;height:14px;accent-color:var(--accent)">{{ d.1 }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      <button class="btn" type="submit">Create and start posting</button>
+      <button class="btn" type="submit">{{ ui("tg_create_and_post") }}</button>
     </form>
   </div>
 </div>
 {% endif %}
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Group selection
 (function(){
-  var checks = document.querySelectorAll('.group-check:not(:disabled)');
-  var hidden = document.getElementById('selected-groups');
-  var btn = document.getElementById('add-selected-btn');
-  if (!checks.length || !hidden || !btn) return;
-  function update(){
-    var ids = [];
-    checks.forEach(function(c){ if(c.checked) ids.push(c.value); });
-    hidden.value = ids.join(',');
-    btn.disabled = ids.length === 0;
-    btn.textContent = 'Add selected (' + ids.length + ')';
-  }
-  checks.forEach(function(c){ c.addEventListener('change', update); });
-  window.toggleAll = function(){
-    var allChecked = true;
-    checks.forEach(function(c){ if(!c.checked) allChecked = false; });
-    checks.forEach(function(c){ c.checked = !allChecked; });
-    update();
-  };
+  var cc=document.querySelectorAll('.gc:not(:disabled)'),h=document.getElementById('selected-groups'),b=document.getElementById('add-btn');
+  if(!cc.length||!h||!b)return;
+  function u(){var ids=[];cc.forEach(function(c){if(c.checked)ids.push(c.value)});h.value=ids.join(',');b.disabled=ids.length===0;b.textContent='{{ ui("tg_add_selected") }} ('+ids.length+')';}
+  cc.forEach(function(c){c.addEventListener('change',u)});
+  window.toggleAll=function(){var all=true;cc.forEach(function(c){if(!c.checked)all=false});cc.forEach(function(c){c.checked=!all});u()};
 })();
-
-// Sort groups
-window.sortGroups = function(by){
-  var list = document.getElementById('groups-list');
-  if (!list) return;
-  var items = Array.from(list.children);
-  items.sort(function(a, b){
-    if (by === 'members') return (parseInt(b.dataset.members)||0) - (parseInt(a.dataset.members)||0);
-    return (a.dataset.name||'').localeCompare(b.dataset.name||'');
-  });
-  items.forEach(function(item){ list.appendChild(item); });
-};
+window.updateHours=function(){var s=document.querySelector('[name=active_start]'),e=document.querySelector('[name=active_end]'),l=document.getElementById('hours-val');if(s&&e&&l)l.textContent=String(s.value).padStart(2,'0')+':00 - '+String(e.value).padStart(2,'0')+':00'};
+window.sortG=function(by){var l=document.getElementById('gl');if(!l)return;var it=Array.from(l.children);it.sort(function(a,b){if(by==='members')return(parseInt(b.dataset.members)||0)-(parseInt(a.dataset.members)||0);return(a.dataset.name||'').localeCompare(b.dataset.name||'')});it.forEach(function(i){l.appendChild(i)})};
 </script>
 {% endblock %}

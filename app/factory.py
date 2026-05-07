@@ -1,5 +1,6 @@
 from flask import Flask, session, request, redirect
 from .config import Config
+from .operator_copilot import build_operator_copilot
 from .routes import register_routes
 from .schema import bootstrap_schema
 from common.i18n import ui, is_rtl
@@ -27,9 +28,11 @@ def create_app():
     try:
         from flask_wtf.csrf import CSRFProtect, generate_csrf
         csrf = CSRFProtect(app)
+        app.jinja_env.globals["csrf_token"] = generate_csrf
         # Exempt API endpoints that don't use forms
         csrf.exempt("fb_safe_workflow.api_groups")
         csrf.exempt("billing.stripe_webhook")
+        csrf.exempt("auth.fb_callback")
 
         # Auto-inject CSRF token into all POST forms via after_request
         @app.after_request
@@ -53,13 +56,30 @@ def create_app():
 
     register_routes(app)
 
+    # Liveness/health endpoint — must be reachable without auth or trial gating.
+    # Registered directly on app (not a blueprint) so it bypasses login_required
+    # decorators on individual blueprints.
+    @app.route("/health")
+    def health():
+        return {"ok": True, "service": "recruit-autopilot"}, 200
+
+    # Browser favicon — Flask serves /static/favicon.ico, but most browsers fetch
+    # /favicon.ico directly and we want a 200, not a 404 in web logs.
+    @app.route("/favicon.ico")
+    def favicon():
+        from flask import send_from_directory
+        import os as _os
+        static_dir = _os.path.join(app.root_path, "static")
+        return send_from_directory(static_dir, "favicon.ico", mimetype="image/x-icon")
+
     # Trial expiration check middleware
     @app.before_request
     def check_trial_expiration():
         from datetime import datetime
         # Skip for public routes
         public_paths = {"/", "/login", "/register", "/user-login", "/pricing",
-                        "/billing/", "/terms", "/set-lang/", "/static/"}
+                        "/billing/", "/terms", "/set-lang/", "/static/", "/health",
+                        "/favicon.ico"}
         path = request.path
         if any(path.startswith(p) or path == p for p in public_paths):
             return None
@@ -87,6 +107,7 @@ def create_app():
         lang = session.get("ui_lang", "he")
         company_id = session.get("current_company_id")
         company_name = None
+        operator_copilot = None
         if company_id:
             from .db import db_session
             from .models import Company
@@ -94,11 +115,24 @@ def create_app():
             c = db.query(Company).filter(Company.id == company_id).first()
             company_name = c.name if c else None
             db.close()
+        if session.get("is_admin") or session.get("user_id"):
+            operator_copilot = build_operator_copilot(session, request.path, lang)
+        # Surface night-mode pause status to all admin templates so operators see why
+        # campaigns are quiet between 23:00–07:00 IL. Behaviour is unchanged — this is
+        # purely a UI flag; the actual freeze lives in common/tg_client._is_night_hours.
+        try:
+            from common.tg_client import _is_night_hours as _is_night
+            night_mode_active = bool(_is_night())
+        except Exception:
+            night_mode_active = False
         return {
             "current_company_name": company_name,
+            "operator_copilot": operator_copilot,
             "ui_lang": lang,
             "is_rtl": is_rtl(lang),
             "supported_langs": SUPPORTED_LANGS,
+            "night_mode_active": night_mode_active,
+            "night_mode_window": "23:00–07:00 Asia/Jerusalem",
         }
 
     app.jinja_env.globals["ui"] = lambda key, **kw: ui(key, session.get("ui_lang", "he"), **kw)

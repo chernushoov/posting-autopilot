@@ -5,6 +5,10 @@ x-runtime-env: &runtime-env
   RECRUITBOT_AI_API_KEY: ${RECRUITBOT_AI_API_KEY}
   AI_PROVIDER: ${AI_PROVIDER}
   AI_API_KEY: ${AI_API_KEY}
+  # RQ worker job timeout (seconds). Must exceed POST_DELAY_MAX in common/tg_client.py
+  # plus Telethon connect/send margins so jobs don't silently expire mid-post.
+  RQ_WORKER_TIMEOUT: ${RQ_WORKER_TIMEOUT:-900}
+  DEFAULT_LANG: ${DEFAULT_LANG:-ru}
 
 services:
   postgres:

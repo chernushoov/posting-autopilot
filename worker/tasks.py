@@ -86,7 +86,10 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
         db.close(); return
 
     hours, days = _load_campaign_window(c)
-    now = datetime.now()
+    # Use Israel time (UTC+3) for active hours check
+    from datetime import timezone, timedelta
+    ISRAEL_TZ = timezone(timedelta(hours=3))
+    now = datetime.now(ISRAEL_TZ)
     if trigger == "scheduler_interval":
         if now.weekday() not in days:
             db.close(); return
@@ -176,12 +179,14 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
         telethon_ok = False
         if company and company.tg_api_id and company.tg_api_hash:
             from common.tg_client import post_to_group
+            image = getattr(v, 'image_path', None)
             ok, msg = post_to_group(
                 api_id=int(company.tg_api_id),
                 api_hash=company.tg_api_hash,
                 company_id=company.id,
                 group_id=s.tg_ref,
                 text=post_text,
+                file_path=image,
             )
             telethon_ok = True
             logger.info(f"[campaign_tick] Telethon post to {s.tg_ref}: ok={ok}, msg={msg}")

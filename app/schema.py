@@ -39,6 +39,7 @@ def bootstrap_schema() -> None:
             "bot_hot_criteria": "TEXT",
             "bot_cold_criteria": "TEXT",
             "whatsapp_number": "VARCHAR(20)",
+            "image_path": "VARCHAR(500)",
         },
     )
     _ensure_columns(
@@ -65,6 +66,9 @@ def bootstrap_schema() -> None:
         {
             "tg_api_id": "VARCHAR(20)",
             "tg_api_hash": "VARCHAR(64)",
+            "fb_access_token": "TEXT",
+            "fb_user_id": "VARCHAR(64)",
+            "fb_user_name": "VARCHAR(200)",
             "business_type": "VARCHAR(20) NOT NULL DEFAULT 'company'",
             "contact_person": "VARCHAR(200)",
             "phone": "VARCHAR(30)",

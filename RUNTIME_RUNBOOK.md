@@ -73,3 +73,20 @@ If dashboard still shows old status:
 - refresh local dashboard
 - ensure sync-agent is pushing `mirror:200`
 - check `runtime_check.py --json` locally first
+
+## Database migration policy (P1 follow-up)
+
+There is no Alembic in this repo. Schema is created/upgraded by
+`app/schema.py::bootstrap_schema()` which is called from every Python
+service entrypoint (web, worker, scheduler). Column changes are manual
+via `init_db.py` or by editing `app/models.py` and letting
+`bootstrap_schema()` add new tables on next boot.
+
+Rules until Alembic is adopted:
+- **Never alter or drop columns** post-pilot without first taking a
+  snapshot: `docker compose exec postgres pg_dump -U postgres ra > backups/ra_$(date +%Y%m%d_%H%M).sql`
+- **Adding a table or nullable column** is safe (bootstrap handles it).
+- **Renaming** a column requires: dump → manual SQL → redeploy.
+- P1 follow-up: add `alembic` to `requirements.txt`, run `alembic init`,
+  baseline against current production schema, and switch
+  `bootstrap_schema()` to `alembic upgrade head`.

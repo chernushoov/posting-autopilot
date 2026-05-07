@@ -15,7 +15,7 @@
 </div>
 {% endif %}
 
-<form method="post" class="card" id="listing-form">
+<form method="post" class="card" id="listing-form" enctype="multipart/form-data">
   <label>{{ ui("title") }}</label>
   <input name="title" id="f-title" value="{{ form_values.get('title', '') }}" placeholder="e.g. Construction worker — Tel Aviv">
   <label>{{ ui("city") }}</label>
@@ -88,6 +88,11 @@
       <textarea name="bot_cold_criteria" id="f-bot-cold" rows="2" placeholder="Spam, rude, irrelevant, doesn't meet criteria">{{ form_values.get('bot_cold_criteria', '') }}</textarea>
     </div>
   </details>
+
+  <div style="margin-top:1rem">
+    <label>Photo</label>
+    <input type="file" name="image" accept="image/*" style="font-size:13px">
+  </div>
 
   <button class="btn" type="submit" style="margin-top:1rem;">{{ ui("create_vacancy_btn") }}</button>
 </form>

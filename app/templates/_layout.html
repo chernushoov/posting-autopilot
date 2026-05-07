@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ title or 'Posting Autopilot' }}</title>
   <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="shortcut icon" href="/favicon.ico">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   {% if is_rtl %}
   <style>
@@ -27,7 +29,8 @@
 </head>
 <body>
   <header class="topbar">
-    <a href="/dashboard" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+    <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+    {% if session.get('is_admin') or session.get('user_id') %}
     <button class="hamburger" onclick="document.querySelector('.nav').classList.toggle('open')" aria-label="Menu">&#9776;</button>
     <nav class="nav">
       <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>{{ ui("nav_dashboard") }}</a>
@@ -40,6 +43,7 @@
       <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
       <a href="/analytics/" {% if request.path.startswith('/analytics') %}class="active"{% endif %}>{{ ui("nav_analytics") }}</a>
     </nav>
+    {% endif %}
     <div class="right">
       <div class="lang-switcher" style="display:flex;gap:4px">
         {% for l in supported_langs %}
@@ -50,13 +54,66 @@
           {% endif %}
         {% endfor %}
       </div>
-      {% if current_company_name %}
-        <a class="pill" href="/companies/" style="font-weight:500">{{ current_company_name }}</a>
+      {% if session.get('is_admin') or session.get('user_id') %}
+        {% if current_company_name %}
+          <a class="pill" href="/companies/" style="font-weight:500">{{ current_company_name }}</a>
+        {% endif %}
+        <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
+      {% else %}
+        <a class="pill" href="/login" style="font-weight:500">{{ ui("sign_in") }}</a>
       {% endif %}
-      <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
     </div>
   </header>
   <main class="container" style="padding-top:28px;padding-bottom:40px">
+    {% if operator_copilot %}
+    <section class="copilot-panel">
+      <div class="copilot-header">
+        <div>
+          <div class="eyebrow">{{ operator_copilot.title }}</div>
+          <h2 class="copilot-title">{{ operator_copilot.page_label }}</h2>
+          <p class="muted">{{ operator_copilot.summary }}</p>
+        </div>
+        <span class="status status-{{ operator_copilot.state_tone }}">{{ operator_copilot.state_label }}</span>
+      </div>
+
+      {% if operator_copilot.actions %}
+      <div class="copilot-actions">
+        {% for action in operator_copilot.actions %}
+          {% if action.method == 'POST' %}
+          <form method="post" action="{{ action.href }}" class="copilot-action-form">
+            <button type="submit" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</button>
+          </form>
+          {% else %}
+          <a href="{{ action.href }}" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="copilot-grid">
+        {% if operator_copilot.facts %}
+        <div class="copilot-block">
+          <div class="small muted">{{ operator_copilot.context_label }}</div>
+          <ul class="copilot-list">
+            {% for fact in operator_copilot.facts %}
+            <li>{{ fact }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if operator_copilot.warnings %}
+        <div class="copilot-block">
+          <div class="small muted">{{ operator_copilot.warnings_label }}</div>
+          <ul class="copilot-list copilot-list-warn">
+            {% for warning in operator_copilot.warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
     {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
     {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
     {% block content %}{% endblock %}

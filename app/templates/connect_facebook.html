@@ -1,74 +1,294 @@
 {% extends "_layout.html" %}
 {% block content %}
-<div class="connect-shell">
+<style>
+  .fb-layout{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start}
+  .fb-sidebar{position:sticky;top:80px}
+  .fb-login-btn{background:#1877F2;color:#fff;border:none;padding:16px 32px;border-radius:var(--radius-sm);font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:background .15s;font-family:inherit}
+  .fb-login-btn:hover{background:#166FE5}
+  .fg{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;font-size:13px}
+  .fg:hover{background:rgba(24,119,242,.05)}
+  .fg input{width:16px;height:16px;accent-color:#1877F2;flex-shrink:0}
+  .dest-fb{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);transition:background .15s}
+  .dest-fb:hover{background:var(--bg)}
+  .fb-profile{display:flex;align-items:center;gap:14px;padding:16px;border-radius:var(--radius-sm);background:var(--bg)}
+  .fb-avatar{width:48px;height:48px;border-radius:50%;background:#1877F2;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+  .tab-bar{display:flex;gap:2px;background:var(--bg);border-radius:var(--radius-sm);padding:3px;margin-bottom:16px}
+  .tab-btn{flex:1;padding:8px 12px;border:none;background:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;font-family:inherit}
+  .tab-btn.active{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  @media(max-width:768px){.fb-layout{grid-template-columns:1fr}.fb-sidebar{position:static}}
+</style>
+
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+{% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+
+{% if not fb_connected %}
+<!-- ═══ NOT CONNECTED ═══ -->
+<div style="max-width:500px;margin:40px auto">
   <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
-  <div class="connect-card">
-    <div class="eyebrow">{{ ui("step_n_of_m", n=4, m=6) }}</div>
-    <h2>{{ ui("connect_facebook_title") }}</h2>
-    <p class="muted">{{ ui("connect_facebook_desc") }}</p>
+  <h1>{{ ui("fb_connect_title") }}</h1>
+  <p class="muted" style="margin-bottom:28px">{{ ui("fb_connect_desc") }}</p>
 
-    <div class="alert" style="margin-top:20px">
-      <strong>{{ ui("assisted_mode_title") }}</strong> &mdash; {{ ui("assisted_mode_desc") }}
+  <div class="card">
+    <div class="eyebrow">{{ ui("tg_credentials") }}</div>
+    <p class="small muted" style="margin-bottom:16px">
+      {% if ui_lang == 'ru' %}Перейдите на <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; скопируйте App ID и App Secret.
+      {% elif ui_lang == 'he' %}עבור ל-<a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; העתק App ID ו-App Secret.
+      {% else %}Go to <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; copy App ID and App Secret.{% endif %}
+    </p>
+    <form method="post" action="/connect/facebook/setup" class="stack">
+      <div class="grid2">
+        <div><label>Facebook App ID</label><input name="fb_app_id" value="{{ session.get('fb_app_id', '') }}" required placeholder="123456789012345"></div>
+        <div><label>Facebook App Secret</label><input name="fb_app_secret" value="" required placeholder="abc123def456..."></div>
+      </div>
+      <button class="fb-login-btn" type="submit">
+        {% if ui_lang == 'ru' %}Подключить Facebook{% elif ui_lang == 'he' %}חבר פייסבוק{% else %}Connect Facebook{% endif %}
+      </button>
+    </form>
+  </div>
+
+  {% if facebook_sources %}
+  <div class="card" style="margin-top:20px">
+    <div style="font-weight:600;margin-bottom:12px">{{ ui("fb_destinations") }} ({{ facebook_sources|length }})</div>
+    {% for s in facebook_sources %}
+    <div class="dest-fb">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+      <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">{{ s.label or 'Group' }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+      <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<!-- ═══ CONNECTED ═══ -->
+<div class="fb-layout">
+  <!-- LEFT: destinations -->
+  <div class="fb-sidebar">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-weight:700;font-size:15px">{{ ui("fb_destinations") }}</div>
+      <button class="pill" onclick="document.getElementById('fb-modal-add').style.display='flex'" style="font-size:11px;padding:5px 12px">+ {{ ui("tg_add_btn") }}</button>
+    </div>
+    {% if facebook_sources %}
+    <div class="card" style="padding:6px;max-height:calc(100vh - 220px);overflow-y:auto">
+      {% set ns = namespace(cf='__none__') %}
+      {% for s in facebook_sources|sort(attribute='folder') %}
+        {% set f = s.folder or 'groups' %}
+        {% if f != ns.cf %}
+          {% set ns.cf = f %}
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--light);padding:10px 14px 3px">{{ f }}</div>
+        {% endif %}
+        <div class="dest-fb">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+          <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label or 'Group' }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+          <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">{{ ui("tg_no_destinations") }}</div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: profile + groups -->
+  <div>
+    <!-- Profile -->
+    <div class="card" style="margin-bottom:20px;border-color:var(--success)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="fb-avatar">{{ (fb_user_name or 'F')[0] }}</div>
+          <div>
+            <div style="font-weight:600;color:var(--success)">{{ ui("fb_connected") }}</div>
+            {% if fb_user_name %}<span class="small muted">{{ fb_user_name }}</span>{% endif %}
+          </div>
+        </div>
+        <form method="post" action="/connect/facebook/sync" style="display:inline"><button class="btn" type="submit">{{ ui("fb_sync_btn") }}</button></form>
+      </div>
     </div>
 
-    <div class="connect-steps">
-      <div class="connect-step">
-        <div class="connect-step-content">
-          <h4>{{ ui("add_fb_groups_title") }}</h4>
-          <p>{{ ui("add_fb_groups_desc") }}</p>
+    <!-- Tabs -->
+    <div class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="showTab('groups',this)">
+          {% if ui_lang == 'ru' %}Группы{% elif ui_lang == 'he' %}קבוצות{% else %}Groups{% endif %}
+        </button>
+        <button class="tab-btn" onclick="showTab('pages',this)">
+          {% if ui_lang == 'ru' %}Сообщества{% elif ui_lang == 'he' %}קהילות{% else %}Communities{% endif %}
+        </button>
+        <button class="tab-btn" onclick="showTab('marketplace',this)">
+          {% if ui_lang == 'ru' %}Маркетплейс{% elif ui_lang == 'he' %}שוק{% else %}Marketplace{% endif %}
+        </button>
+      </div>
+
+      <!-- ─── Groups tab ─── -->
+      <div class="tab-content active" id="tab-groups">
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Добавьте Facebook-группы для публикации объявлений.{% elif ui_lang == 'he' %}הוסף קבוצות פייסבוק לפרסום מודעות.{% else %}Add Facebook groups where your listings will be posted.{% endif %}
+        </p>
+        <!-- Synced groups -->
+        {% if fb_groups %}
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="small" style="font-weight:600">{% if ui_lang == 'ru' %}Найденные группы ({{ fb_groups|length }}){% elif ui_lang == 'he' %}קבוצות שנמצאו ({{ fb_groups|length }}){% else %}Found groups ({{ fb_groups|length }}){% endif %}</span>
+            <form method="post" action="/connect/facebook/add-selected">
+              <input type="hidden" name="group_ids" id="fb-selected" value="">
+              <button class="btn" type="submit" id="fb-add-btn" disabled style="font-size:12px;padding:6px 14px">{{ ui("fb_add_selected") }} (0)</button>
+            </form>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:4px">
+            {% for g in fb_groups %}
+            <label class="fg">
+              <input type="checkbox" class="fb-gc" value="{{ g.id }}" {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}checked disabled{% endif %}>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:500">{{ g.name }}</div>
+                <div style="font-size:11px;color:var(--muted)">{{ g.member_count or 0 }} {{ ui("fb_members") }} · {{ g.privacy or '' }}</div>
+              </div>
+              {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}<span style="font-size:10px;color:var(--success);font-weight:600">{{ ui("fb_added") }}</span>{% endif %}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <!-- Manual add group -->
+        <div style="border-top:1px solid var(--border-light);padding-top:16px">
+          <span class="small" style="font-weight:600;display:block;margin-bottom:10px">{% if ui_lang == 'ru' %}Добавить вручную{% elif ui_lang == 'he' %}הוסף ידנית{% else %}Add manually{% endif %}</span>
+          <form method="post" action="/sources/new" style="display:flex;gap:8px;align-items:flex-end">
+            <input type="hidden" name="platform" value="facebook">
+            <input type="hidden" name="posting_mode" value="assisted_manual">
+            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="tg_ref" value="">
+            <input type="hidden" name="folder" value="groups">
+            <div style="flex:1"><label class="small">{% if ui_lang == 'ru' %}Название{% elif ui_lang == 'he' %}שם{% else %}Name{% endif %}</label><input name="label" required placeholder=""></div>
+            <div style="flex:1"><label class="small">URL</label><input name="destination_url" required placeholder="https://facebook.com/groups/..."></div>
+            <button type="submit" class="btn" style="padding:10px 16px;white-space:nowrap">+</button>
+          </form>
         </div>
       </div>
-      <div class="connect-step">
-        <div class="connect-step-content">
-          <h4>{{ ui("generate_asset_title") }}</h4>
-          <p>{{ ui("generate_asset_desc") }}</p>
+
+      <!-- ─── Communities/Pages tab ─── -->
+      <div class="tab-content" id="tab-pages">
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Добавьте сообщества, открытые страницы и доски объявлений.{% elif ui_lang == 'he' %}הוסף קהילות, דפים פתוחים ולוחות מודעות.{% else %}Add communities, open pages and bulletin boards.{% endif %}
+        </p>
+        <!-- List existing community destinations -->
+        {% set community_sources = facebook_sources|selectattr('folder', 'equalto', 'communities')|list %}
+        {% if community_sources %}
+        <div style="margin-bottom:16px;display:flex;flex-direction:column;gap:4px">
+          {% for s in community_sources %}
+          <div class="dest-fb">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+            <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">{{ s.label }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+            <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <!-- Add community -->
+        <div style="border-top:1px solid var(--border-light);padding-top:16px">
+          <form method="post" action="/sources/new" style="display:flex;gap:8px;align-items:flex-end">
+            <input type="hidden" name="platform" value="facebook">
+            <input type="hidden" name="posting_mode" value="assisted_manual">
+            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="tg_ref" value="">
+            <input type="hidden" name="folder" value="communities">
+            <div style="flex:1"><label class="small">{% if ui_lang == 'ru' %}Название{% elif ui_lang == 'he' %}שם{% else %}Name{% endif %}</label><input name="label" required placeholder=""></div>
+            <div style="flex:1"><label class="small">URL</label><input name="destination_url" required placeholder="https://facebook.com/..."></div>
+            <button type="submit" class="btn" style="padding:10px 16px;white-space:nowrap">+</button>
+          </form>
         </div>
       </div>
-      <div class="connect-step">
-        <div class="connect-step-content">
-          <h4>{{ ui("use_queue_title") }}</h4>
-          <p>{{ ui("use_queue_desc") }}</p>
+
+      <!-- ─── Marketplace tab ─── -->
+      <div class="tab-content" id="tab-marketplace">
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Публикуйте на Facebook Marketplace: авто, недвижимость, товары, услуги. Создайте объявление — система подготовит текст для размещения.{% elif ui_lang == 'he' %}פרסם ב-Facebook Marketplace: רכב, נדל"ן, מוצרים, שירותים. צור מודעה והמערכת תכין את הטקסט.{% else %}Post to Facebook Marketplace: cars, real estate, items, services. Create a listing and the system prepares the text.{% endif %}
+        </p>
+        <!-- List existing marketplace destinations -->
+        {% set mp_sources = facebook_sources|selectattr('folder', 'equalto', 'marketplace')|list %}
+        {% if mp_sources %}
+        <div style="margin-bottom:16px;display:flex;flex-direction:column;gap:4px">
+          {% for s in mp_sources %}
+          <div class="dest-fb">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
+            <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">{{ s.label }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
+            <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <!-- Add marketplace entry -->
+        <div style="border-top:1px solid var(--border-light);padding-top:16px">
+          <span class="small" style="font-weight:600;display:block;margin-bottom:10px">{% if ui_lang == 'ru' %}Добавить Marketplace{% elif ui_lang == 'he' %}הוסף Marketplace{% else %}Add Marketplace{% endif %}</span>
+          <form method="post" action="/sources/new" class="stack" style="gap:10px">
+            <input type="hidden" name="platform" value="facebook">
+            <input type="hidden" name="posting_mode" value="assisted_manual">
+            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="tg_ref" value="">
+            <input type="hidden" name="folder" value="marketplace">
+            <div class="grid2">
+              <div><label class="small">{% if ui_lang == 'ru' %}Город / Регион{% elif ui_lang == 'he' %}עיר / אזור{% else %}City / Region{% endif %}</label><input name="label" required placeholder="{% if ui_lang == 'ru' %}Тель-Авив{% elif ui_lang == 'he' %}תל אביב{% else %}Tel Aviv{% endif %}"></div>
+              <div><label class="small">{% if ui_lang == 'ru' %}Категория{% elif ui_lang == 'he' %}קטגוריה{% else %}Category{% endif %}</label>
+                <select name="destination_url" style="width:100%">
+                  <option value="https://facebook.com/marketplace/telaviv/vehicles">{% if ui_lang == 'ru' %}Авто{% elif ui_lang == 'he' %}רכב{% else %}Vehicles{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/propertyrentals">{% if ui_lang == 'ru' %}Недвижимость{% elif ui_lang == 'he' %}נדל"ן{% else %}Property{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/jobs">{% if ui_lang == 'ru' %}Вакансии{% elif ui_lang == 'he' %}משרות{% else %}Jobs{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/search">{% if ui_lang == 'ru' %}Товары{% elif ui_lang == 'he' %}מוצרים{% else %}Items{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/telaviv/services">{% if ui_lang == 'ru' %}Услуги{% elif ui_lang == 'he' %}שירותים{% else %}Services{% endif %}</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn" style="align-self:flex-start">{% if ui_lang == 'ru' %}Добавить{% elif ui_lang == 'he' %}הוסף{% else %}Add{% endif %}</button>
+          </form>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <form method="post" action="/sources/new" class="stack" style="margin-top:28px">
+<!-- Modal: add manual -->
+<div id="fb-modal-add" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--card);border-radius:20px;padding:32px;width:92%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.18)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="margin:0;font-size:20px">{{ ui("fb_add_manual") }}</h2>
+      <button onclick="document.getElementById('fb-modal-add').style.display='none'" style="background:none;border:1px solid var(--border-light);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted)">&times;</button>
+    </div>
+    <form method="post" action="/sources/new" class="stack">
       <input type="hidden" name="platform" value="facebook">
       <input type="hidden" name="posting_mode" value="assisted_manual">
       <input type="hidden" name="destination_kind" value="group">
       <input type="hidden" name="tg_ref" value="">
-      <div>
-        <label>{{ ui("group_name") }}</label>
-        <input name="label" placeholder="" required>
-      </div>
-      <div>
-        <label>{{ ui("fb_group_url") }}</label>
-        <input name="destination_url" placeholder="https://facebook.com/groups/..." required>
-      </div>
-      <button type="submit" class="btn">{{ ui("add_fb_group_btn") }}</button>
+      <div><label>{{ ui("group_name") }}</label><input name="label" required></div>
+      <div><label>{{ ui("fb_group_url") }}</label><input name="destination_url" placeholder="https://facebook.com/groups/..." required></div>
+      <button type="submit" class="btn">{{ ui("tg_add_btn") }}</button>
     </form>
-
-    {% if facebook_sources %}
-    <div style="margin-top:28px">
-      <h3 style="margin-bottom:12px">{{ ui("your_fb_dests") }}</h3>
-      <div class="stack tight">
-        {% for s in facebook_sources %}
-        <div class="card card-flat" style="padding:16px;flex-direction:row;align-items:center;justify-content:space-between">
-          <div>
-            <strong>{{ s.label or ui("facebook_groups") }}</strong>
-            <div class="small muted">{{ s.destination_url or ui("no_url_set") }} &middot; {{ ui("assisted_manual") }}</div>
-          </div>
-          <span class="status status-posted">{{ ui("ready") }}</span>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center">
-      <a href="/connect/telegram" class="btn-outline" style="padding:10px 24px;border-radius:999px;text-decoration:none">&larr; Telegram</a>
-      <a href="/campaigns/new" class="btn" style="text-decoration:none">{{ ui("create_campaign_link") }} &rarr;</a>
-    </div>
   </div>
 </div>
+{% endif %}
+
+<div style="margin-top:24px;text-align:center">
+  <a href="/connect/telegram" class="pill" style="text-decoration:none">&larr; Telegram</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Tab switching
+function showTab(name,btn){
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  var tab=document.getElementById('tab-'+name);
+  if(tab)tab.classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+// Group selection
+(function(){
+  var cc=document.querySelectorAll('.fb-gc:not(:disabled)'),h=document.getElementById('fb-selected'),b=document.getElementById('fb-add-btn');
+  if(!cc.length||!h||!b)return;
+  function u(){var ids=[];cc.forEach(function(c){if(c.checked)ids.push(c.value)});h.value=ids.join(',');b.disabled=ids.length===0;b.textContent='{{ ui("fb_add_selected") }} ('+ids.length+')';}
+  cc.forEach(function(c){c.addEventListener('change',u)});
+})();
+</script>
 {% endblock %}
