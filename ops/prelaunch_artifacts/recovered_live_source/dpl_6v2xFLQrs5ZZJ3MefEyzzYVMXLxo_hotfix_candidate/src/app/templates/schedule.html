@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <div class="eyebrow">Step 3 of 5</div>
+    <h1>Schedule</h1>
+    <p class="muted">Choose one saved ad, decide when it should run, and create the first trackable posting batch across Facebook and Telegram destinations.</p>
+  </div>
+</section>
+
+<section class="grid two-col">
+  <form method="post" class="card stack">
+    <h2>Run Setup</h2>
+    <label>Choose Ad</label>
+    <select name="ad_id">
+      {% for ad in ads %}
+      <option value="{{ ad.id }}" {% if selected_ad and selected_ad.id == ad.id %}selected{% endif %}>{{ ad.title }}</option>
+      {% endfor %}
+    </select>
+    <div class="field-grid">
+      <div>
+        <label>Schedule Name</label>
+        <input name="title" value="Morning posting run">
+      </div>
+      <div>
+        <label>Start At</label>
+        <input type="datetime-local" name="start_at" value="{{ default_start_at or '' }}">
+      </div>
+    </div>
+    <div class="field-grid">
+      <div>
+        <label>Cadence</label>
+        <select name="cadence">
+          <option value="daily">Daily</option>
+          <option value="weekdays">Weekdays</option>
+          <option value="manual_review">Manual review</option>
+        </select>
+      </div>
+      <div>
+        <label>Timezone</label>
+        <input name="timezone" value="Asia/Jerusalem">
+      </div>
+    </div>
+    <label>Notes</label>
+    <textarea name="notes" rows="4" placeholder="Optional operator note for this run"></textarea>
+    <button class="btn" type="submit">Create Run</button>
+  </form>
+
+  <div class="stack">
+    <div class="card stack">
+      <h2>Selected Ad</h2>
+      {% if selected_ad %}
+      <strong>{{ selected_ad.title }}</strong>
+      <div class="pre">{{ selected_ad.primary_text }}</div>
+      <div class="small muted">CTA: {{ selected_ad.cta_text }} · Audience: {{ selected_ad.audience or 'General' }}</div>
+      <div class="small muted">Selected destinations: {{ selected_ad.groups|length }}</div>
+      <div class="list">
+        {% for target in selected_ad.groups %}
+        <div>{{ target.group.name }} <span class="muted small">· {{ target.group.platform }}{% if target.group.external_ref %} · {% if target.group.external_ref in ['@startup_hiring_alerts', '@telaviv_job_drops', '@remote_ops_broadcast'] %}seeded sample destination{% else %}{{ target.group.external_ref }}{% endif %}{% endif %}</span></div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="muted">No ad saved yet. Go back and create one first.</div>
+      {% endif %}
+    </div>
+    <div class="card subtle-card stack">
+      <h2>This Creates</h2>
+      <div class="list">
+        <div>Real schedule row saved</div>
+        <div>Real posting run created</div>
+        <div>History item for each selected group</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

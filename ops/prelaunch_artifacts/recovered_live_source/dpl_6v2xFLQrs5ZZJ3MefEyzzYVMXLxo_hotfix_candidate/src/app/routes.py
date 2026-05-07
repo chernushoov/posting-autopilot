@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import flash, redirect, render_template, request, session, url_for
 from sqlalchemy.orm import joinedload
@@ -187,7 +187,12 @@ def register_routes(app):
             primary_text = request.form.get("primary_text", "").strip()
             cta_text = request.form.get("cta_text", "").strip() or "Send details in DM"
             audience = request.form.get("audience", "").strip() or None
-            selected_group_ids = [int(group_id) for group_id in request.form.getlist("group_ids")]
+            selected_group_ids = []
+            for raw_group_id in request.form.getlist("group_ids"):
+                try:
+                    selected_group_ids.append(int(raw_group_id))
+                except (TypeError, ValueError):
+                    continue
             if not title or not primary_text or not selected_group_ids:
                 db.close()
                 return render_template(
@@ -234,21 +239,45 @@ def register_routes(app):
         )
         selected_ad = next((ad for ad in ads if ad.id == selected_ad_id), ads[0] if ads else None)
 
+        next_slot = (datetime.utcnow() + timedelta(hours=1)).replace(second=0, microsecond=0)
+        next_slot = next_slot.replace(minute=(next_slot.minute // 5) * 5)
+        default_start_at = next_slot.strftime("%Y-%m-%dT%H:%M")
+
+        def render_form(error: str | None = None):
+            return render_template(
+                "schedule.html",
+                ads=ads,
+                selected_ad=selected_ad,
+                default_start_at=default_start_at,
+                error=error,
+            )
+
         if request.method == "POST":
-            ad_id = int(request.form.get("ad_id"))
+            ad_id_raw = request.form.get("ad_id", "").strip()
+            try:
+                ad_id = int(ad_id_raw)
+            except (TypeError, ValueError):
+                db.close()
+                return render_form("Select an ad first.")
             title = request.form.get("title", "").strip() or "Primary schedule"
             start_at_raw = request.form.get("start_at", "").strip()
-            cadence = request.form.get("cadence", "").strip() or "daily"
+            cadence_raw = request.form.get("cadence", "").strip() or "daily"
+            allowed_cadences = {"daily", "weekdays", "manual_review"}
+            cadence = cadence_raw if cadence_raw in allowed_cadences else "daily"
             timezone = request.form.get("timezone", "").strip() or "Asia/Jerusalem"
             notes = request.form.get("notes", "").strip() or None
             if not start_at_raw:
                 db.close()
-                return render_template("schedule.html", ads=ads, selected_ad=selected_ad, error="Start time is required.")
-            start_at = datetime.fromisoformat(start_at_raw)
+                return render_form("Start time is required.")
+            try:
+                start_at = datetime.fromisoformat(start_at_raw)
+            except (TypeError, ValueError):
+                db.close()
+                return render_form("Start time must be a valid date/time (YYYY-MM-DDTHH:MM).")
             ad = db.query(Ad).filter(Ad.id == ad_id, Ad.user_id == session["user_id"]).first()
             if not ad:
                 db.close()
-                return render_template("schedule.html", ads=ads, selected_ad=selected_ad, error="Select an ad first.")
+                return render_form("Select an ad first.")
 
             schedule = Schedule(
                 user_id=session["user_id"],
@@ -295,13 +324,17 @@ def register_routes(app):
             return redirect(url_for("history"))
 
         db.close()
-        return render_template("schedule.html", ads=ads, selected_ad=selected_ad)
+        return render_form()
 
     @app.route("/history", methods=["GET"])
     @login_required
     def history():
         db = db_session()
-        status_filter = request.args.get("status", "").strip()
+        valid_statuses = {status.value for status in HistoryStatus}
+        raw_filter = request.args.get("status", "").strip()
+        status_filter = raw_filter if raw_filter in valid_statuses else ""
+        if raw_filter and not status_filter:
+            flash(f"Unknown status filter '{raw_filter}'. Showing all items.", "warning")
         query = (
             db.query(PostHistoryItem)
             .options(
@@ -322,17 +355,26 @@ def register_routes(app):
     @login_required
     def update_history_status(item_id: int):
         db = db_session()
+        valid_statuses = {status.value for status in HistoryStatus}
+        new_status = request.form.get("status", HistoryStatus.ready.value)
+        if new_status not in valid_statuses:
+            db.close()
+            flash(f"Unknown status '{new_status}'. CRM item not changed.", "error")
+            return redirect(url_for("history"))
         item = db.query(PostHistoryItem).filter(PostHistoryItem.id == item_id, PostHistoryItem.user_id == session["user_id"]).first()
-        if item:
-            item.status = request.form.get("status", HistoryStatus.ready.value)
-            item.operator_note = request.form.get("operator_note", "").strip() or item.operator_note
-            item.updated_at = datetime.utcnow()
-            if item.status == HistoryStatus.posted.value:
-                item.published_at = datetime.utcnow()
-            item.posting_run.last_updated_at = datetime.utcnow()
-            if item.status == HistoryStatus.posted.value and item.posting_run.status == RunStatus.scheduled.value:
-                item.posting_run.status = RunStatus.active.value
-            db.commit()
+        if not item:
+            db.close()
+            flash("CRM item not found or not yours.", "error")
+            return redirect(url_for("history"))
+        item.status = new_status
+        item.operator_note = request.form.get("operator_note", "").strip() or item.operator_note
+        item.updated_at = datetime.utcnow()
+        if item.status == HistoryStatus.posted.value:
+            item.published_at = datetime.utcnow()
+        item.posting_run.last_updated_at = datetime.utcnow()
+        if item.status == HistoryStatus.posted.value and item.posting_run.status == RunStatus.scheduled.value:
+            item.posting_run.status = RunStatus.active.value
+        db.commit()
         db.close()
         flash("CRM item updated.", "success")
         return redirect(url_for("history"))
