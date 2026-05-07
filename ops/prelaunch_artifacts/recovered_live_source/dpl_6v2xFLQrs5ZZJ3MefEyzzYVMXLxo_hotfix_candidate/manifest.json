@@ -1,0 +1,199 @@
+{
+  "deployment_id": "dpl_6v2xFLQrs5ZZJ3MefEyzzYVMXLxo",
+  "output_dir": "/Users/agentmachine/Desktop/recruit-autopilot-core/ops/prelaunch_artifacts/recovered_live_source/dpl_6v2xFLQrs5ZZJ3MefEyzzYVMXLxo",
+  "recovered_files": 25,
+  "entries": [
+    {
+      "path": "src",
+      "type": "directory",
+      "mode": 16749
+    },
+    {
+      "path": "src/.env.example",
+      "type": "file",
+      "mode": 33188,
+      "uid": "ac3a38e3089061a479d0387437f9e9b4c53f2a45"
+    },
+    {
+      "path": "src/.vercelignore",
+      "type": "file",
+      "mode": 33188,
+      "uid": "860fdc535d9b225381b422d288c24a379e51eadd"
+    },
+    {
+      "path": "src/BUILD_STATUS.md",
+      "type": "file",
+      "mode": 33188,
+      "uid": "c891960b8ecfb7d1ab50152c7b111791c66c362c"
+    },
+    {
+      "path": "src/app",
+      "type": "directory",
+      "mode": 16749
+    },
+    {
+      "path": "src/app/__init__.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "a89cc514a44433433337b382ec26d19ff613de72"
+    },
+    {
+      "path": "src/app/auth.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "afb09b58d51f886a0794d7c8fc21e1181c955907"
+    },
+    {
+      "path": "src/app/bootstrap.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "9b68ae646e28e1ab4d6b6b57cdee96d12800ca36"
+    },
+    {
+      "path": "src/app/config.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "51c62fec167c06dc2491177eba2f3888dff74962"
+    },
+    {
+      "path": "src/app/db.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "6b71afc0e0159707c1ea2c07e7e92ddfb7e3b157"
+    },
+    {
+      "path": "src/app/factory.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "e6c73db8e58a280865fa5b1d55905f515c05b0ec"
+    },
+    {
+      "path": "src/app/models.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "c581687efcf32fa06daac40fe86dc07f97c0a331"
+    },
+    {
+      "path": "src/app/routes.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "07949cd027721f069f0db1a831e0db3bd7992c1c"
+    },
+    {
+      "path": "src/app/telegram.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "185a6a12c4415e83ba462428b5e7d2d971cab810"
+    },
+    {
+      "path": "src/app/templates",
+      "type": "directory",
+      "mode": 16749
+    },
+    {
+      "path": "src/app/templates/ad_builder.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "db1e26dc316919abc98543a09ba3ccc158a794b4"
+    },
+    {
+      "path": "src/app/templates/base.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "33c8133d443aa8954cbc4a7912ca868782f557ec"
+    },
+    {
+      "path": "src/app/templates/facebook_connect.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "60d947a28550bb6d8d5702c79a0b8c8733a8feaf"
+    },
+    {
+      "path": "src/app/templates/history.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "c509b32fe4a40ce9842bc70bbce176258c43a3f7"
+    },
+    {
+      "path": "src/app/templates/login.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "9456f271959861a720098f7168e033cc6975480a"
+    },
+    {
+      "path": "src/app/templates/schedule.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "e15bd1f198c23d8b31ae12a8e7da6beb169caa42"
+    },
+    {
+      "path": "src/app/templates/settings.html",
+      "type": "file",
+      "mode": 33188,
+      "uid": "302256beebf55ff112b6d2897405694859a28180"
+    },
+    {
+      "path": "src/index.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "bd684593777f83c819b544851ac553ddbd016241"
+    },
+    {
+      "path": "src/public",
+      "type": "directory",
+      "mode": 16749
+    },
+    {
+      "path": "src/public/app.css",
+      "type": "file",
+      "mode": 33188,
+      "uid": "c31bc4236c7ffcf9cb40d32a96b957263fc0bdb8"
+    },
+    {
+      "path": "src/requirements.txt",
+      "type": "file",
+      "mode": 33188,
+      "uid": "28ff034d9614829b10223110640a0601d7bc99e6"
+    },
+    {
+      "path": "src/run.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "b9bc2499e24b68cf487675ba09d7141239df4687"
+    },
+    {
+      "path": "src/scripts",
+      "type": "directory",
+      "mode": 16749
+    },
+    {
+      "path": "src/scripts/__init__.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "adc83b19e793491b1c6ea0fd8b46cd9f32e592fc"
+    },
+    {
+      "path": "src/scripts/bootstrap.py",
+      "type": "file",
+      "mode": 33188,
+      "uid": "0bb1f05f2dc3311f466fbbc6b98f6b88d85e5b9d"
+    },
+    {
+      "path": "out",
+      "type": "directory",
+      "mode": 16749
+    },
+    {
+      "path": "out/index",
+      "type": "lambda",
+      "mode": 49590,
+      "uid": "team_3KWcFv5zUVHA6wb5CROURGTW-1dff6073903722757a1901f561fac75f0a"
+    },
+    {
+      "path": "out/index",
+      "type": "lambda",
+      "mode": 49590,
+      "uid": "team_3KWcFv5zUVHA6wb5CROURGTW-1dff6073903722757a1901f561fac75f0a"
+    }
+  ]
+}

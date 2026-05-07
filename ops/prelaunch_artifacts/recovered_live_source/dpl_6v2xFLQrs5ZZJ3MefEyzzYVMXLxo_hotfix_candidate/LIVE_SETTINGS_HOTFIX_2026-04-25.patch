@@ -1,0 +1,30 @@
+--- a/src/app/routes.py
++++ b/src/app/routes.py
+@@
+-            db.close()
+             if user:
+-                session["user_id"] = user.id
+-                session["user_name"] = user.full_name
++                user_id = user.id
++                user_name = user.full_name
++                db.close()
++                session["user_id"] = user_id
++                session["user_name"] = user_name
+                 return redirect(url_for("channel_connect"))
++            db.close()
+             return render_template("login.html", error="Wrong email or password.")
+@@
+-            user.full_name = request.form.get("full_name", "").strip() or user.full_name
++            updated_name = request.form.get("full_name", "").strip() or user.full_name
++            user.full_name = updated_name
+             settings_row.timezone = request.form.get("timezone", "").strip() or settings_row.timezone
+             settings_row.default_cta = request.form.get("default_cta", "").strip() or settings_row.default_cta
+             settings_row.posting_window = request.form.get("posting_window", "").strip() or settings_row.posting_window
+             settings_row.notifications_enabled = request.form.get("notifications_enabled") == "on"
+             settings_row.updated_at = datetime.utcnow()
+             db.commit()
++            session["user_name"] = updated_name
+             db.close()
+-            session["user_name"] = user.full_name
+             flash("Profile settings saved.", "success")
+             return redirect(url_for("settings"))
