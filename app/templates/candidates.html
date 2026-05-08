@@ -2,8 +2,9 @@
 {% block content %}
 <div class="row">
   <h1>{{ ui("candidates_title") }}</h1>
-  <div style="display:flex;gap:8px;align-items:center">
-    <form method="get">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <form method="get" style="display:flex;gap:8px">
+      {% if current_classification %}<input type="hidden" name="classification" value="{{ current_classification }}">{% endif %}
       <select name="status" onchange="this.form.submit()">
         <option value="">{{ ui("all") }}</option>
         {% for s in statuses %}
@@ -14,15 +15,47 @@
     <a href="/candidates/export" class="pill" style="white-space:nowrap">Export CSV</a>
   </div>
 </div>
+
+<div class="row" style="gap:6px;flex-wrap:wrap;margin:0 0 16px">
+  {% set base_q = '?status=' ~ current if current else '' %}
+  {% set sep = '&' if current else '?' %}
+  <a class="pill {% if not current_classification %}active{% endif %}"
+     href="/candidates/{{ base_q }}"
+     style="text-decoration:none">{{ ui('all') }}</a>
+  <a class="pill hot {% if current_classification == 'hot' %}active{% endif %}"
+     href="/candidates/{{ base_q }}{{ sep }}classification=hot"
+     style="text-decoration:none">{{ ui('cls_hot') }} · {{ counts_by_classification.hot }}</a>
+  <a class="pill {% if current_classification == 'warm' %}active{% endif %}"
+     href="/candidates/{{ base_q }}{{ sep }}classification=warm"
+     style="text-decoration:none">{{ ui('cls_warm') }} · {{ counts_by_classification.warm }}</a>
+  <a class="pill cold {% if current_classification == 'cold' %}active{% endif %}"
+     href="/candidates/{{ base_q }}{{ sep }}classification=cold"
+     style="text-decoration:none">{{ ui('cls_cold') }} · {{ counts_by_classification.cold }}</a>
+  <a class="pill {% if current_classification == 'duplicate' %}active{% endif %}"
+     href="/candidates/{{ base_q }}{{ sep }}classification=duplicate"
+     style="text-decoration:none;background:#f4e1d4;color:#7a4a1f">
+     {{ ui('cls_duplicate') }} · {{ counts_by_classification.duplicate }}
+  </a>
+</div>
+
 <table class="table">
-  <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("phone_label_full") }}</th><th>{{ ui("status") }}</th><th>Class</th><th>{{ ui("score") }}</th><th></th></tr>
+  <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("phone_label_full") }}</th><th>{{ ui("status") }}</th><th>{{ ui('class_label') }}</th><th>{{ ui("score") }}</th><th></th></tr>
   {% for c in candidates %}
-  <tr>
+  <tr {% if c.classification == 'duplicate' %}style="opacity:0.7"{% endif %}>
     <td>{{ c.id }}</td>
-    <td>{{ c.full_name or c.tg_username or c.tg_user_id or "-" }}</td>
+    <td>
+      {{ c.full_name or c.tg_username or c.tg_user_id or "-" }}
+      {% if c.classification == 'duplicate' %}
+      <span class="pill" style="background:#f4e1d4;color:#7a4a1f;font-size:11px;padding:2px 8px;margin-left:6px">{{ ui('cls_duplicate') }}</span>
+      {% endif %}
+    </td>
     <td>{{ c.phone or "-" }}</td>
     <td>{{ c.status.value }}</td>
-    <td>{% if c.classification %}<span class="pill {% if c.classification == 'hot' %}hot{% elif c.classification == 'cold' %}cold{% endif %}">{{ c.classification }}</span>{% else %}-{% endif %}</td>
+    <td>
+      {% if c.classification %}
+        <span class="pill {% if c.classification == 'hot' %}hot{% elif c.classification == 'cold' %}cold{% elif c.classification == 'duplicate' %}duplicate{% endif %}">{{ c.classification }}</span>
+      {% else %}-{% endif %}
+    </td>
     <td>{{ c.score or "-" }}</td>
     <td><a class="pill" href="/candidates/{{ c.id }}">{{ ui("open") }}</a></td>
   </tr>

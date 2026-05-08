@@ -15,96 +15,183 @@
 </div>
 {% endif %}
 
+<style>
+  .wiz-stepper { display:flex; gap:8px; margin-bottom:18px; }
+  .wiz-stepper .step {
+    flex:1; padding:10px 12px; border-radius:8px;
+    background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.06);
+    font-size:13px; line-height:1.3;
+  }
+  .wiz-stepper .step.active { background:var(--accent, #4a7eff); color:#fff; border-color:var(--accent, #4a7eff); font-weight:600; }
+  .wiz-stepper .step.done { background:rgba(74,126,255,0.10); color:var(--accent, #4a7eff); }
+  .wiz-stepper .step .num { display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; background:rgba(0,0,0,0.10); margin-right:6px; font-weight:700; }
+  .wiz-stepper .step.active .num { background:rgba(255,255,255,0.25); }
+  .wiz-step { display:none; }
+  .wiz-step.active { display:block; }
+  .wiz-actions { display:flex; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid rgba(0,0,0,0.06); }
+  .wiz-actions .spacer { flex:1; }
+</style>
+
 <form method="post" class="card" id="listing-form" enctype="multipart/form-data" {% if edit_id %}action="/vacancies/{{ edit_id }}/edit"{% endif %}>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label>{{ ui("title") }}</label>
-  <input name="title" id="f-title" value="{{ form_values.get('title', '') }}" placeholder="{{ ui('ph_title') }}">
-  <label>{{ ui("city") }}</label>
-  <input name="city" value="{{ form_values.get('city', '') }}" placeholder="{{ ui('ph_city') }}">
-  <label>{{ ui("language") }}</label>
-  <select name="language">
-    {% for l in languages %}<option value="{{ l }}" {% if form_values.get('language', 'ru') == l %}selected{% endif %}>{{ l }}</option>{% endfor %}
-  </select>
-  <div class="grid2">
-    <div>
-      <label>{{ ui("salary") }}</label>
-      <input name="salary_text" value="{{ form_values.get('salary_text', '') }}" placeholder="{{ ui('ph_salary') }}">
-    </div>
-    <div>
-      <label>{{ ui("schedule") }}</label>
-      <input name="schedule_text" value="{{ form_values.get('schedule_text', '') }}" placeholder="{{ ui('ph_schedule') }}">
-    </div>
-  </div>
-  <div class="grid2">
-    <div>
-      <label>{{ ui("contact") }}</label>
-      <input name="contact_text" value="{{ form_values.get('contact_text', '') }}" placeholder="{{ ui('ph_contact') }}">
-    </div>
-    <div>
-      <label>{{ ui('whatsapp_label') }}</label>
-      <input name="whatsapp_number" id="f-whatsapp" value="{{ form_values.get('whatsapp_number', '') }}" placeholder="{{ ui('ph_whatsapp') }}">
-    </div>
-  </div>
-  <div class="grid2">
-    <div>
-      <label>{{ ui("apply_link") }}</label>
-      <input name="apply_url" value="{{ form_values.get('apply_url', '') }}" placeholder="https://...">
-      <div class="small muted" style="margin-top:6px">If left empty, Posting Autopilot uses the connected RecruitBot deep link automatically.</div>
-    </div>
-    <div></div>
-  </div>
-  <label>{{ ui("body") }}</label>
-  <textarea name="body" rows="8" placeholder="{{ ui('ph_body') }}">{{ form_values.get('body', '') }}</textarea>
-  <label>{{ ui("final_post_title") }}</label>
-  <input name="final_post_title" value="{{ form_values.get('final_post_title', '') }}" placeholder="{{ ui('ph_final_post_title') }}">
-  <label>{{ ui("final_post_body") }}</label>
-  <textarea name="final_post_body" rows="8" placeholder="{{ ui('ph_final_post_body') }}">{{ form_values.get('final_post_body', '') }}</textarea>
-  <label>{{ ui("questions") }}</label>
-  <textarea name="questions" rows="6" placeholder="1) ...&#10;2) ...">{{ form_values.get('questions', '') }}</textarea>
 
-  <details class="card" style="margin-top:1.5rem;padding:1rem;" id="bot-settings">
-    <summary style="cursor:pointer;font-weight:600;font-size:1.05rem;">{{ ui('bot_settings_title') }}</summary>
-    <div style="margin-top:1rem;">
-      <label>{{ ui('listing_type_label') }}</label>
-      <select name="listing_type" id="f-listing-type">
-        <option value="recruitment" {% if form_values.get('listing_type','recruitment')=='recruitment' %}selected{% endif %}>{{ ui('listing_type_recruitment') }}</option>
-        <option value="auto" {% if form_values.get('listing_type')=='auto' %}selected{% endif %}>{{ ui('listing_type_auto') }}</option>
-        <option value="realestate" {% if form_values.get('listing_type')=='realestate' %}selected{% endif %}>{{ ui('listing_type_realestate') }}</option>
-        <option value="services" {% if form_values.get('listing_type')=='services' %}selected{% endif %}>{{ ui('listing_type_services') }}</option>
-        <option value="custom" {% if form_values.get('listing_type')=='custom' %}selected{% endif %}>{{ ui('listing_type_custom') }}</option>
-      </select>
-
-      <label>{{ ui('bot_intro_label') }}</label>
-      <textarea name="bot_introduction" id="f-bot-intro" rows="3" placeholder="{{ ui('ph_bot_intro') }}">{{ form_values.get('bot_introduction', '') }}</textarea>
-
-      <label>{{ ui('bot_faq_label') }}</label>
-      <textarea name="bot_faq_knowledge" id="f-bot-faq" rows="5" placeholder="{{ ui('ph_bot_faq') }}">{{ form_values.get('bot_faq_knowledge', '') }}</textarea>
-
-      <label>{{ ui('bot_qq_label') }}</label>
-      <textarea name="bot_qualifying_questions" id="f-bot-qq" rows="4" placeholder="{{ ui('ph_bot_qq') }}">{{ form_values.get('bot_qualifying_questions', '') }}</textarea>
-
-      <label>{{ ui('bot_hot_label') }}</label>
-      <textarea name="bot_hot_criteria" id="f-bot-hot" rows="2" placeholder="{{ ui('ph_bot_hot') }}">{{ form_values.get('bot_hot_criteria', '') }}</textarea>
-
-      <label>{{ ui('bot_cold_label') }}</label>
-      <textarea name="bot_cold_criteria" id="f-bot-cold" rows="2" placeholder="{{ ui('ph_bot_cold') }}">{{ form_values.get('bot_cold_criteria', '') }}</textarea>
-    </div>
-  </details>
-
-  <div style="margin-top:1rem">
-    <label>{{ ui('photo_label') }}</label>
-    {% if existing_image %}<div class="small muted" style="margin-bottom:6px">{{ ui('photo_existing') }}: {{ existing_image.split('/')[-1] }}</div>{% endif %}
-    <input type="file" name="image" accept="image/*" style="font-size:13px">
+  <div class="wiz-stepper">
+    <div class="step active" data-step-indicator="1"><span class="num">1</span>{{ ui('wiz_step_1') }}</div>
+    <div class="step" data-step-indicator="2"><span class="num">2</span>{{ ui('wiz_step_2') }}</div>
+    <div class="step" data-step-indicator="3"><span class="num">3</span>{{ ui('wiz_step_3') }}</div>
   </div>
 
-  <button class="btn" type="submit" style="margin-top:1rem;">
-    {% if edit_id %}{{ ui("save_changes_btn") }}{% else %}{{ ui("create_vacancy_btn") }}{% endif %}
-  </button>
+  <!-- Step 1: WHAT — title, body, city, language -->
+  <div class="wiz-step active" data-step="1">
+    <label>{{ ui("title") }}</label>
+    <input name="title" id="f-title" value="{{ form_values.get('title', '') }}" placeholder="{{ ui('ph_title') }}">
+
+    <div class="grid2">
+      <div>
+        <label>{{ ui("city") }}</label>
+        <input name="city" value="{{ form_values.get('city', '') }}" placeholder="{{ ui('ph_city') }}">
+      </div>
+      <div>
+        <label>{{ ui("language") }}</label>
+        <select name="language">
+          {% for l in languages %}<option value="{{ l }}" {% if form_values.get('language', 'ru') == l %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <label>{{ ui("body") }}</label>
+    <textarea name="body" rows="6" placeholder="{{ ui('ph_body') }}">{{ form_values.get('body', '') }}</textarea>
+  </div>
+
+  <!-- Step 2: HOW MUCH — terms (salary, schedule, contact, WhatsApp, apply, post text) -->
+  <div class="wiz-step" data-step="2">
+    <div class="grid2">
+      <div>
+        <label>{{ ui("salary") }}</label>
+        <input name="salary_text" value="{{ form_values.get('salary_text', '') }}" placeholder="{{ ui('ph_salary') }}">
+      </div>
+      <div>
+        <label>{{ ui("schedule") }}</label>
+        <input name="schedule_text" value="{{ form_values.get('schedule_text', '') }}" placeholder="{{ ui('ph_schedule') }}">
+      </div>
+    </div>
+    <div class="grid2">
+      <div>
+        <label>{{ ui("contact") }}</label>
+        <input name="contact_text" value="{{ form_values.get('contact_text', '') }}" placeholder="{{ ui('ph_contact') }}">
+      </div>
+      <div>
+        <label>{{ ui('whatsapp_label') }}</label>
+        <input name="whatsapp_number" id="f-whatsapp" value="{{ form_values.get('whatsapp_number', '') }}" placeholder="{{ ui('ph_whatsapp') }}">
+      </div>
+    </div>
+    <div class="grid2">
+      <div>
+        <label>{{ ui("apply_link") }}</label>
+        <input name="apply_url" value="{{ form_values.get('apply_url', '') }}" placeholder="https://...">
+        <div class="small muted" style="margin-top:6px">{{ ui('apply_link_helper') }}</div>
+      </div>
+      <div>
+        <label>{{ ui('photo_label') }}</label>
+        {% if existing_image %}<div class="small muted" style="margin-bottom:6px">{{ ui('photo_existing') }}: {{ existing_image.split('/')[-1] }}</div>{% endif %}
+        <input type="file" name="image" accept="image/*" style="font-size:13px">
+      </div>
+    </div>
+
+    <details class="card" style="margin-top:1.2rem;padding:1rem;" id="post-asset-override">
+      <summary style="cursor:pointer;font-weight:600">{{ ui('wiz_post_text_override') }}</summary>
+      <div style="margin-top:1rem">
+        <label>{{ ui("final_post_title") }}</label>
+        <input name="final_post_title" value="{{ form_values.get('final_post_title', '') }}" placeholder="{{ ui('ph_final_post_title') }}">
+        <label>{{ ui("final_post_body") }}</label>
+        <textarea name="final_post_body" rows="6" placeholder="{{ ui('ph_final_post_body') }}">{{ form_values.get('final_post_body', '') }}</textarea>
+        <label>{{ ui("questions") }}</label>
+        <textarea name="questions" rows="4" placeholder="1) ...&#10;2) ...">{{ form_values.get('questions', '') }}</textarea>
+      </div>
+    </details>
+  </div>
+
+  <!-- Step 3: BOT — screening config -->
+  <div class="wiz-step" data-step="3">
+    <p class="small muted">{{ ui('wiz_step_3_intro') }}</p>
+
+    <label>{{ ui('listing_type_label') }}</label>
+    <select name="listing_type" id="f-listing-type">
+      <option value="recruitment" {% if form_values.get('listing_type','recruitment')=='recruitment' %}selected{% endif %}>{{ ui('listing_type_recruitment') }}</option>
+      <option value="auto" {% if form_values.get('listing_type')=='auto' %}selected{% endif %}>{{ ui('listing_type_auto') }}</option>
+      <option value="realestate" {% if form_values.get('listing_type')=='realestate' %}selected{% endif %}>{{ ui('listing_type_realestate') }}</option>
+      <option value="services" {% if form_values.get('listing_type')=='services' %}selected{% endif %}>{{ ui('listing_type_services') }}</option>
+      <option value="custom" {% if form_values.get('listing_type')=='custom' %}selected{% endif %}>{{ ui('listing_type_custom') }}</option>
+    </select>
+
+    <label>{{ ui('bot_intro_label') }}</label>
+    <textarea name="bot_introduction" id="f-bot-intro" rows="3" placeholder="{{ ui('ph_bot_intro') }}">{{ form_values.get('bot_introduction', '') }}</textarea>
+
+    <label>{{ ui('bot_qq_label') }}</label>
+    <textarea name="bot_qualifying_questions" id="f-bot-qq" rows="5" placeholder="{{ ui('ph_bot_qq') }}">{{ form_values.get('bot_qualifying_questions', '') }}</textarea>
+
+    <div class="grid2">
+      <div>
+        <label>{{ ui('bot_hot_label') }}</label>
+        <textarea name="bot_hot_criteria" id="f-bot-hot" rows="3" placeholder="{{ ui('ph_bot_hot') }}">{{ form_values.get('bot_hot_criteria', '') }}</textarea>
+      </div>
+      <div>
+        <label>{{ ui('bot_cold_label') }}</label>
+        <textarea name="bot_cold_criteria" id="f-bot-cold" rows="3" placeholder="{{ ui('ph_bot_cold') }}">{{ form_values.get('bot_cold_criteria', '') }}</textarea>
+      </div>
+    </div>
+
+    <details style="margin-top:1rem">
+      <summary class="small muted" style="cursor:pointer">{{ ui('bot_faq_label') }}</summary>
+      <textarea name="bot_faq_knowledge" id="f-bot-faq" rows="4" style="margin-top:6px" placeholder="{{ ui('ph_bot_faq') }}">{{ form_values.get('bot_faq_knowledge', '') }}</textarea>
+    </details>
+  </div>
+
+  <div class="wiz-actions">
+    <button type="button" class="pill" id="wiz-prev" style="display:none" onclick="wizPrev()">← {{ ui('wiz_back') }}</button>
+    <div class="spacer"></div>
+    <button type="button" class="btn" id="wiz-next" onclick="wizNext()">{{ ui('wiz_next') }} →</button>
+    <button type="submit" class="btn" id="wiz-submit" style="display:none">
+      {% if edit_id %}{{ ui("save_changes_btn") }}{% else %}{{ ui("create_vacancy_btn") }}{% endif %}
+    </button>
+  </div>
 </form>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const WIZ_STEPS = 3;
+let wizCurrent = 1;
+
+function wizShow(n) {
+  wizCurrent = Math.max(1, Math.min(WIZ_STEPS, n));
+  document.querySelectorAll('.wiz-step').forEach(s => {
+    s.classList.toggle('active', Number(s.dataset.step) === wizCurrent);
+  });
+  document.querySelectorAll('[data-step-indicator]').forEach(s => {
+    const stepNum = Number(s.dataset.stepIndicator);
+    s.classList.toggle('active', stepNum === wizCurrent);
+    s.classList.toggle('done', stepNum < wizCurrent);
+  });
+  document.getElementById('wiz-prev').style.display = wizCurrent > 1 ? '' : 'none';
+  document.getElementById('wiz-next').style.display = wizCurrent < WIZ_STEPS ? '' : 'none';
+  document.getElementById('wiz-submit').style.display = wizCurrent === WIZ_STEPS ? '' : 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function wizNext() {
+  // Step 1 minimal validation: title + body must be filled before stepping forward.
+  if (wizCurrent === 1) {
+    const t = document.getElementById('f-title').value.trim();
+    const b = document.querySelector('textarea[name="body"]').value.trim();
+    if (!t || !b) {
+      alert({{ ui('wiz_validation_step1') | tojson }});
+      return;
+    }
+  }
+  wizShow(wizCurrent + 1);
+}
+function wizPrev() { wizShow(wizCurrent - 1); }
+
 function loadTemplate(key) {
   fetch('/vacancies/api/template/' + key)
     .then(r => r.json())
@@ -116,13 +203,14 @@ function loadTemplate(key) {
       document.getElementById('f-bot-qq').value = Array.isArray(qq) ? qq.join('\n') : qq;
       document.getElementById('f-bot-hot').value = d.bot_hot_criteria || '';
       document.getElementById('f-bot-cold').value = d.bot_cold_criteria || '';
-      // Open bot settings section
-      document.getElementById('bot-settings').open = true;
-      // Highlight selected template
       document.querySelectorAll('.template-btn').forEach(b => b.style.background = '');
       var btn = document.querySelector('[data-template="'+key+'"]');
       if (btn) btn.style.background = 'var(--accent)';
+      // Jump to step 3 since the template is mostly bot-config — operator confirms there.
+      wizShow(3);
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => wizShow(1));
 </script>
 {% endblock %}

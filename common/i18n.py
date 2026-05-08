@@ -570,6 +570,38 @@ UI = {
     "photo_label": {"ru": "Фото", "he": "תמונה", "en": "Photo"},
     "photo_existing": {"ru": "Текущее фото", "he": "תמונה נוכחית", "en": "Current photo"},
     "edit_vacancy_action": {"ru": "Редактировать", "he": "ערוך", "en": "Edit"},
+    "cls_hot": {"ru": "Горячие", "he": "חמים", "en": "Hot"},
+    "cls_warm": {"ru": "Тёплые", "he": "פושרים", "en": "Warm"},
+    "cls_cold": {"ru": "Холодные", "he": "קרים", "en": "Cold"},
+    "cls_duplicate": {"ru": "Дубли", "he": "כפילויות", "en": "Duplicate"},
+    "class_label": {"ru": "Класс", "he": "סוג", "en": "Class"},
+    "all": {"ru": "Все", "he": "הכל", "en": "All"},
+    # Vacancy wizard
+    "wiz_step_1": {"ru": "Что публикуем", "he": "מה מפרסמים", "en": "What"},
+    "wiz_step_2": {"ru": "Условия и контакты", "he": "תנאים ופרטים", "en": "Terms & contacts"},
+    "wiz_step_3": {"ru": "Бот скрининг", "he": "סינון בוט", "en": "Bot screening"},
+    "wiz_back": {"ru": "Назад", "he": "חזרה", "en": "Back"},
+    "wiz_next": {"ru": "Далее", "he": "הבא", "en": "Next"},
+    "wiz_validation_step1": {
+        "ru": "Заполни название и описание перед переходом к следующему шагу.",
+        "he": "מלא כותרת ותיאור לפני המעבר לשלב הבא.",
+        "en": "Fill in title and description before moving to the next step.",
+    },
+    "wiz_step_3_intro": {
+        "ru": "Бот будет задавать эти вопросы соискателям, оценивать ответы и присылать тебе горячие лиды.",
+        "he": "הבוט ישאל את השאלות האלה את המועמדים, יעריך את התשובות וישלח אליך לידים חמים.",
+        "en": "The bot will ask candidates these questions, score answers, and forward hot leads.",
+    },
+    "wiz_post_text_override": {
+        "ru": "Текст поста (если хочешь переписать вручную)",
+        "he": "טקסט הפוסט (אם רוצים לשכתב ידנית)",
+        "en": "Post text override (only if you want to write it manually)",
+    },
+    "apply_link_helper": {
+        "ru": "Если пусто — система подставит ссылку на бота автоматически.",
+        "he": "אם ריק — המערכת תשלים את הקישור לבוט אוטומטית.",
+        "en": "If left empty, Posting Autopilot uses the connected RecruitBot deep link automatically.",
+    },
 }
 
 def ui(key: str, lang: str = "en", **kwargs) -> str:

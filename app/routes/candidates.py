@@ -13,17 +13,36 @@ bp = Blueprint("candidates", __name__, url_prefix="/candidates")
 @bp.get("/")
 @require_company
 def list_candidates():
-    status = request.args.get("status","")
+    status = request.args.get("status", "")
+    classification = request.args.get("classification", "")
     db = db_session()
-    q = scoped(db, Candidate).order_by(Candidate.id.desc())
+    base_q = scoped(db, Candidate)
+
+    counts_by_classification = {
+        "hot": base_q.filter(Candidate.classification == "hot").count(),
+        "warm": base_q.filter(Candidate.classification == "warm").count(),
+        "cold": base_q.filter(Candidate.classification == "cold").count(),
+        "duplicate": base_q.filter(Candidate.classification == "duplicate").count(),
+    }
+
+    q = base_q.order_by(Candidate.id.desc())
     if status:
         try:
             q = q.filter(Candidate.status == CandidateStatus(status))
         except Exception:
             pass
+    if classification:
+        q = q.filter(Candidate.classification == classification)
     candidates = q.limit(200).all()
     db.close()
-    return render_template("candidates.html", candidates=candidates, statuses=[s.value for s in CandidateStatus], current=status)
+    return render_template(
+        "candidates.html",
+        candidates=candidates,
+        statuses=[s.value for s in CandidateStatus],
+        current=status,
+        current_classification=classification,
+        counts_by_classification=counts_by_classification,
+    )
 
 @bp.get("/<int:candidate_id>")
 @require_company
