@@ -4,6 +4,22 @@
 
 ---
 
+## What's loaded in the database right now (demo-ready snapshot)
+
+- **4 active vacancies** for FloorDSGN, all with bot screening configured (RU primary, deep-link `?start=apply_<id>`):
+  - id 5 — Эпокси / Микротопинг (специалист)
+  - id 6 — Бетонные полы / Установка и затирка
+  - id 11 — Помощник на полы (без опыта, обучаем)
+  - id 12 — Мастер декоративного бетона / терраццо
+- **6 Telegram destinations** all marked READY (Telethon access verified):
+  - @haifa_rabota, @rabotaisraelrabota, @izrail_rabota, @israels_jobs_haifa, @batyam_rabota, @rabota_v_izrail
+- **5 Facebook groups** imported, manual workflow ready.
+- **1 multi-channel TG campaign (paused)** — `Floor.DSGN — Concrete worker (multi-channel pilot)` (id 7), vacancy 6 → all 6 ready TG destinations, 4h interval, 6 max/day, hours 10–19 IL. Hit Run Now from `/campaigns/` to fire one staggered cycle (≈10 min total).
+- **4 Facebook posting runs** — one per FloorDSGN vacancy, each with an approved Hebrew variant + 5 FB groups in the queue. View at `/facebook/posting-runs/<id>/queue`. Auto-fire when FB session captured.
+- **5 demo candidates** seeded — mix of hot/warm/cold/interviewing in RU and HE, populating the Worker Responses panel.
+
+---
+
 ## State as of 2026-05-08
 
 - **Stack**: local docker on operator's Mac (`localhost:8080`), exposed via Cloudflare tunnel `basement-inner-extra-tyler.trycloudflare.com`.
