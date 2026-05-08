@@ -9,13 +9,29 @@ from worker.queue import enqueue_check_source, enqueue_test_message
 
 bp = Blueprint("sources", __name__, url_prefix="/sources")
 
+TELEGRAM_DESTINATION_KINDS = ("group", "channel", "chat")
+FACEBOOK_DESTINATION_KINDS = ("group", "page", "marketplace")
+ALL_DESTINATION_KINDS = TELEGRAM_DESTINATION_KINDS + tuple(
+    kind for kind in FACEBOOK_DESTINATION_KINDS if kind not in TELEGRAM_DESTINATION_KINDS
+)
 
-def _valid_tg_ref(value: str) -> bool:
+
+def _valid_tg_ref(value: str, destination_kind: str = "group") -> bool:
     if value.startswith("@") and len(value) > 1:
         return True
     if value.startswith("-100") and value[4:].isdigit():
         return True
+    if destination_kind == "chat" and value.isdigit() and len(value) >= 6:
+        return True
     return False
+
+
+def _is_facebook_destination_ready(source: Source) -> bool:
+    return bool(source.is_active and source.destination_url and (source.posting_mode or "assisted_manual") == "assisted_manual")
+
+
+def _is_telegram_destination_ready(source: Source) -> bool:
+    return bool(source.is_active and source.last_check_ok)
 
 
 @bp.get("/")
@@ -23,11 +39,36 @@ def _valid_tg_ref(value: str) -> bool:
 def list_sources():
     db = db_session()
     sources = scoped(db, Source).order_by(Source.id.desc()).all()
+    source_summary = {
+        "telegram_total": 0,
+        "telegram_ready": 0,
+        "telegram_needs_check": 0,
+        "facebook_total": 0,
+        "facebook_manual": 0,
+        "facebook_ready": 0,
+        "facebook_missing_url": 0,
+    }
+    for source in sources:
+        platform = (source.platform or "telegram").strip() or "telegram"
+        if platform == "facebook":
+            source_summary["facebook_total"] += 1
+            source_summary["facebook_manual"] += 1
+            if _is_facebook_destination_ready(source):
+                source_summary["facebook_ready"] += 1
+            else:
+                source_summary["facebook_missing_url"] += 1
+        else:
+            source_summary["telegram_total"] += 1
+            if _is_telegram_destination_ready(source):
+                source_summary["telegram_ready"] += 1
+            else:
+                source_summary["telegram_needs_check"] += 1
     db.close()
     return render_template(
         "sources.html",
         sources=sources,
-        types=[t.value for t in SourceType],
+        source_summary=source_summary,
+        destination_kind_options=ALL_DESTINATION_KINDS,
         platforms=["telegram", "facebook"],
         posting_modes=["auto", "assisted_manual"],
         error=request.args.get("error"),
@@ -50,29 +91,35 @@ def new_source():
         destination_ref = f"fb-{int(time.time())}-{id(destination_url) % 10000}"
     if not destination_ref:
         return redirect(url_for("sources.list_sources", error="Destination ref is required."))
-    if platform == "telegram" and not _valid_tg_ref(destination_ref):
-        return redirect(url_for("sources.list_sources", error="Telegram ref must look like @username or -1001234567890."))
+    if platform == "telegram" and not _valid_tg_ref(destination_ref, destination_kind):
+        return redirect(url_for("sources.list_sources", error="Telegram ref must look like @username, -1001234567890, or a numeric chat id (chat-kind only)."))
     if platform not in {"telegram", "facebook"}:
         return redirect(url_for("sources.list_sources", error="Choose a valid platform."))
-    if destination_kind not in {t.value for t in SourceType}:
-        return redirect(url_for("sources.list_sources", error="Choose a valid destination kind."))
+    allowed_destination_kinds = TELEGRAM_DESTINATION_KINDS if platform == "telegram" else FACEBOOK_DESTINATION_KINDS
+    if destination_kind not in allowed_destination_kinds:
+        return redirect(url_for("sources.list_sources", error="Choose a valid destination kind for this platform."))
     if platform == "facebook":
         posting_mode = "assisted_manual"
+        if not destination_url:
+            return redirect(url_for("sources.list_sources", error="Facebook pilot destinations require a direct destination URL."))
     if posting_mode not in {"auto", "assisted_manual"}:
         return redirect(url_for("sources.list_sources", error="Choose a valid posting mode."))
 
     db = db_session()
     folder = request.form.get("folder", "").strip() or None
+    source_type = SourceType(destination_kind) if platform == "telegram" else SourceType.group
     source = Source(
         company_id=current_company_id(),
         tg_ref=destination_ref,
         label=label,
-        source_type=SourceType(destination_kind),
+        source_type=source_type,
         platform=platform,
         destination_kind=destination_kind,
         posting_mode=posting_mode,
         destination_url=destination_url,
         folder=folder,
+        last_check_ok=(True if platform == "facebook" and destination_url else False),
+        last_check_message=("Facebook manual destination saved." if platform == "facebook" and destination_url else None),
     )
     db.add(source)
     try:
@@ -80,9 +127,16 @@ def new_source():
     except Exception:
         db.rollback()
         db.close()
-        return redirect(url_for("sources.list_sources", error="This destination already exists for the current company."))
+        ref = request.referrer
+        if ref:
+            return redirect(ref + ("&" if "?" in ref else "?") + "error=already_exists")
+        return redirect(url_for("sources.list_sources", error="This destination already exists."))
     db.close()
-    return redirect(url_for("sources.list_sources", message="Destination added. Run Check before any live send."))
+    # Return to referrer (Facebook/Telegram page) instead of sources list
+    ref = request.referrer
+    if ref:
+        return redirect(ref + ("&" if "?" in ref else "?") + "message=added")
+    return redirect(url_for("sources.list_sources", message="Destination added."))
 
 
 @bp.post("/check/<int:source_id>")

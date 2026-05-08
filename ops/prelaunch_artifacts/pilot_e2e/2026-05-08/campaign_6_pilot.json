@@ -1,0 +1,1 @@
+{"id":6,"company_id":1,"vacancy_id":1,"name":"Pilot E2E DM 2026-05-08","interval_minutes":60,"max_posts_per_day":10,"active_hours_json":"{\"start\": 9, \"end\": 22}","days_of_week_json":"[0, 1, 2, 3, 4, 5, 6]","is_running":false,"created_at":"2026-05-08 07:35:00.280994"}

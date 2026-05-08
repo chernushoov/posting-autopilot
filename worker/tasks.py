@@ -5,6 +5,7 @@ import logging
 from app.db import db_session
 from app.models import Source, Campaign, CampaignSource, Vacancy, Company, Candidate, CandidateStatus, PostingAttempt
 from common.ai import build_system_prompt
+from common.recruitbot_links import build_recruitbot_apply_link
 from bot.tg import tg_send_message_safe
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,9 @@ def _build_post_asset(vacancy: Vacancy):
             parts.append(f"Schedule: {vacancy.schedule_text}")
         if vacancy.contact_text:
             parts.append(f"Contact: {vacancy.contact_text}")
-        if vacancy.apply_url:
-            parts.append(f"Apply: {vacancy.apply_url}")
+        effective_apply_url = vacancy.apply_url or build_recruitbot_apply_link(vacancy.id)
+        if effective_apply_url:
+            parts.append(f"Apply: {effective_apply_url}")
         # Task 2.3: WhatsApp click-to-chat
         if getattr(vacancy, 'whatsapp_number', None):
             wa_num = vacancy.whatsapp_number.lstrip('+')
@@ -52,16 +54,69 @@ def _blocked_status_from_message(message: str) -> str:
         return "blocked_or_suspected"
     return "failed"
 
+
+def _should_clear_source_ready(message: str) -> bool:
+    lowered = (message or "").lower()
+    hard_failure_markers = [
+        "chat not found",
+        "username not occupied",
+        "peer_id_invalid",
+        "channel_invalid",
+        "bot is not a member",
+        "user not participant",
+        "have no rights",
+        "not enough rights",
+        "administrator rights",
+        "forbidden: bot was kicked",
+    ]
+    return any(marker in lowered for marker in hard_failure_markers)
+
+
+def _valid_tg_ref(value: str) -> bool:
+    if value.startswith("@") and len(value) > 1:
+        return True
+    if value.startswith("-100") and value[4:].isdigit():
+        return True
+    if value.isdigit() and len(value) >= 6:
+        return True
+    return False
+
 def check_source_access(source_id: int):
-    # MVP: stub. In real world: use Telegram Bot API getChat/getChatMember.
     db = db_session()
     s = db.query(Source).filter(Source.id == source_id).first()
     if not s:
         db.close(); return
-    # naive rule: if starts with @ or -100 -> assume ok
-    ok = s.tg_ref.startswith("@") or s.tg_ref.startswith("-100")
-    s.last_check_ok = bool(ok)
-    s.last_check_message = "format looks valid only (stub, not real membership proof)" if ok else "invalid tg_ref format"
+    if (s.platform or "telegram") == "facebook":
+        s.last_check_ok = bool(s.destination_url)
+        s.last_check_message = "Manual Facebook destination confirmed by operator." if s.destination_url else "Facebook destination URL is missing."
+        db.commit()
+        db.close()
+        return
+
+    if not _valid_tg_ref(s.tg_ref):
+        s.last_check_ok = False
+        s.last_check_message = "invalid tg_ref format"
+        db.commit()
+        db.close()
+        return
+
+    company = db.query(Company).filter(Company.id == s.company_id).first()
+    if not company or not company.tg_api_id or not company.tg_api_hash:
+        s.last_check_ok = True
+        s.last_check_message = "format looks valid, but Telegram account is not connected yet"
+        db.commit()
+        db.close()
+        return
+
+    from common.tg_client import check_dialog_access
+
+    result = check_dialog_access(int(company.tg_api_id), company.tg_api_hash, company.id, s.tg_ref)
+    s.last_check_ok = bool(result.get("ok"))
+    if result.get("ok"):
+        resolved_title = result.get("title") or s.label or s.tg_ref
+        s.last_check_message = f"Access confirmed via Telegram account: {resolved_title}"
+    else:
+        s.last_check_message = result.get("error") or "Unable to verify destination access"
     db.commit()
     db.close()
 
@@ -71,7 +126,10 @@ def send_test_message(source_id: int, text: str):
     if not s:
         db.close(); return
     ok, msg = tg_send_message_safe(s.tg_ref, text)
-    s.last_check_ok = ok
+    if ok:
+        s.last_check_ok = True
+    elif _should_clear_source_ready(msg):
+        s.last_check_ok = False
     s.last_check_message = msg
     db.commit()
     db.close()
@@ -80,7 +138,8 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
     # MVP: post vacancy text to each source once. Scheduler will call periodically.
     db = db_session()
     c = db.query(Campaign).filter(Campaign.id == campaign_id).first()
-    if not c or not c.is_running:
+    allow_paused_run = trigger == "operator_run_now"
+    if not c or (not c.is_running and not allow_paused_run):
         db.close(); return
     if c.interval_minutes <= 0:
         db.close(); return
@@ -174,10 +233,15 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
 
         post_text = f"{asset_title}\n\n{asset_body}".strip()
 
-        # Try Telethon (user account) first — this can post to any group the user is in
+        # Routing rules:
+        # - destination_kind == "chat": user-account Telethon CANNOT DM yourself, so use Bot API.
+        #   Bot API can DM any user who has /start'd the bot — perfect for pilot DM destinations.
+        # - Otherwise: try Telethon (user-account, posts to any group the user is in), Bot API as fallback.
         company = db.query(Company).filter(Company.id == c.company_id).first()
         telethon_ok = False
-        if company and company.tg_api_id and company.tg_api_hash:
+        kind = (s.destination_kind or s.source_type.value if hasattr(s, 'source_type') and s.source_type else 'group').lower()
+        use_telethon = bool(company and company.tg_api_id and company.tg_api_hash) and kind != "chat"
+        if use_telethon:
             from common.tg_client import post_to_group
             image = getattr(v, 'image_path', None)
             ok, msg = post_to_group(
@@ -190,19 +254,26 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
             )
             telethon_ok = True
             logger.info(f"[campaign_tick] Telethon post to {s.tg_ref}: ok={ok}, msg={msg}")
+            if not ok and ("Cannot find any entity" in (msg or "") or "PEER_ID_INVALID" in (msg or "")):
+                logger.info(f"[campaign_tick] Telethon could not resolve {s.tg_ref}, falling back to Bot API")
+                ok, msg = tg_send_message_safe(s.tg_ref, post_text)
+                telethon_ok = False
+                logger.info(f"[campaign_tick] Bot API fallback post to {s.tg_ref}: ok={ok}, msg={msg}")
         else:
-            # Fallback to Bot API (only works if bot is admin in the group)
+            # Bot API path (only works if bot is admin in the group OR target user has /start'd the bot)
             ok, msg = tg_send_message_safe(s.tg_ref, post_text)
             logger.info(f"[campaign_tick] Bot API post to {s.tg_ref}: ok={ok}, msg={msg}")
 
-        s.last_check_ok = ok
         s.last_check_message = msg
         if ok:
+            s.last_check_ok = True
             s.last_post_at = datetime.utcnow()
             attempt.result_status = "posted"
             attempt.operator_notes = f"Telegram post sent via {'Telethon' if telethon_ok else 'Bot API'}."
             remaining_posts -= 1
         else:
+            if _should_clear_source_ready(msg):
+                s.last_check_ok = False
             attempt.result_status = _blocked_status_from_message(msg)
             attempt.error_message = msg
     db.commit()
