@@ -49,19 +49,32 @@ def list_candidates():
 def view_candidate(candidate_id: int):
     db = db_session()
     c = scoped(db, Candidate).filter(Candidate.id == candidate_id).first()
+    if not c:
+        db.close()
+        return redirect(url_for("candidates.list_candidates"))
+
     v = None
-    if c and c.vacancy_id:
+    if c.vacancy_id:
         v = scoped(db, Vacancy).filter(Vacancy.id == c.vacancy_id).first()
     chat = []
-    if c:
+    try:
+        chat = json.loads(c.chat_log_json or "[]")
+    except Exception:
+        chat = []
+
+    # If this candidate is marked duplicate, surface the prior original by
+    # matching normalized phone within the same company. Operator sees one
+    # link "Дубль от #14 Сергей Бетонов" → can jump to the original record.
+    duplicate_of = None
+    if c.classification == "duplicate" and c.phone:
         try:
-            chat = json.loads(c.chat_log_json or "[]")
+            from bot.run_bot import find_duplicate_candidate
+            duplicate_of = find_duplicate_candidate(db, c.company_id, c.phone, exclude_id=c.id)
         except Exception:
-            chat = []
+            duplicate_of = None
+
     db.close()
-    if not c:
-        return redirect(url_for("candidates.list_candidates"))
-    return render_template("candidate_view.html", c=c, v=v, chat=chat)
+    return render_template("candidate_view.html", c=c, v=v, chat=chat, duplicate_of=duplicate_of)
 
 @bp.get("/export")
 @require_company

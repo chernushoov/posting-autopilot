@@ -97,13 +97,13 @@
     </div>
     {% if vacancy.bot_hot_criteria %}
     <div class="field">
-      <div class="field-label">Hot criteria <span class="badge hot">HOT</span></div>
+      <div class="field-label">{{ ui('bot_hot_label') }} <span class="badge hot">{{ ui('cls_hot') }}</span></div>
       <div class="field-value"><pre>{{ vacancy.bot_hot_criteria }}</pre></div>
     </div>
     {% endif %}
     {% if vacancy.bot_cold_criteria %}
     <div class="field">
-      <div class="field-label">Cold criteria <span class="badge cold">COLD</span></div>
+      <div class="field-label">{{ ui('bot_cold_label') }} <span class="badge cold">{{ ui('cls_cold') }}</span></div>
       <div class="field-value"><pre>{{ vacancy.bot_cold_criteria }}</pre></div>
     </div>
     {% endif %}

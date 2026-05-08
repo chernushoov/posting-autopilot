@@ -616,6 +616,39 @@ UI = {
     "vac_funnel_last_at": {"ru": "Последний отклик", "he": "פנייה אחרונה", "en": "Last applicant"},
     "view_all": {"ru": "Смотреть всех", "he": "הצג הכל", "en": "View all"},
     "when": {"ru": "Когда", "he": "מתי", "en": "When"},
+    # Campaigns + posting attempts (i18n leaks Tamar caught in re-test)
+    "manual_action_hint": {
+        "ru": "Открой канал, опубликуй вручную, потом сохрани результат ниже.",
+        "he": "פתח את היעד, פרסם ידנית, ושמור את התוצאה למטה.",
+        "en": "Open destination, publish manually, then save the result below.",
+    },
+    "campaign_pilot_focus": {
+        "ru": "Telegram авто + Facebook ручная публикация",
+        "he": "טלגרם אוטומטי + פייסבוק פרסום ידני",
+        "en": "Telegram auto + Facebook assisted/manual",
+    },
+    "ph_operator_notes": {
+        "ru": "Заметки оператора или причина ошибки",
+        "he": "הערות מפעיל או סיבת הכשל",
+        "en": "Paste operator notes or failure details",
+    },
+    "retry_btn": {"ru": "↻ Повторить", "he": "↻ נסה שוב", "en": "↻ Retry"},
+    "retry_hint": {
+        "ru": "Повторить попытку постинга для этой записи",
+        "he": "נסה שוב לפרסם את הרשומה הזו",
+        "en": "Retry this posting attempt now",
+    },
+    "retry_confirm": {
+        "ru": "Запустить повторную попытку постинга? Эта запись будет включена в следующий цикл и попытка отправится в течение минуты.",
+        "he": "להפעיל ניסיון פרסום נוסף? הרשומה הזו תיכנס למחזור הבא ותישלח תוך דקה.",
+        "en": "Retry posting now? This entry will be queued and the attempt will fire within a minute.",
+    },
+    # Duplicate cross-ref
+    "dup_of_label": {
+        "ru": "Дубль от",
+        "he": "כפילות של",
+        "en": "Duplicate of",
+    },
 }
 
 def ui(key: str, lang: str = "en", **kwargs) -> str:

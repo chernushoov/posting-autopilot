@@ -72,7 +72,7 @@
         <div class="small muted">{{ attempt.asset_body[:120] }}{% if attempt.asset_body|length > 120 %}...{% endif %}</div>
       </td>
       <td>
-        <div class="small muted">{{ attempt.operator_notes or "Open destination, publish manually, then save the result below." }}</div>
+        <div class="small muted">{{ attempt.operator_notes or ui('manual_action_hint') }}</div>
       </td>
     </tr>
     {% endfor %}
@@ -89,7 +89,7 @@
     <td>#{{ c.vacancy_id }}</td>
     <td>{{ c.interval_minutes }} min</td>
     <td>{{ ui("yes") if c.is_running else ui("no") }}</td>
-    <td class="small muted">Telegram auto + Facebook assisted/manual</td>
+    <td class="small muted">{{ ui('campaign_pilot_focus') }}</td>
     <td class="actions">
       <form method="post" action="/campaigns/run/{{ c.id }}">
         <button class="pill" type="submit">{{ ui("run_now") }}</button>
@@ -137,16 +137,22 @@
       <td>
         {% if attempt.result_status == "manual_action_required" %}
           <form method="post" action="/campaigns/attempt/{{ attempt.id }}/result" class="list">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <select name="result_status">
               <option value="posted">posted</option>
               <option value="failed">failed</option>
               <option value="blocked_or_suspected">blocked_or_suspected</option>
             </select>
-            <textarea name="operator_notes" rows="2" placeholder="Paste operator notes or failure details"></textarea>
+            <textarea name="operator_notes" rows="2" placeholder="{{ ui('ph_operator_notes') }}"></textarea>
             <button class="pill" type="submit">{{ ui("save_result") }}</button>
           </form>
+        {% elif attempt.result_status in ("failed", "blocked_or_suspected") %}
+          <form method="post" action="/campaigns/attempt/{{ attempt.id }}/retry" class="inline-form" onsubmit="return confirm({{ ui('retry_confirm') | tojson }})">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="pill" type="submit" title="{{ ui('retry_hint') }}">{{ ui('retry_btn') }}</button>
+          </form>
         {% else %}
-          <span class="small muted">n/a</span>
+          <span class="small muted">—</span>
         {% endif %}
       </td>
     </tr>

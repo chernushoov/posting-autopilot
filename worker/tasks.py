@@ -220,7 +220,14 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
         if (s.platform or "telegram") == "facebook":
             attempt.action_taken = "facebook_manual_prepare"
             attempt.result_status = "manual_action_required"
-            attempt.operator_notes = "Open the saved destination URL or destination ref, paste the prepared content, publish manually, then mark the result."
+            # Operator-facing instruction stored on the attempt row. Keep RU primary
+            # for the FloorDSGN pilot since the operator and customers are RU/HE.
+            # Tamar feedback 2026-05-08: this string was leaking English into a
+            # Russian-locale workspace. RU first, English follow-up for ops mixing.
+            attempt.operator_notes = (
+                "Открой канал/URL, скопируй подготовленный текст, опубликуй вручную, "
+                "затем отметь результат (Posted/Failed). · Open destination, paste content, mark result."
+            )
             s.last_check_message = "Manual Facebook action required."
             continue
 
