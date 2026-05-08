@@ -34,34 +34,77 @@ def build_system_prompt(company, vacancy_title: str | None = None, lang: str = "
     return "\n".join(parts)
 
 
-def score_candidate(vacancy_title: str, questions: list[str], answers: list[str], lang: str = "ru") -> dict:
+SCORING_SYSTEM_PROMPT_BY_TYPE = {
+    "recruitment": (
+        "You are a recruitment screening evaluator. "
+        "Score the candidate 0-100 based on their answers to screening questions for the given job vacancy. "
+        "Consider: relevance of experience, location fit, availability, work authorization, willingness."
+    ),
+    "realestate": (
+        "You are a rental applicant evaluator working for a real-estate broker. "
+        "Score this rental APPLICANT 0-100 based on how well they match the apartment's requirements. "
+        "Consider: move-in timing fit, household size vs apartment size, pets policy match, "
+        "willingness to pay deposit / first+last month, and proof of income (tlush) if mentioned. "
+        "An ideal applicant moves in within the listed timeframe, fits the apartment, has stable income, and accepts the deposit."
+    ),
+    "auto": (
+        "You are a used-car buyer-qualification evaluator working for a car dealer. "
+        "Score this BUYER 0-100 based on how serious + ready they are. "
+        "Consider: budget fit vs listing price, willingness to schedule a test drive within the week, "
+        "purchase intent (own vs reseller — own=hot, reseller=warm), payment method (cash/financing). "
+        "An ideal buyer has the budget, wants to view the car this week, will pay cash or has financing approved."
+    ),
+    "services": (
+        "You are a service-inquiry evaluator. "
+        "Score this CLIENT 0-100 based on the clarity of their need, timeline urgency, and location fit."
+    ),
+    "custom": (
+        "You are an inquiry evaluator. "
+        "Score 0-100 based on how good a fit the inquirer is for what's being offered."
+    ),
+}
+
+
+def score_candidate(vacancy_title: str, questions: list[str], answers: list[str], lang: str = "ru", listing_type: str = "recruitment") -> dict:
     """Score a candidate based on screening answers.
 
     Returns {"score": int 0-100, "summary": str, "provider": str}.
     Falls back to rule-based scoring if AI provider is unavailable.
+    listing_type drives the system prompt so realestate / auto / services
+    inquiries don't get evaluated as job applications.
     """
     provider = get_ai_provider()
     api_key = get_ai_api_key()
 
     if provider != "stub" and api_key:
         try:
-            return _score_with_openai(vacancy_title, questions, answers, lang, api_key)
+            return _score_with_openai(vacancy_title, questions, answers, lang, api_key, listing_type)
         except Exception as e:
             log.warning("AI scoring failed, falling back to rule-based: %s", e)
 
     return _score_rule_based(vacancy_title, questions, answers, lang)
 
 
-def _score_with_openai(vacancy_title: str, questions: list[str], answers: list[str], lang: str, api_key: str) -> dict:
+def _score_with_openai(vacancy_title: str, questions: list[str], answers: list[str], lang: str, api_key: str, listing_type: str = "recruitment") -> dict:
     """Score using OpenAI API."""
     from openai import OpenAI
 
     client = OpenAI(api_key=api_key)
     lang_name = LANG_NAMES.get(lang, "Russian")
+    system_intro = SCORING_SYSTEM_PROMPT_BY_TYPE.get(listing_type, SCORING_SYSTEM_PROMPT_BY_TYPE["recruitment"])
 
     qa_text = ""
     for i, (q, a) in enumerate(zip(questions, answers), 1):
         qa_text += f"Q{i}: {q}\nA{i}: {a}\n\n"
+
+    listing_label_by_type = {
+        "recruitment": "Vacancy",
+        "realestate":  "Apartment listing",
+        "auto":        "Car listing",
+        "services":    "Service offering",
+        "custom":      "Listing",
+    }
+    listing_label = listing_label_by_type.get(listing_type, "Listing")
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -69,16 +112,14 @@ def _score_with_openai(vacancy_title: str, questions: list[str], answers: list[s
             {
                 "role": "system",
                 "content": (
-                    "You are a recruitment screening evaluator. "
-                    "Score the candidate 0-100 based on their answers to screening questions for the given vacancy. "
-                    "Consider: relevance of experience, location fit, availability, work authorization, willingness. "
+                    f"{system_intro} "
                     f"Return the summary in {lang_name}. "
                     "Respond ONLY with valid JSON: {\"score\": <int>, \"summary\": \"<1-2 sentences>\"}"
                 ),
             },
             {
                 "role": "user",
-                "content": f"Vacancy: {vacancy_title}\n\nScreening answers:\n{qa_text}",
+                "content": f"{listing_label}: {vacancy_title}\n\nScreening answers:\n{qa_text}",
             },
         ],
         temperature=0.3,

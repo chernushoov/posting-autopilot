@@ -593,7 +593,7 @@ async def on_message(message: Message):
 
                 if not c.score:
                     v_title = vacancy.title if vacancy else "Unknown"
-                    result = score_candidate(v_title, questions, user_answers, lang)
+                    result = score_candidate(v_title, questions, user_answers, lang, listing_type=(vacancy.listing_type or "recruitment") if vacancy else "recruitment")
                     c.score = result["score"]
                     c.summary = result["summary"]
 
@@ -677,7 +677,7 @@ async def on_message(message: Message):
             user_answers = [m["text"] for m in log if m.get("role") == "user"]
             v_title = vacancy.title if vacancy else "Unknown"
 
-            result = score_candidate(v_title, questions, user_answers, lang)
+            result = score_candidate(v_title, questions, user_answers, lang, listing_type=(vacancy.listing_type or "recruitment") if vacancy else "recruitment")
             c.score = result["score"]
             c.summary = result["summary"]
 
@@ -747,7 +747,7 @@ async def on_contact(message: Message):
 
         if not c.score:
             v_title = vacancy.title if vacancy else "Unknown"
-            result = score_candidate(v_title, questions, user_answers, lang)
+            result = score_candidate(v_title, questions, user_answers, lang, listing_type=(vacancy.listing_type or "recruitment") if vacancy else "recruitment")
             c.score = result["score"]
             c.summary = result["summary"]
 

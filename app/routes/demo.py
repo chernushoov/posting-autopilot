@@ -197,32 +197,102 @@ def api_simulate():
         lang = (vacancy.language or "ru").lower()
         questions = get_screening_questions(vacancy, lang)
 
-        canned_by_lang = {
-            "ru": [
-                "5 лет опыта на промышленных бетонных полах, работал на крупных складах и паркингах",
-                "Тель-Авив, готов ездить по всей стране, у меня есть машина",
-                "Документы в порядке, виза работника",
-                "Готов выйти на следующей неделе",
-                "Готов уточнить остальные детали на интервью",
-            ],
-            "he": [
-                "5 שנות ניסיון בבטון תעשייתי, עבדתי במחסנים גדולים ובחניונים",
-                "תל אביב, מוכן לעבוד בכל הארץ, יש לי רכב",
-                "מסמכים בסדר, ויזת עובד",
-                "מוכן להתחיל בשבוע הבא",
-                "מוכן להבהיר פרטים נוספים בריאיון",
-            ],
-            "en": [
-                "5 years experience on industrial concrete floors, large warehouses and parking lots",
-                "Tel Aviv, ready to travel anywhere in the country, I have a car",
-                "Documents in order, work visa",
-                "Ready to start next week",
-                "Happy to clarify in interview",
-            ],
+        # Canned answers per listing_type so the demo simulation looks realistic
+        # for ANY vertical, not just recruitment. AI scoring + classification then
+        # rate each set against the actual vacancy.bot_qualifying_questions, so
+        # operator sees vertical-correct outputs in the notification.
+        listing_type = (vacancy.listing_type or "recruitment").lower()
+        canned_by_type_lang = {
+            "recruitment": {
+                "ru": [
+                    "5 лет опыта на промышленных бетонных полах, работал на крупных складах и паркингах",
+                    "Тель-Авив, готов ездить по всей стране, у меня есть машина",
+                    "Документы в порядке, виза работника",
+                    "Готов выйти на следующей неделе",
+                ],
+                "he": [
+                    "5 שנות ניסיון בבטון תעשייתי, עבדתי במחסנים גדולים ובחניונים",
+                    "תל אביב, מוכן לעבוד בכל הארץ, יש לי רכב",
+                    "מסמכים בסדר, ויזת עובד",
+                    "מוכן להתחיל בשבוע הבא",
+                ],
+                "en": [
+                    "5 years experience on industrial concrete floors, warehouses and parking",
+                    "Tel Aviv, ready to travel anywhere in the country, I have a car",
+                    "Documents in order, work visa",
+                    "Ready to start next week",
+                ],
+            },
+            "realestate": {
+                "ru": [
+                    "Хочу въехать с 1 июня 2026",
+                    "Будем жить вдвоём — я и жена, оба работаем в hi-tech",
+                    "Без домашних животных",
+                    "Готовы внести первый и последний месяц + банковский залог (тлуш с работы покажу)",
+                ],
+                "he": [
+                    "אני רוצה להיכנס מ-1 ביוני 2026",
+                    "נגור שניים — אני ואשתי, שנינו עובדים בהייטק",
+                    "אין לנו חיות מחמד",
+                    "מוכנים להפקיד חודש ראשון + אחרון + ערבות בנקאית. אביא תלוש שכר",
+                ],
+                "en": [
+                    "Want to move in by June 1, 2026",
+                    "Two of us — me and my wife, both work in hi-tech",
+                    "No pets",
+                    "Happy to pay first and last month + bank guarantee, will bring payslip",
+                ],
+            },
+            "auto": {
+                "ru": [
+                    "Бюджет до 65 000 ₪, готов рассмотреть до 70 если состояние идеальное",
+                    "Хочу посмотреть в эти выходные, тест-драйв",
+                    "Себе, не на перепродажу — нужна на каждый день, ребёнка возить",
+                    "Платёж наличными, кредит не нужен",
+                ],
+                "he": [
+                    "תקציב עד 65,000 ₪, אם המצב מצוין אפשר עד 70",
+                    "רוצה לראות סוף השבוע הזה, מבחן נסיעה",
+                    "לעצמי לשימוש יומי — מסיע ילד",
+                    "תשלום במזומן, ללא הלוואה",
+                ],
+                "en": [
+                    "Budget up to ₪65,000, can stretch to ₪70k for excellent condition",
+                    "Want to see this weekend, test drive",
+                    "For myself, daily use, taking kid to school",
+                    "Cash payment, no financing needed",
+                ],
+            },
+            "services": {
+                "ru": [
+                    "Нужен срочно, желательно до конца недели",
+                    "Тель-Авив, могу принять у себя или встретиться у вас",
+                    "Бюджет в пределах ваших стандартных расценок",
+                ],
+                "he": [
+                    "דרוש בדחיפות, רצוי עד סוף השבוע",
+                    "תל אביב, יכול לקבל אצלי או להגיע אליכם",
+                    "תקציב במסגרת המחירים הסטנדרטיים שלכם",
+                ],
+                "en": [
+                    "Need it urgently, ideally by end of week",
+                    "Tel Aviv, can host or visit you",
+                    "Budget within your standard rates",
+                ],
+            },
         }
-        answers = list(canned_by_lang.get(lang, canned_by_lang["ru"]))[: max(len(questions), 1)]
+        per_type = canned_by_type_lang.get(listing_type, canned_by_type_lang["recruitment"])
+        answers = list(per_type.get(lang, per_type.get("ru", [])))[: max(len(questions), 1)]
+        # Pad with type-appropriate fallback if the vacancy has more questions than canned set
+        fallback_by_type = {
+            "recruitment": "Готов уточнить на интервью",
+            "realestate":  "Готов уточнить на просмотре",
+            "auto":        "Готов уточнить на тест-драйве",
+            "services":    "Готов уточнить детали по WhatsApp",
+            "custom":      "Готов уточнить детали",
+        }
         while len(answers) < len(questions):
-            answers.append("Готов уточнить на интервью")
+            answers.append(fallback_by_type.get(listing_type, "Готов уточнить детали"))
 
         chat_log = []
         for q, a in zip(questions, answers):
@@ -244,7 +314,7 @@ def api_simulate():
         db.add(candidate)
         db.flush()
 
-        scoring = score_candidate(vacancy.title, questions, answers, lang)
+        scoring = score_candidate(vacancy.title, questions, answers, lang, listing_type=(vacancy.listing_type or "recruitment"))
         candidate.score = int(scoring.get("score", 0))
         candidate.summary = scoring.get("summary") or ""
         candidate.classification = classify_candidate(vacancy, candidate, questions, answers)
