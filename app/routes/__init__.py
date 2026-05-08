@@ -13,6 +13,7 @@ from .prospecting import bp as prospecting_bp
 from .registration import bp as registration_bp
 from .billing import bp as billing_bp
 from .profile import bp as profile_bp
+from .demo import bp as demo_bp
 
 def register_routes(app):
     app.register_blueprint(auth_bp)
@@ -30,3 +31,4 @@ def register_routes(app):
     app.register_blueprint(analytics_bp)
     app.register_blueprint(pricing_bp)
     app.register_blueprint(prospecting_bp)
+    app.register_blueprint(demo_bp)
