@@ -649,6 +649,41 @@ UI = {
         "he": "כפילות של",
         "en": "Duplicate of",
     },
+    # Multi-photo for real estate / cars listings
+    "photos_label": {"ru": "Фото", "he": "תמונות", "en": "Photos"},
+    "photos_helper": {
+        "ru": "Можно выбрать несколько файлов сразу. Для квартир рекомендуем 8–15 фото, для авто 6–10.",
+        "he": "ניתן לבחור מספר קבצים בבת אחת. לדירות מומלץ 8–15 תמונות, לרכב 6–10.",
+        "en": "Pick multiple files at once. 8–15 recommended for apartments, 6–10 for cars.",
+    },
+    "photos_existing_count": {"ru": "Сейчас прикреплено", "he": "מצורפות כעת", "en": "Currently attached"},
+    "photos_replace_helper": {
+        "ru": "Удалить старые и заменить на новые загруженные",
+        "he": "מחק את הישנות והחלף בחדשות",
+        "en": "Delete the existing photos and replace with newly uploaded",
+    },
+    # Listing-type-driven label overrides — Tamar's "Зарплата" makes no sense for rentals,
+    # Misha's complaint about "vacancy/candidate" terminology, Boris's "schedule" for cars.
+    # Form labels remap based on form_values.listing_type (or the active template).
+    "salary_recruitment": {"ru": "Зарплата", "he": "שכר", "en": "Salary"},
+    "salary_realestate":  {"ru": "Цена / месяц",     "he": "מחיר / חודש",        "en": "Rent / month"},
+    "salary_auto":        {"ru": "Цена",              "he": "מחיר",                "en": "Price"},
+    "salary_services":    {"ru": "Стоимость услуги",  "he": "עלות השירות",         "en": "Service price"},
+
+    "schedule_recruitment": {"ru": "График",              "he": "לוח זמנים",        "en": "Schedule"},
+    "schedule_realestate":  {"ru": "Свободна с",          "he": "פנויה מ-",          "en": "Available from"},
+    "schedule_auto":        {"ru": "Год / Пробег",        "he": "שנה / קילומטראז'",  "en": "Year / Mileage"},
+    "schedule_services":    {"ru": "Доступность",         "he": "זמינות",            "en": "Availability"},
+
+    "ph_salary_recruitment": {"ru": "Например: 55 ₪/час или 12000 ₪/мес", "he": "למשל: 55 ₪/שעה", "en": "e.g. 55 ₪/hour"},
+    "ph_salary_realestate":  {"ru": "Например: 7500 ₪/мес",                "he": "למשל: 7500 ₪/חודש", "en": "e.g. 7500 ₪/month"},
+    "ph_salary_auto":        {"ru": "Например: 62000 ₪",                   "he": "למשל: 62000 ₪",     "en": "e.g. 62000 ₪"},
+    "ph_salary_services":    {"ru": "Например: 350 ₪ / выезд",             "he": "למשל: 350 ₪",        "en": "e.g. 350 ₪ / visit"},
+
+    "ph_schedule_recruitment": {"ru": "Например: Вс-Чт 07:00–16:00", "he": "למשל: א׳-ה׳ 07:00–16:00", "en": "e.g. Sun-Thu, 07:00-16:00"},
+    "ph_schedule_realestate":  {"ru": "Например: с 1 июля 2026",      "he": "למשל: מ-1 ביולי 2026",     "en": "e.g. from 1 July 2026"},
+    "ph_schedule_auto":        {"ru": "Например: 2019 / 80,000 км",   "he": "למשל: 2019 / 80,000 ק״מ", "en": "e.g. 2019 / 80,000 km"},
+    "ph_schedule_services":    {"ru": "Например: с понедельника",     "he": "למשל: מיום שני",            "en": "e.g. starting Monday"},
 }
 
 def ui(key: str, lang: str = "en", **kwargs) -> str:

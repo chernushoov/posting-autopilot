@@ -199,7 +199,8 @@ class Vacancy(Base):
     bot_hot_criteria = Column(Text, nullable=True)
     bot_cold_criteria = Column(Text, nullable=True)
     whatsapp_number = Column(String(20), nullable=True)  # Task 2.3: WhatsApp click-to-chat
-    image_path = Column(String(500), nullable=True)  # uploaded photo path
+    image_path = Column(String(500), nullable=True)  # legacy single primary photo path
+    images_json = Column(Text, nullable=True)  # JSON array of upload paths for carousel (real estate / cars)
 
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

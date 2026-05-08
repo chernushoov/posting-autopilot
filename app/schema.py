@@ -40,6 +40,11 @@ def bootstrap_schema() -> None:
             "bot_cold_criteria": "TEXT",
             "whatsapp_number": "VARCHAR(20)",
             "image_path": "VARCHAR(500)",
+            # Multi-photo support — JSON array of upload paths. Real estate
+            # listings need 8-15 photos per apartment; cars need 8-15 too.
+            # Recruitment usually one photo. image_path stays as legacy "primary"
+            # photo; images_json is the canonical list when set.
+            "images_json": "TEXT",
         },
     )
     _ensure_columns(

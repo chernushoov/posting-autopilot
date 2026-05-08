@@ -72,6 +72,18 @@ def create_app():
         static_dir = _os.path.join(app.root_path, "static")
         return send_from_directory(static_dir, "favicon.ico", mimetype="image/x-icon")
 
+    # Serve uploaded photos (vacancy carousel for real estate / cars). Files
+    # live in <repo>/data/uploads/<basename>; the route only resolves the
+    # basename so path-traversal attempts ("../etc/passwd") are blocked by
+    # send_from_directory.
+    @app.route("/uploads/<path:filename>")
+    def uploaded_file(filename: str):
+        from flask import send_from_directory
+        import os as _os
+        upload_dir = _os.path.join(app.root_path, "..", "data", "uploads")
+        upload_dir = _os.path.abspath(upload_dir)
+        return send_from_directory(upload_dir, filename)
+
     # Trial expiration check middleware
     @app.before_request
     def check_trial_expiration():

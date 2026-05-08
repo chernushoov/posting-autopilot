@@ -67,12 +67,34 @@
   <div class="wiz-step" data-step="2">
     <div class="grid2">
       <div>
-        <label>{{ ui("salary") }}</label>
-        <input name="salary_text" value="{{ form_values.get('salary_text', '') }}" placeholder="{{ ui('ph_salary') }}">
+        <label id="lbl-salary"
+               data-l-recruitment="{{ ui('salary_recruitment') }}"
+               data-l-realestate="{{ ui('salary_realestate') }}"
+               data-l-auto="{{ ui('salary_auto') }}"
+               data-l-services="{{ ui('salary_services') }}">
+          {{ ui("salary") }}
+        </label>
+        <input name="salary_text" id="f-salary" value="{{ form_values.get('salary_text', '') }}"
+               placeholder="{{ ui('ph_salary') }}"
+               data-ph-recruitment="{{ ui('ph_salary_recruitment') }}"
+               data-ph-realestate="{{ ui('ph_salary_realestate') }}"
+               data-ph-auto="{{ ui('ph_salary_auto') }}"
+               data-ph-services="{{ ui('ph_salary_services') }}">
       </div>
       <div>
-        <label>{{ ui("schedule") }}</label>
-        <input name="schedule_text" value="{{ form_values.get('schedule_text', '') }}" placeholder="{{ ui('ph_schedule') }}">
+        <label id="lbl-schedule"
+               data-l-recruitment="{{ ui('schedule_recruitment') }}"
+               data-l-realestate="{{ ui('schedule_realestate') }}"
+               data-l-auto="{{ ui('schedule_auto') }}"
+               data-l-services="{{ ui('schedule_services') }}">
+          {{ ui("schedule") }}
+        </label>
+        <input name="schedule_text" id="f-schedule" value="{{ form_values.get('schedule_text', '') }}"
+               placeholder="{{ ui('ph_schedule') }}"
+               data-ph-recruitment="{{ ui('ph_schedule_recruitment') }}"
+               data-ph-realestate="{{ ui('ph_schedule_realestate') }}"
+               data-ph-auto="{{ ui('ph_schedule_auto') }}"
+               data-ph-services="{{ ui('ph_schedule_services') }}">
       </div>
     </div>
     <div class="grid2">
@@ -92,9 +114,20 @@
         <div class="small muted" style="margin-top:6px">{{ ui('apply_link_helper') }}</div>
       </div>
       <div>
-        <label>{{ ui('photo_label') }}</label>
-        {% if existing_image %}<div class="small muted" style="margin-bottom:6px">{{ ui('photo_existing') }}: {{ existing_image.split('/')[-1] }}</div>{% endif %}
-        <input type="file" name="image" accept="image/*" style="font-size:13px">
+        <label>{{ ui('photos_label') }}</label>
+        {% if existing_images %}
+        <div class="small muted" style="margin-bottom:6px">
+          {{ ui('photos_existing_count') }}: <b>{{ existing_images|length }}</b>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+            {% for img in existing_images %}<span class="pill" style="font-size:11px;padding:2px 8px">{{ img.split('/')[-1][:24] }}</span>{% endfor %}
+          </div>
+          <label class="small" style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer">
+            <input type="checkbox" name="replace_photos">{{ ui('photos_replace_helper') }}
+          </label>
+        </div>
+        {% endif %}
+        <input type="file" name="images" accept="image/*" multiple style="font-size:13px">
+        <div class="small muted" style="margin-top:4px">{{ ui('photos_helper') }}</div>
       </div>
     </div>
 
@@ -206,11 +239,37 @@ function loadTemplate(key) {
       document.querySelectorAll('.template-btn').forEach(b => b.style.background = '');
       var btn = document.querySelector('[data-template="'+key+'"]');
       if (btn) btn.style.background = 'var(--accent)';
+      // Re-apply listing-type labels so salary/schedule labels match the new type
+      applyListingTypeLabels();
       // Jump to step 3 since the template is mostly bot-config — operator confirms there.
       wizShow(3);
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => wizShow(1));
+function applyListingTypeLabels() {
+  // Re-label salary/schedule fields based on the listing type so "Зарплата"
+  // doesn't show on a rental listing and "График" doesn't show on a car ad.
+  const lt = (document.getElementById('f-listing-type') || {}).value || 'recruitment';
+  ['lbl-salary', 'lbl-schedule'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const next = el.dataset['l' + lt[0].toUpperCase() + lt.slice(1).replace(/[A-Z]/g, '')];
+    const lookup = { recruitment: el.dataset.lRecruitment, realestate: el.dataset.lRealestate, auto: el.dataset.lAuto, services: el.dataset.lServices };
+    if (lookup[lt]) el.textContent = lookup[lt];
+  });
+  ['f-salary', 'f-schedule'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const lookup = { recruitment: el.dataset.phRecruitment, realestate: el.dataset.phRealestate, auto: el.dataset.phAuto, services: el.dataset.phServices };
+    if (lookup[lt]) el.placeholder = lookup[lt];
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  wizShow(1);
+  applyListingTypeLabels();
+  const sel = document.getElementById('f-listing-type');
+  if (sel) sel.addEventListener('change', applyListingTypeLabels);
+});
 </script>
 {% endblock %}

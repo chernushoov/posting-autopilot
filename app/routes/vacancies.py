@@ -110,6 +110,21 @@ def view_vacancy(vacancy_id: int):
     recent_candidates = candidates_for_vac[:8]
 
     apply_link = vacancy.apply_url or build_recruitbot_apply_link(vacancy.id)
+
+    photo_paths: list[str] = []
+    if vacancy.images_json:
+        try:
+            parsed = json.loads(vacancy.images_json)
+            if isinstance(parsed, list):
+                photo_paths = [str(p) for p in parsed if p]
+        except Exception:
+            photo_paths = []
+    if not photo_paths and vacancy.image_path:
+        photo_paths = [vacancy.image_path]
+    # Convert filesystem paths to /uploads/<basename> URLs (served by app)
+    import os as _os
+    photo_urls = [f"/uploads/{_os.path.basename(p)}" for p in photo_paths]
+
     db.close()
     return render_template(
         "vacancy_detail.html",
@@ -119,6 +134,7 @@ def view_vacancy(vacancy_id: int):
         apply_link=apply_link,
         funnel=funnel,
         recent_candidates=recent_candidates,
+        photo_urls=photo_urls,
     )
 
 
@@ -183,6 +199,16 @@ def edit_vacancy(vacancy_id: int):
         "bot_cold_criteria": v.bot_cold_criteria or "",
         "whatsapp_number": v.whatsapp_number or "",
     }
+    existing_images: list[str] = []
+    if v.images_json:
+        try:
+            parsed = json.loads(v.images_json)
+            if isinstance(parsed, list):
+                existing_images = [str(p) for p in parsed if p]
+        except Exception:
+            existing_images = []
+    if not existing_images and v.image_path:
+        existing_images = [v.image_path]
     return render_template(
         "vacancy_new.html",
         languages=[l.value for l in Language],
@@ -190,6 +216,7 @@ def edit_vacancy(vacancy_id: int):
         templates=get_all_templates(),
         edit_id=v.id,
         existing_image=v.image_path,
+        existing_images=existing_images,
     )
 
 
@@ -245,16 +272,45 @@ def edit_vacancy_post(vacancy_id: int):
     if final_post_body.strip():
         v.final_post_body = final_post_body
 
+    # Multi-photo upload — supports new `images[]` field (multiple file inputs)
+    # plus legacy single `image`. New uploads append to existing images_json by default.
+    import os as _os, time as _time
+    upload_dir = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'uploads')
+    _os.makedirs(upload_dir, exist_ok=True)
+
+    new_paths: list[str] = []
+    files = request.files.getlist('images') if 'images' in request.files else []
     if 'image' in request.files:
-        img = request.files['image']
-        if img and img.filename:
-            import os, time as _time
-            upload_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            safe_name = f"{int(_time.time())}_{img.filename.replace(' ', '_')}"
-            save_path = os.path.join(upload_dir, safe_name)
-            img.save(save_path)
-            v.image_path = save_path
+        single = request.files.get('image')
+        if single and single.filename:
+            files.append(single)
+    for img in files:
+        if not img or not img.filename:
+            continue
+        safe_name = f"{int(_time.time() * 1000)}_{img.filename.replace(' ', '_')}"
+        save_path = _os.path.join(upload_dir, safe_name)
+        img.save(save_path)
+        new_paths.append(save_path)
+
+    # Replace mode for edit: if operator checks "replace_photos" we discard the
+    # old set; default is append so adding 2 more photos to a 5-photo listing
+    # gives 7. Empty upload + replace_photos=on means delete all photos.
+    replace_photos = (request.form.get("replace_photos") or "") == "on"
+    existing_paths: list[str] = []
+    if not replace_photos and v.images_json:
+        try:
+            parsed = json.loads(v.images_json)
+            if isinstance(parsed, list):
+                existing_paths = [str(p) for p in parsed if p]
+        except Exception:
+            existing_paths = []
+    combined = (existing_paths + new_paths) if not replace_photos else new_paths
+    if combined:
+        v.images_json = json.dumps(combined, ensure_ascii=False)
+        v.image_path = combined[0]  # legacy primary
+    elif replace_photos:
+        v.images_json = None
+        v.image_path = None
 
     db.commit()
     db.close()
@@ -305,19 +361,27 @@ def new_vacancy_post():
     bot_cold_criteria = request.form.get("bot_cold_criteria", "").strip() or None
     whatsapp_number = request.form.get("whatsapp_number", "").strip() or None
 
-    # Image upload
-    image_path = None
+    # Multi-photo upload — accepts `images[]` (preferred for real estate / cars)
+    # or legacy single `image`. All saved files are stored in images_json;
+    # image_path becomes the first one for backward compatibility.
+    import os as _os, time as _time
+    upload_dir = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'uploads')
+    _os.makedirs(upload_dir, exist_ok=True)
+    saved_paths: list[str] = []
+    files = request.files.getlist('images') if 'images' in request.files else []
     if 'image' in request.files:
-        img = request.files['image']
-        if img and img.filename:
-            import os
-            upload_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            import time as _time
-            safe_name = f"{int(_time.time())}_{img.filename.replace(' ', '_')}"
-            save_path = os.path.join(upload_dir, safe_name)
-            img.save(save_path)
-            image_path = save_path
+        single = request.files.get('image')
+        if single and single.filename:
+            files.append(single)
+    for img in files:
+        if not img or not img.filename:
+            continue
+        safe_name = f"{int(_time.time() * 1000)}_{img.filename.replace(' ', '_')}"
+        save_path = _os.path.join(upload_dir, safe_name)
+        img.save(save_path)
+        saved_paths.append(save_path)
+    image_path = saved_paths[0] if saved_paths else None
+    images_json_value = json.dumps(saved_paths, ensure_ascii=False) if saved_paths else None
 
     # Parse bot qualifying questions as JSON array
     bot_qq = None
@@ -348,6 +412,7 @@ def new_vacancy_post():
         bot_cold_criteria=bot_cold_criteria,
         whatsapp_number=whatsapp_number,
         image_path=image_path,
+        images_json=images_json_value,
     )
     db.add(vacancy)
     db.flush()  # get vacancy.id
