@@ -139,6 +139,37 @@ def new_source():
     return redirect(url_for("sources.list_sources", message="Destination added."))
 
 
+@bp.post("/check-all")
+@require_company
+def check_all_sources():
+    """Bulk-enqueue Telethon access checks for every Telegram source in the
+    current company that isn't already marked ready. Useful right after a
+    fresh sync_dialogs / curated import so the operator doesn't click 5+
+    individual Check buttons.
+
+    Facebook destinations are not queued — they're verified differently
+    (URL presence) via the per-source check_source path.
+    """
+    db = db_session()
+    sources = scoped(db, Source).filter(
+        Source.platform == "telegram",
+        Source.is_active == True,
+        Source.last_check_ok == False,
+    ).all()
+    queued = 0
+    for s in sources:
+        try:
+            enqueue_check_source(s.id)
+            queued += 1
+        except Exception:
+            continue
+    db.close()
+    return redirect(url_for(
+        "sources.list_sources",
+        message=f"Queued Telethon access checks for {queued} pending Telegram destinations.",
+    ))
+
+
 @bp.post("/check/<int:source_id>")
 @require_company
 def check_source(source_id: int):

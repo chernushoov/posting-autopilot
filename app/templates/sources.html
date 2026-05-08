@@ -1,7 +1,34 @@
 {% extends "_layout.html" %}
 {% block content %}
+{% set focus_source = request.args.get('focus_source', '') %}
 <div class="row">
   <h1>{{ ui("destinations_title") }}</h1>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <h2 style="margin-top:0">Pilot Destination Rules</h2>
+  <div class="grid3">
+    <div class="card card-flat">
+      <div class="eyebrow">Telegram</div>
+      <div style="font-size:28px;font-weight:700">{{ source_summary.telegram_ready }}/{{ source_summary.telegram_total }}</div>
+      <div class="small muted">ready for auto posting · {{ source_summary.telegram_needs_check }} still need check</div>
+    </div>
+    <div class="card card-flat">
+      <div class="eyebrow">Facebook</div>
+      <div style="font-size:28px;font-weight:700">{{ source_summary.facebook_ready }}/{{ source_summary.facebook_total }}</div>
+      <div class="small muted">manual destinations with direct URL · {{ source_summary.facebook_missing_url }} missing URL</div>
+    </div>
+    <div class="card card-flat">
+      <div class="eyebrow">Operator rule</div>
+      <div class="small muted" style="margin-top:8px">Telegram may auto-post only after READY. Facebook must be prepared here and confirmed later in Pilot Runs.</div>
+      {% if source_summary.telegram_needs_check > 0 %}
+      <form method="post" action="/sources/check-all" style="margin-top:10px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="pill" type="submit" style="width:100%">▶ Check {{ source_summary.telegram_needs_check }} pending Telegram destinations</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
 <form method="post" action="/sources/new" class="card">
@@ -14,8 +41,8 @@
     </div>
     <div>
       <label>{{ ui("dest_kind") }}</label>
-      <select name="source_type">
-        {% for t in types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      <select name="destination_kind" id="destination-kind-select">
+        {% for kind in destination_kind_options %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
       </select>
     </div>
   </div>
@@ -41,7 +68,7 @@
 <table class="table">
   <tr><th>ID</th><th>{{ ui("platform") }}</th><th>{{ ui("dest_ref") }}</th><th>Mode</th><th>{{ ui("ready") }}</th><th>{{ ui("actions") }}</th></tr>
   {% for s in sources %}
-  <tr>
+  <tr id="source-{{ s.id }}" class="{% if focus_source == s.id|string %}focus-row{% endif %}">
     <td>{{ s.id }}</td>
     <td>{{ s.platform or "telegram" }}</td>
     <td>
@@ -76,4 +103,28 @@
   </tr>
   {% endfor %}
 </table>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const platformSelect = document.querySelector('select[name="platform"]');
+  const kindSelect = document.getElementById('destination-kind-select');
+  if (!platformSelect || !kindSelect) return;
+  const options = {
+    telegram: ['group', 'channel', 'chat'],
+    facebook: ['group', 'page', 'marketplace'],
+  };
+  function syncKinds() {
+    const platform = platformSelect.value === 'facebook' ? 'facebook' : 'telegram';
+    const values = options[platform];
+    const current = kindSelect.value;
+    kindSelect.innerHTML = values.map((value) => `<option value="${value}">${value}</option>`).join('');
+    if (values.includes(current)) {
+      kindSelect.value = current;
+    }
+  }
+  platformSelect.addEventListener('change', syncKinds);
+  syncKinds();
+})();
+</script>
 {% endblock %}
