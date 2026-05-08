@@ -21,7 +21,8 @@
     </td>
     <td>{{ ui("yes") if v.is_active else ui("no") }}</td>
     <td>
-      <a class="pill" href="/vacancies/{{ v.id }}" style="margin-right:6px">View</a>
+      <a class="pill" href="/vacancies/{{ v.id }}" style="margin-right:6px">{{ ui('open') }}</a>
+      <a class="pill" href="/vacancies/{{ v.id }}/edit" style="margin-right:6px">{{ ui('edit_vacancy_action') }}</a>
       <form method="post" action="/vacancies/toggle/{{ v.id }}" style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="pill" type="submit">{{ ui("toggle") }}</button>

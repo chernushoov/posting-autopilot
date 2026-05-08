@@ -80,11 +80,12 @@
       <div class="copilot-actions">
         {% for action in operator_copilot.actions %}
           {% if action.method == 'POST' %}
-          <form method="post" action="{{ action.href }}" class="copilot-action-form">
+          <form method="post" action="{{ action.href }}" class="copilot-action-form" {% if action.confirm %}onsubmit="return confirm({{ action.confirm|tojson }})"{% endif %}>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</button>
           </form>
           {% else %}
-          <a href="{{ action.href }}" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</a>
+          <a href="{{ action.href }}" class="{{ 'btn' if action.primary else 'pill' }}" {% if action.confirm %}onclick="return confirm({{ action.confirm|tojson }})"{% endif %}>{{ action.label }}</a>
           {% endif %}
         {% endfor %}
       </div>

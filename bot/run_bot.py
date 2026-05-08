@@ -91,6 +91,54 @@ def extract_phone(text: str) -> str | None:
     return None
 
 
+def _normalize_phone(phone: str) -> str:
+    """Normalize a phone for cross-candidate comparison.
+
+    Strip everything that isn't a digit. For Israel numbers we additionally drop
+    the leading 0 if there's no country code, so '054-565-1959', '0545651959',
+    '+972545651959', and '972545651959' all collapse to '972545651959'.
+    """
+    if not phone:
+        return ""
+    digits = re.sub(r"\D", "", phone)
+    if not digits:
+        return ""
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("0") and len(digits) == 10:
+        digits = "972" + digits[1:]
+    if len(digits) == 9 and digits.startswith("5"):
+        digits = "972" + digits
+    return digits
+
+
+def find_duplicate_candidate(db, company_id: int, phone: str, exclude_id: int | None = None):
+    """Return the most recent prior Candidate in this company that shares the
+    same normalized phone, or None.
+
+    Used to mark new candidates as duplicates so the operator doesn't get a
+    second hot-lead notification for the same human applying to a different
+    vacancy. Tamar (recruiter feedback 2026-05-08) called this her unlock to
+    pay the $500 tier — same person applies to 3 vacancies, "уже общались, отказали"
+    needs to be visible without scrolling.
+    """
+    if not phone:
+        return None
+    target = _normalize_phone(phone)
+    if not target:
+        return None
+    candidates = db.query(Candidate).filter(
+        Candidate.company_id == company_id,
+        Candidate.phone.isnot(None),
+    )
+    if exclude_id is not None:
+        candidates = candidates.filter(Candidate.id != exclude_id)
+    for prior in candidates.order_by(Candidate.id.desc()).all():
+        if _normalize_phone(prior.phone) == target:
+            return prior
+    return None
+
+
 def get_screening_questions(vacancy, lang: str) -> list[str]:
     """Get screening questions: bot_qualifying_questions > interview_questions_json > defaults."""
     # Priority 1: Universal bot qualifying questions (Task 1.2)
@@ -529,6 +577,16 @@ async def on_message(message: Message):
                     c.summary = result["summary"]
 
                 classification = classify_candidate(vacancy, c, questions, user_answers)
+                # Phone-based dedup: same phone in this company → mark duplicate.
+                duplicate_of = find_duplicate_candidate(db, c.company_id, phone, exclude_id=c.id)
+                if duplicate_of:
+                    classification = "duplicate"
+                    prior_label = duplicate_of.full_name or duplicate_of.tg_username or f"#{duplicate_of.id}"
+                    c.summary = (
+                        f"DUPLICATE: тот же телефон уже у {prior_label} (#{duplicate_of.id}). "
+                        f"Прошлый статус: {duplicate_of.status.value if duplicate_of.status else '?'}, "
+                        f"score {duplicate_of.score or '-'}. " + (c.summary or "")
+                    ).strip()
                 c.classification = classification
                 c.status = CandidateStatus.passed if classification == "hot" else CandidateStatus.passed
 
@@ -539,7 +597,7 @@ async def on_message(message: Message):
 
                 await message.answer(reply)
 
-                # HOT lead notification (Task 1.5)
+                # HOT lead notification (Task 1.5) — skipped if duplicate.
                 if classification == "hot":
                     await send_hot_lead_notification(message.bot, comp, c, vacancy)
 
@@ -673,6 +731,16 @@ async def on_contact(message: Message):
             c.summary = result["summary"]
 
         classification = classify_candidate(vacancy, c, questions, user_answers)
+        # Phone-based dedup (mirrors on_message text-phone path).
+        duplicate_of = find_duplicate_candidate(db, c.company_id, phone, exclude_id=c.id)
+        if duplicate_of:
+            classification = "duplicate"
+            prior_label = duplicate_of.full_name or duplicate_of.tg_username or f"#{duplicate_of.id}"
+            c.summary = (
+                f"DUPLICATE: тот же телефон уже у {prior_label} (#{duplicate_of.id}). "
+                f"Прошлый статус: {duplicate_of.status.value if duplicate_of.status else '?'}, "
+                f"score {duplicate_of.score or '-'}. " + (c.summary or "")
+            ).strip()
         c.classification = classification
         c.status = CandidateStatus.passed
 

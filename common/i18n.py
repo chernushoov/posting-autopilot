@@ -479,6 +479,97 @@ UI = {
     "phone_label_full": {"ru": "Телефон", "he": "טלפון", "en": "Phone"},
     "most_popular": {"ru": "Популярный", "he": "הפופולרי", "en": "Most Popular"},
     "faq_title": {"ru": "FAQ", "he": "שאלות נפוצות", "en": "FAQ"},
+    # Vacancy form placeholders (Tamar reported English placeholders inside RU UI as "выглядит как незаконченный продукт")
+    "ph_body": {
+        "ru": "Опишите вакансию: что делать, где, требования, условия...",
+        "he": "תאר את ההצעה: מה לעשות, איפה, דרישות, תנאים...",
+        "en": "Listing description: what to do, where, requirements, terms...",
+    },
+    "ph_final_post_title": {
+        "ru": "По умолчанию — заголовок объявления",
+        "he": "ברירת מחדל — כותרת המודעה",
+        "en": "Defaults to listing title",
+    },
+    "ph_final_post_body": {
+        "ru": "Если пусто, текст поста соберётся из полей объявления.",
+        "he": "אם ריק, טקסט הפוסט נבנה משדות המודעה.",
+        "en": "If empty, the system builds the posting asset from the listing fields.",
+    },
+    "ph_bot_intro": {
+        "ru": "Что бот скажет соискателю первым (приветствие, контекст вакансии)…",
+        "he": "מה הבוט אומר ראשון (ברכה, הקשר המשרה)…",
+        "en": "How the bot introduces itself to respondents…",
+    },
+    "ph_bot_faq": {
+        "ru": "Факты для бота (зарплата, график, локация, требования) — отвечает сам, не отвлекая оператора…",
+        "he": "עובדות לבוט (שכר, לו״ז, מיקום, דרישות) — עונה לבד בלי להפריע למפעיל…",
+        "en": "Facts the bot can answer by itself (price, schedule, location, etc.)…",
+    },
+    "ph_bot_qq": {
+        "ru": "Сколько лет опыта работы?\nВ каком городе живёте?\nЕсть ли документы для работы в Израиле?",
+        "he": "כמה שנות ניסיון?\nבאיזו עיר אתה גר?\nיש לך מסמכים לעבודה בישראל?",
+        "en": "What's your budget?\nWhen are you available?\nDo you have experience?",
+    },
+    "ph_bot_hot": {
+        "ru": "Кого считаем горячим лидом: ответил на все вопросы, оставил телефон, опыт совпадает.",
+        "he": "מי נחשב ליד חם: ענה על כל השאלות, השאיר טלפון, ניסיון מתאים.",
+        "en": "Answered all questions + left phone number",
+    },
+    "ph_bot_cold": {
+        "ru": "Что считаем холодным: спам, грубит, не подходит по требованиям.",
+        "he": "מה נחשב קר: ספאם, גס, לא עומד בדרישות.",
+        "en": "Spam, rude, irrelevant, doesn't meet criteria",
+    },
+    # Vacancy form labels (was hardcoded English even when locale=RU)
+    "bot_settings_title": {"ru": "Настройки бота", "he": "הגדרות בוט", "en": "AI Bot Settings"},
+    "listing_type_label": {"ru": "Тип объявления", "he": "סוג מודעה", "en": "Listing Type"},
+    "listing_type_recruitment": {"ru": "Вакансия (наём)", "he": "משרה (גיוס)", "en": "Job Vacancy"},
+    "listing_type_auto": {"ru": "Продажа авто", "he": "מכירת רכב", "en": "Car Sale"},
+    "listing_type_realestate": {"ru": "Аренда квартиры", "he": "השכרת דירה", "en": "Apartment Rental"},
+    "listing_type_services": {"ru": "Услуги", "he": "שירותים", "en": "Service Offering"},
+    "listing_type_custom": {"ru": "Своё", "he": "מותאם אישית", "en": "Custom"},
+    "bot_intro_label": {"ru": "Приветствие бота", "he": "ברכת הבוט", "en": "Bot Introduction"},
+    "bot_faq_label": {"ru": "FAQ для бота", "he": "FAQ לבוט", "en": "Bot FAQ Knowledge"},
+    "bot_qq_label": {"ru": "Уточняющие вопросы (по одному на строку)", "he": "שאלות מסננות (אחת בשורה)", "en": "Bot Qualifying Questions (one per line)"},
+    "bot_hot_label": {"ru": "Считать ГОРЯЧИМ если", "he": "סמן כחם אם", "en": "Mark as HOT when"},
+    "bot_cold_label": {"ru": "Считать ХОЛОДНЫМ если", "he": "סמן כקר אם", "en": "Mark as COLD when"},
+    "edit_vacancy_title": {"ru": "Редактировать объявление", "he": "עריכת מודעה", "en": "Edit listing"},
+    "what_posting": {"ru": "Что публикуем?", "he": "מה מפרסמים?", "en": "What are you posting?"},
+    "ph_title": {
+        "ru": "Например: Укладчик бетона — Тель-Авив",
+        "he": "למשל: רצף בטון — תל אביב",
+        "en": "e.g. Construction worker — Tel Aviv",
+    },
+    "ph_city": {
+        "ru": "Например: Тель-Авив или 'По всей стране'",
+        "he": "למשל: תל אביב או 'כל הארץ'",
+        "en": "e.g. Tel Aviv",
+    },
+    "ph_salary": {
+        "ru": "Например: 55 ₪/час или 12000 ₪/мес",
+        "he": "למשל: 55 ₪/שעה או 12000 ₪/חודש",
+        "en": "e.g. 55 ₪/hour",
+    },
+    "ph_schedule": {
+        "ru": "Например: Вс-Чт 07:00–16:00 или 'Свободный график'",
+        "he": "למשל: א׳-ה׳ 07:00–16:00",
+        "en": "e.g. Sun-Thu, 07:00-16:00",
+    },
+    "ph_contact": {
+        "ru": "Например: Telegram @recruiter или +972...",
+        "he": "למשל: Telegram @recruiter או +972...",
+        "en": "e.g. Telegram @recruiter or phone",
+    },
+    "whatsapp_label": {"ru": "WhatsApp номер", "he": "מספר WhatsApp", "en": "WhatsApp Number"},
+    "ph_whatsapp": {
+        "ru": "Например: 972541234567 (без +)",
+        "he": "למשל: 972541234567",
+        "en": "e.g. 972541234567",
+    },
+    "save_changes_btn": {"ru": "Сохранить изменения", "he": "שמור שינויים", "en": "Save changes"},
+    "photo_label": {"ru": "Фото", "he": "תמונה", "en": "Photo"},
+    "photo_existing": {"ru": "Текущее фото", "he": "תמונה נוכחית", "en": "Current photo"},
+    "edit_vacancy_action": {"ru": "Редактировать", "he": "ערוך", "en": "Edit"},
 }
 
 def ui(key: str, lang: str = "en", **kwargs) -> str:

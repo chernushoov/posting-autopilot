@@ -98,7 +98,7 @@
     {% if telegram_sources %}
     <div class="card" style="padding:6px;max-height:calc(100vh - 220px);overflow-y:auto">
       {% set ns = namespace(cf='__none__') %}
-      {% for s in telegram_sources|sort(attribute='folder') %}
+      {% for s in telegram_sources %}{# Pre-sorted None-safely in route. #}
         {% set f = s.folder or ui('tg_ungrouped') %}
         {% if f != ns.cf %}
           {% set ns.cf = f %}

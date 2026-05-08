@@ -65,7 +65,7 @@ def dashboard():
     db = db_session()
     company_id = session.get("current_company_id")
 
-    from ..models import Vacancy, Source, Campaign, Candidate, PostingAttempt
+    from ..models import Vacancy, Source, Campaign, Candidate, CandidateStatus, PostingAttempt
 
     has_company = company_id is not None
     company_name = ""
@@ -95,6 +95,36 @@ def dashboard():
 
     candidate_count = db.query(Candidate).filter(Candidate.company_id == company_id).count() if has_company else 0
     active_campaign_count = db.query(Campaign).filter(Campaign.company_id == company_id, Campaign.is_running == True).count() if has_company else 0
+    candidate_status_counts = {status.value: 0 for status in CandidateStatus}
+    recent_candidates = []
+    if has_company:
+        for status in CandidateStatus:
+            candidate_status_counts[status.value] = db.query(Candidate).filter(
+                Candidate.company_id == company_id,
+                Candidate.status == status,
+            ).count()
+
+        recent_candidate_rows = db.query(Candidate).filter(
+            Candidate.company_id == company_id
+        ).order_by(Candidate.id.desc()).limit(8).all()
+        vacancy_titles = {}
+        vacancy_ids = {candidate.vacancy_id for candidate in recent_candidate_rows if candidate.vacancy_id}
+        if vacancy_ids:
+            for vacancy in db.query(Vacancy).filter(Vacancy.id.in_(vacancy_ids)).all():
+                vacancy_titles[vacancy.id] = vacancy.title
+        recent_candidates = [
+            {
+                "id": candidate.id,
+                "name": candidate.full_name or candidate.tg_username or candidate.tg_user_id or f"Candidate #{candidate.id}",
+                "status": candidate.status.value if candidate.status else "new",
+                "classification": getattr(candidate, "classification", None),
+                "score": candidate.score,
+                "phone": getattr(candidate, "phone", None),
+                "vacancy_title": vacancy_titles.get(candidate.vacancy_id, ""),
+                "created_at": candidate.created_at,
+            }
+            for candidate in recent_candidate_rows
+        ]
 
     steps_done = sum([has_company, has_vacancy, has_telegram, has_facebook, has_campaign, has_posted])
     steps_total = 6
@@ -109,6 +139,8 @@ def dashboard():
         has_campaign=has_campaign, campaign_count=campaign_count,
         has_posted=has_posted, posting_count=posting_count,
         candidate_count=candidate_count,
+        candidate_status_counts=candidate_status_counts,
+        recent_candidates=recent_candidates,
         active_campaign_count=active_campaign_count,
         steps_done=steps_done, steps_total=steps_total, progress_pct=progress_pct,
     )
@@ -129,6 +161,11 @@ def connect_telegram():
     db = db_session()
     from ..models import Source, Candidate, Vacancy
     telegram_sources = db.query(Source).filter(Source.company_id == company_id, Source.platform == "telegram", Source.is_active == True).all()
+    # None-safe pre-sort by folder (template's |sort(attribute='folder') chokes on
+    # mixed NULL + non-NULL folders; that broke /connect/telegram with a
+    # TypeError "<" not supported between NoneType and str on 2026-05-08 after
+    # we curated 5 new sources with folder='pilot' alongside legacy folder=NULL).
+    telegram_sources.sort(key=lambda s: ((s.folder or ""), s.id))
     existing_ids = {str(s.tg_ref) for s in telegram_sources}
 
     # Recent bot conversations for live feed
@@ -419,14 +456,14 @@ def connect_facebook():
     fb_connected = bool(comp and comp.fb_access_token)
     fb_user_name = comp.fb_user_name if comp else None
 
-    # Load synced groups from cache
-    fb_groups = []
+    # Load synced pages from cache
+    fb_pages = []
     try:
         import os, json as _json
-        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache', f'groups_{company_id}.json')
+        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache', f'pages_{company_id}.json')
         if os.path.exists(cache_path):
             with open(cache_path) as f:
-                fb_groups = _json.load(f)
+                fb_pages = _json.load(f)
     except Exception:
         pass
 
@@ -440,7 +477,10 @@ def connect_facebook():
         fb_app_id=FB_APP_ID,
         fb_connected=fb_connected,
         fb_user_name=fb_user_name,
-        fb_groups=fb_groups,
+        fb_pages=fb_pages,
+        official_pages_sync_enabled=True,
+        official_groups_sync_enabled=False,
+        official_marketplace_api_enabled=False,
         error=request.args.get("error"),
         message=request.args.get("message"),
     )
@@ -448,7 +488,7 @@ def connect_facebook():
 
 @bp.post("/connect/facebook/setup")
 def fb_setup():
-    """Save FB App credentials and redirect to Facebook OAuth."""
+    """Save FB App credentials and redirect to Facebook OAuth (official Pages flow)."""
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
     fb_app_id = request.form.get("fb_app_id", "").strip()
@@ -466,20 +506,15 @@ def fb_setup():
     os.environ["FB_APP_SECRET"] = fb_app_secret
 
     # Redirect to Facebook OAuth
+    from common.fb_client import get_login_url
     redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
-    oauth_url = (
-        f"https://www.facebook.com/v19.0/dialog/oauth?"
-        f"client_id={fb_app_id}"
-        f"&redirect_uri={redirect_uri}"
-        f"&scope=public_profile"
-        f"&response_type=code"
-    )
+    oauth_url = get_login_url(redirect_uri)
     return redirect(oauth_url)
 
 
 @bp.get("/connect/facebook/callback")
 def fb_callback():
-    """Facebook OAuth callback — exchange code for token, sync groups."""
+    """Facebook OAuth callback — exchange code for token, sync Pages."""
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
@@ -498,7 +533,7 @@ def fb_callback():
     if fb_app_secret:
         os.environ["FB_APP_SECRET"] = fb_app_secret
 
-    from common.fb_client import exchange_code, get_long_lived_token, get_user_info, get_user_groups
+    from common.fb_client import exchange_code, get_long_lived_token, get_user_info, get_user_pages
     redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
 
     # Exchange code for token
@@ -524,25 +559,25 @@ def fb_callback():
         db.commit()
     db.close()
 
-    # Sync groups
-    groups_result = get_user_groups(token)
-    if groups_result.get("ok"):
+    # Sync Pages
+    pages_result = get_user_pages(token)
+    if pages_result.get("ok"):
         import os, json as _json
         cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache')
         os.makedirs(cache_dir, exist_ok=True)
-        cache_path = os.path.join(cache_dir, f'groups_{company_id}.json')
+        cache_path = os.path.join(cache_dir, f'pages_{company_id}.json')
         with open(cache_path, 'w') as f:
-            _json.dump(groups_result["groups"], f, ensure_ascii=False)
-        msg = f"Facebook connected! Found {groups_result['total']} groups."
+            _json.dump(pages_result["pages"], f, ensure_ascii=False)
+        msg = f"Facebook connected! Synced {pages_result['total']} Pages."
     else:
-        msg = "Facebook connected but could not sync groups: " + groups_result.get("error", "")
+        msg = "Facebook connected but could not sync Pages: " + pages_result.get("error", "")
 
     return redirect(url_for("auth.connect_facebook", message=msg))
 
 
 @bp.post("/connect/facebook/sync")
 def fb_sync():
-    """Re-sync Facebook groups."""
+    """Re-sync Facebook Pages through the official Pages API."""
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
@@ -555,67 +590,65 @@ def fb_sync():
     token = comp.fb_access_token
     db.close()
 
-    from common.fb_client import get_user_groups
-    result = get_user_groups(token)
+    from common.fb_client import get_user_pages
+    result = get_user_pages(token)
     if result.get("ok"):
         import os, json as _json
         cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache')
         os.makedirs(cache_dir, exist_ok=True)
-        cache_path = os.path.join(cache_dir, f'groups_{company_id}.json')
+        cache_path = os.path.join(cache_dir, f'pages_{company_id}.json')
         with open(cache_path, 'w') as f:
-            _json.dump(result["groups"], f, ensure_ascii=False)
-        return redirect(url_for("auth.connect_facebook", message=f"Synced {result['total']} groups"))
-    return redirect(url_for("auth.connect_facebook", error=result.get("error", "Sync failed")))
+            _json.dump(result["pages"], f, ensure_ascii=False)
+        return redirect(url_for("auth.connect_facebook", message=f"Synced {result['total']} Pages"))
+    return redirect(url_for("auth.connect_facebook", error=result.get("error", "Pages sync failed")))
 
-
-@bp.post("/connect/facebook/add-selected")
-def fb_add_selected():
-    """Add selected Facebook groups as posting destinations."""
+@bp.post("/connect/facebook/add-selected-pages")
+def fb_add_selected_pages():
+    """Add selected Facebook Pages as posting destinations."""
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
-    group_ids = request.form.get("group_ids", "").split(",")
+    page_ids = request.form.get("page_ids", "").split(",")
 
     # Load from cache
-    fb_groups = []
+    fb_pages = []
     try:
         import os, json as _json
-        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache', f'groups_{company_id}.json')
+        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'fb_cache', f'pages_{company_id}.json')
         if os.path.exists(cache_path):
             with open(cache_path) as f:
-                fb_groups = _json.load(f)
+                fb_pages = _json.load(f)
     except Exception:
         pass
 
     db = db_session()
     from ..models import Source, SourceType
     added = 0
-    for gid in group_ids:
-        gid = gid.strip()
-        if not gid:
+    for page_id in page_ids:
+        page_id = page_id.strip()
+        if not page_id:
             continue
-        group = next((g for g in fb_groups if str(g["id"]) == gid), None)
-        if not group:
+        page = next((item for item in fb_pages if str(item["id"]) == page_id), None)
+        if not page:
             continue
-        fb_url = f"https://facebook.com/groups/{group['id']}"
+        fb_url = page.get("link") or f"https://facebook.com/{page['id']}"
         existing = db.query(Source).filter(Source.company_id == company_id, Source.destination_url == fb_url).first()
         if existing:
             continue
-        import time as _time
         source = Source(
             company_id=company_id,
-            tg_ref=f"fb-{group['id']}",
-            label=group["name"],
+            tg_ref=f"fb-page-{page['id']}",
+            label=page["name"],
             source_type=SourceType.group,
             platform="facebook",
-            destination_kind="group",
+            destination_kind="page",
             posting_mode="assisted_manual",
             destination_url=fb_url,
             last_check_ok=True,
-            last_check_message=f"Synced from Facebook ({group.get('member_count', 0)} members)",
+            last_check_message=f"Synced from Facebook Pages API ({page.get('category', 'Page')})",
         )
         db.add(source)
         added += 1
     db.commit()
     db.close()
-    return redirect(url_for("auth.connect_facebook", message=f"Added {added} groups"))
+    return redirect(url_for("auth.connect_facebook", message=f"Added {added} Pages"))

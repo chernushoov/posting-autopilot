@@ -105,7 +105,135 @@ def new_vacancy():
         languages=[l.value for l in Language],
         form_values={},
         templates=get_all_templates(),
+        edit_id=None,
     )
+
+
+@bp.get("/<int:vacancy_id>/edit")
+@require_company
+def edit_vacancy(vacancy_id: int):
+    """Reuse the new-vacancy form template, pre-filled from the existing
+    Vacancy row. POST goes to /vacancies/<id>/edit, which UPDATEs in place.
+    """
+    db = db_session()
+    v = scoped(db, Vacancy).filter(Vacancy.id == vacancy_id).first()
+    db.close()
+    if not v:
+        return redirect(url_for("vacancies.list_vacancies", error="Vacancy not found in this company."))
+
+    bot_qq_text = ""
+    if v.bot_qualifying_questions:
+        try:
+            parsed = json.loads(v.bot_qualifying_questions)
+            if isinstance(parsed, list):
+                bot_qq_text = "\n".join(str(q) for q in parsed if str(q).strip())
+        except Exception:
+            bot_qq_text = v.bot_qualifying_questions
+    interview_qs_text = ""
+    if v.interview_questions_json:
+        try:
+            parsed = json.loads(v.interview_questions_json)
+            if isinstance(parsed, list):
+                interview_qs_text = "\n".join(str(q) for q in parsed if str(q).strip())
+        except Exception:
+            interview_qs_text = v.interview_questions_json
+
+    form_values = {
+        "title": v.title or "",
+        "body": v.body or "",
+        "city": v.city or "",
+        "language": v.language.value if v.language else "ru",
+        "salary_text": v.salary_text or "",
+        "schedule_text": v.schedule_text or "",
+        "contact_text": v.contact_text or "",
+        "apply_url": v.apply_url or "",
+        "final_post_title": v.final_post_title or "",
+        "final_post_body": v.final_post_body or "",
+        "questions": interview_qs_text,
+        "listing_type": v.listing_type or "recruitment",
+        "bot_introduction": v.bot_introduction or "",
+        "bot_faq_knowledge": v.bot_faq_knowledge or "",
+        "bot_qualifying_questions": bot_qq_text,
+        "bot_hot_criteria": v.bot_hot_criteria or "",
+        "bot_cold_criteria": v.bot_cold_criteria or "",
+        "whatsapp_number": v.whatsapp_number or "",
+    }
+    return render_template(
+        "vacancy_new.html",
+        languages=[l.value for l in Language],
+        form_values=form_values,
+        templates=get_all_templates(),
+        edit_id=v.id,
+        existing_image=v.image_path,
+    )
+
+
+@bp.post("/<int:vacancy_id>/edit")
+@require_company
+def edit_vacancy_post(vacancy_id: int):
+    db = db_session()
+    v = scoped(db, Vacancy).filter(Vacancy.id == vacancy_id).first()
+    if not v:
+        db.close()
+        return redirect(url_for("vacancies.list_vacancies", error="Vacancy not found."))
+
+    title = request.form.get("title", "").strip()
+    body = request.form.get("body", "").strip()
+    if not title or not body:
+        db.close()
+        return redirect(url_for("vacancies.edit_vacancy", vacancy_id=vacancy_id, error="Title and body are required."))
+
+    v.title = title
+    v.body = body
+    v.city = request.form.get("city", "").strip() or None
+    lang_raw = request.form.get("language", "ru")
+    try:
+        v.language = Language(lang_raw)
+    except Exception:
+        pass
+    v.salary_text = request.form.get("salary_text", "").strip() or None
+    v.schedule_text = request.form.get("schedule_text", "").strip() or None
+    v.contact_text = request.form.get("contact_text", "").strip() or None
+    apply_url_raw = request.form.get("apply_url", "").strip() or None
+    v.apply_url = apply_url_raw or build_recruitbot_apply_link(v.id)
+    v.listing_type = request.form.get("listing_type", "recruitment").strip() or "recruitment"
+    v.bot_introduction = request.form.get("bot_introduction", "").strip() or None
+    v.bot_faq_knowledge = request.form.get("bot_faq_knowledge", "").strip() or None
+    bot_qq_raw = request.form.get("bot_qualifying_questions", "").strip()
+    v.bot_qualifying_questions = (
+        json.dumps([line.strip() for line in bot_qq_raw.split("\n") if line.strip()], ensure_ascii=False)
+        if bot_qq_raw
+        else None
+    )
+    v.bot_hot_criteria = request.form.get("bot_hot_criteria", "").strip() or None
+    v.bot_cold_criteria = request.form.get("bot_cold_criteria", "").strip() or None
+    v.whatsapp_number = request.form.get("whatsapp_number", "").strip() or None
+    questions_raw = request.form.get("questions", "").strip()
+    v.interview_questions_json = json.dumps(
+        [line.strip() for line in questions_raw.split("\n") if line.strip()],
+        ensure_ascii=False,
+    )
+
+    final_post_title, final_post_body = _build_post_asset_from_form(request.form, apply_url=v.apply_url)
+    if final_post_title:
+        v.final_post_title = final_post_title
+    if final_post_body.strip():
+        v.final_post_body = final_post_body
+
+    if 'image' in request.files:
+        img = request.files['image']
+        if img and img.filename:
+            import os, time as _time
+            upload_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            safe_name = f"{int(_time.time())}_{img.filename.replace(' ', '_')}"
+            save_path = os.path.join(upload_dir, safe_name)
+            img.save(save_path)
+            v.image_path = save_path
+
+    db.commit()
+    db.close()
+    return redirect(url_for("vacancies.view_vacancy", vacancy_id=vacancy_id, message="saved"))
 
 
 @bp.get("/api/template/<key>")
