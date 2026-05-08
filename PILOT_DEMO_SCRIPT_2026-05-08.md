@@ -134,8 +134,19 @@ python scripts/fb_capture_session.py
 Open Telegram on a phone (operator's), open `@AutopillotRecruit_bot`. Pretend
 to be a candidate.
 
-**OR**, if the observer doesn't need to see the bot UI specifically, run the
-end-to-end simulation, which is faster and deterministic:
+**OR (preferred for live demo)** — open the demo helper page in a separate
+browser tab, click one button, observer watches a real `🔥 HOT LEAD!` notification
+arrive in operator's Telegram within 3 seconds:
+
+```
+http://localhost:8080/demo/
+```
+
+Page shows one Fire ▶ button per active vacancy. Pick the one you've been
+narrating. Click. The page tells you exactly what fired (score, classification,
+which chat received the notification). The TG message arrives in parallel.
+
+If you want the terminal-only path (more "behind the scenes"):
 
 ```bash
 docker exec recruit-autopilot-core-bot-1 sh -c \

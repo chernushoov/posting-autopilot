@@ -1,0 +1,130 @@
+{% extends "_layout.html" %}
+{% block content %}
+<style>
+  .v-detail { max-width: 920px; margin: 0 auto; padding: 0 8px 40px; }
+  .v-detail h1 { font-size: 22px; margin: 8px 0 4px; line-height: 1.3; }
+  .v-detail .v-meta { color: var(--muted, #888); font-size: 12px; margin-bottom: 24px; }
+  .v-detail .v-section { background: var(--card-bg, #fff); border: 1px solid var(--border, #e0e0e0); border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
+  .v-detail .v-section h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted, #888); margin: 0 0 12px; font-weight: 600; }
+  .v-detail .field { margin-bottom: 12px; font-size: 13px; }
+  .v-detail .field-label { color: var(--muted, #888); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+  .v-detail .field-value { font-size: 13px; line-height: 1.5; word-wrap: break-word; }
+  .v-detail .field-value pre { white-space: pre-wrap; margin: 0; font-family: inherit; }
+  .v-detail .post-preview { background: rgba(0,0,0,0.03); padding: 14px 16px; border-radius: 6px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; max-height: 360px; overflow-y: auto; border-left: 3px solid var(--primary, #4a7eff); }
+  .v-detail .bot-q-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.55; }
+  .v-detail .bot-q-list li { margin-bottom: 6px; }
+  .v-detail .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(74,126,255,0.1); color: var(--primary, #4a7eff); }
+  .v-detail .badge.hot { background: rgba(255,107,107,0.12); color: #d33; }
+  .v-detail .badge.cold { background: rgba(150,150,150,0.15); color: #555; }
+  .v-detail .actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .v-detail .actions a, .v-detail .actions button { padding: 8px 14px; border-radius: 6px; text-decoration: none; border: 1px solid var(--border, #e0e0e0); background: var(--card-bg, #fff); color: var(--text, #222); font-size: 12px; cursor: pointer; }
+  .v-detail .apply-link { background: var(--primary, #4a7eff); color: #fff; border-color: var(--primary, #4a7eff); }
+  .v-detail .apply-link:hover { opacity: 0.9; }
+  .v-detail .small { color: var(--muted, #888); font-size: 11px; }
+  .v-detail .copy-btn { font-size: 11px; padding: 3px 8px; margin-left: 6px; cursor: pointer; opacity: 0.6; }
+  .v-detail .copy-btn:hover { opacity: 1; }
+</style>
+
+<div class="v-detail">
+  <a href="{{ url_for('vacancies.list_vacancies') }}" class="small">← {{ t('back', 'Back', 'Назад') if t else 'Back' }}</a>
+
+  <h1>
+    {{ vacancy.title }}
+    {% if vacancy.is_active %}<span class="badge">active</span>{% else %}<span class="badge cold">paused</span>{% endif %}
+  </h1>
+  <p class="v-meta">id={{ vacancy.id }} · company_id={{ vacancy.company_id }} · lang={{ vacancy.language.value if vacancy.language else 'ru' }} · created {{ vacancy.created_at.strftime('%Y-%m-%d %H:%M') if vacancy.created_at else '?' }}</p>
+
+  <div class="v-section">
+    <h2>Vacancy core</h2>
+    <div class="field">
+      <div class="field-label">Body (intake / context)</div>
+      <div class="field-value"><pre>{{ vacancy.body }}</pre></div>
+    </div>
+    <div class="field">
+      <div class="field-label">City · Salary · Schedule · Contact</div>
+      <div class="field-value">
+        {{ vacancy.city or '—' }}<br>
+        <span class="small">Pay:</span> {{ vacancy.salary_text or '—' }}<br>
+        <span class="small">Schedule:</span> {{ vacancy.schedule_text or '—' }}<br>
+        <span class="small">Contact:</span> {{ vacancy.contact_text or '—' }}<br>
+        <span class="small">WhatsApp:</span> {{ vacancy.whatsapp_number or '—' }}
+      </div>
+    </div>
+  </div>
+
+  <div class="v-section">
+    <h2>What gets posted</h2>
+    <div class="field">
+      <div class="field-label">Final post title</div>
+      <div class="field-value">{{ vacancy.final_post_title or vacancy.title }}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Final post body
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText)">copy</button>
+      </div>
+      <div class="post-preview">{{ vacancy.final_post_body or vacancy.body }}</div>
+    </div>
+    <div class="actions">
+      <a class="apply-link" href="{{ apply_link }}" target="_blank">Open apply link →</a>
+      <button class="copy-btn" style="font-size:12px" onclick="navigator.clipboard.writeText('{{ apply_link }}')">copy apply link</button>
+    </div>
+  </div>
+
+  <div class="v-section">
+    <h2>Bot screening setup</h2>
+    {% if vacancy.bot_introduction %}
+    <div class="field">
+      <div class="field-label">Greeting (bot says first)</div>
+      <div class="field-value"><pre>{{ vacancy.bot_introduction }}</pre></div>
+    </div>
+    {% endif %}
+    <div class="field">
+      <div class="field-label">Qualifying questions (bot asks in order)</div>
+      <div class="field-value">
+        {% if bot_questions_list %}
+          <ol class="bot-q-list">
+            {% for q in bot_questions_list %}<li>{{ q }}</li>{% endfor %}
+          </ol>
+        {% elif interview_questions_list %}
+          <ol class="bot-q-list">
+            {% for q in interview_questions_list %}<li>{{ q }}</li>{% endfor %}
+          </ol>
+          <p class="small">(legacy interview_questions_json — bot uses these as fallback)</p>
+        {% else %}
+          <p class="small">No custom questions — bot uses default screening.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% if vacancy.bot_hot_criteria %}
+    <div class="field">
+      <div class="field-label">Hot criteria <span class="badge hot">HOT</span></div>
+      <div class="field-value"><pre>{{ vacancy.bot_hot_criteria }}</pre></div>
+    </div>
+    {% endif %}
+    {% if vacancy.bot_cold_criteria %}
+    <div class="field">
+      <div class="field-label">Cold criteria <span class="badge cold">COLD</span></div>
+      <div class="field-value"><pre>{{ vacancy.bot_cold_criteria }}</pre></div>
+    </div>
+    {% endif %}
+    {% if vacancy.bot_faq_knowledge %}
+    <div class="field">
+      <div class="field-label">FAQ knowledge (bot uses for context)</div>
+      <div class="field-value"><pre>{{ vacancy.bot_faq_knowledge }}</pre></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="v-section">
+    <h2>Operator actions</h2>
+    <div class="actions">
+      <form method="post" action="{{ url_for('vacancies.toggle_vacancy', vacancy_id=vacancy.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">{{ 'Pause' if vacancy.is_active else 'Resume' }}</button>
+      </form>
+      <a href="/demo/" target="_blank">▶ Run demo (fire hot lead)</a>
+      <a href="{{ url_for('vacancies.list_vacancies') }}">All vacancies</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

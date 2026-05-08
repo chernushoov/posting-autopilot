@@ -8,16 +8,22 @@
   <tr><th>ID</th><th>{{ ui("title") }}</th><th>{{ ui("city") }}</th><th>{{ ui("posting_asset") }}</th><th>{{ ui("active") }}</th><th>{{ ui("actions") }}</th></tr>
   {% for v in vacancies %}
   <tr>
-    <td>{{ v.id }}</td>
-    <td>{{ v.title }}</td>
+    <td><a href="/vacancies/{{ v.id }}" style="text-decoration:none;color:inherit">{{ v.id }}</a></td>
+    <td><a href="/vacancies/{{ v.id }}" style="text-decoration:none;color:inherit"><strong>{{ v.title }}</strong></a></td>
     <td>{{ v.city or "-" }}</td>
     <td>
       <strong>{{ v.final_post_title or v.title }}</strong>
       <div class="small muted">{{ (v.final_post_body or v.body)[:180] }}{% if (v.final_post_body or v.body)|length > 180 %}...{% endif %}</div>
+      {% set effective_apply = v.apply_url or generated_apply_links.get(v.id) %}
+      {% if effective_apply %}
+      <div class="small" style="margin-top:6px"><span class="muted">Apply:</span> <a href="{{ effective_apply }}" target="_blank" rel="noopener">{{ effective_apply }}</a></div>
+      {% endif %}
     </td>
     <td>{{ ui("yes") if v.is_active else ui("no") }}</td>
     <td>
-      <form method="post" action="/vacancies/toggle/{{ v.id }}">
+      <a class="pill" href="/vacancies/{{ v.id }}" style="margin-right:6px">View</a>
+      <form method="post" action="/vacancies/toggle/{{ v.id }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="pill" type="submit">{{ ui("toggle") }}</button>
       </form>
     </td>

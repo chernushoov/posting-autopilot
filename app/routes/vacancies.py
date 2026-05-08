@@ -7,11 +7,12 @@ from ..db import db_session
 from ..models import Language, Vacancy
 from ..tenant import current_company_id, scoped
 from ..listing_templates import get_template, get_all_templates
+from common.recruitbot_links import build_recruitbot_apply_link
 
 bp = Blueprint("vacancies", __name__, url_prefix="/vacancies")
 
 
-def _build_post_asset_from_form(form) -> tuple[str, str]:
+def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[str, str]:
     title = form.get("final_post_title", "").strip() or form.get("title", "").strip()
     custom_body = form.get("final_post_body", "").strip()
     if custom_body:
@@ -22,7 +23,7 @@ def _build_post_asset_from_form(form) -> tuple[str, str]:
     salary_text = form.get("salary_text", "").strip()
     schedule_text = form.get("schedule_text", "").strip()
     contact_text = form.get("contact_text", "").strip()
-    apply_url = form.get("apply_url", "").strip()
+    apply_url = apply_url if apply_url is not None else form.get("apply_url", "").strip()
     if city:
         parts.append(f"City: {city}")
     if salary_text:
@@ -42,11 +43,57 @@ def list_vacancies():
     db = db_session()
     vacancies = scoped(db, Vacancy).order_by(Vacancy.id.desc()).all()
     db.close()
+    generated_apply_links = {
+        vacancy.id: build_recruitbot_apply_link(vacancy.id) for vacancy in vacancies
+    }
     return render_template(
         "vacancies.html",
         vacancies=vacancies,
+        generated_apply_links=generated_apply_links,
         error=request.args.get("error"),
         message=request.args.get("message"),
+    )
+
+
+@bp.get("/<int:vacancy_id>")
+@require_company
+def view_vacancy(vacancy_id: int):
+    """Read-only detail view for one vacancy.
+
+    Useful for the demo walkthrough: opens a clean page with the full
+    vacancy state — body, post title/body, apply link, bot screening
+    questions parsed back into a list, hot/cold criteria, image.
+    No edit form yet (would need a /new-template UPDATE refactor); use
+    SQL or recreate via /new for now.
+    """
+    db = db_session()
+    vacancy = scoped(db, Vacancy).filter(Vacancy.id == vacancy_id).first()
+    db.close()
+    if not vacancy:
+        return redirect(url_for("vacancies.list_vacancies", error="Vacancy not found in this company."))
+    bot_questions_list = []
+    if vacancy.bot_qualifying_questions:
+        try:
+            parsed = json.loads(vacancy.bot_qualifying_questions)
+            if isinstance(parsed, list):
+                bot_questions_list = [str(q) for q in parsed if str(q).strip()]
+        except Exception:
+            pass
+    interview_questions_list = []
+    if vacancy.interview_questions_json:
+        try:
+            parsed = json.loads(vacancy.interview_questions_json)
+            if isinstance(parsed, list):
+                interview_questions_list = [str(q) for q in parsed if str(q).strip()]
+        except Exception:
+            pass
+    apply_link = vacancy.apply_url or build_recruitbot_apply_link(vacancy.id)
+    return render_template(
+        "vacancy_detail.html",
+        vacancy=vacancy,
+        bot_questions_list=bot_questions_list,
+        interview_questions_list=interview_questions_list,
+        apply_link=apply_link,
     )
 
 
@@ -82,15 +129,15 @@ def new_vacancy_post():
     schedule_text = request.form.get("schedule_text", "").strip() or None
     contact_text = request.form.get("contact_text", "").strip() or None
     apply_url = request.form.get("apply_url", "").strip() or None
-    final_post_title, final_post_body = _build_post_asset_from_form(request.form)
 
-    if not title or not body or not final_post_body.strip():
+    if not title or not body:
         db.close()
         return render_template(
             "vacancy_new.html",
-            error="Title, body, and final post content are required.",
+            error="Title and body are required.",
             languages=[l.value for l in Language],
             form_values=request.form,
+            templates=get_all_templates(),
         )
     try:
         q = [line.strip() for line in questions.split("\n") if line.strip()]
@@ -137,8 +184,8 @@ def new_vacancy_post():
         schedule_text=schedule_text,
         contact_text=contact_text,
         apply_url=apply_url,
-        final_post_title=final_post_title,
-        final_post_body=final_post_body,
+        final_post_title=request.form.get("final_post_title", "").strip() or title,
+        final_post_body=request.form.get("final_post_body", "").strip() or None,
         interview_questions_json=json.dumps(q, ensure_ascii=False),
         listing_type=listing_type,
         bot_introduction=bot_introduction,
@@ -151,6 +198,22 @@ def new_vacancy_post():
     )
     db.add(vacancy)
     db.flush()  # get vacancy.id
+
+    effective_apply_url = apply_url or build_recruitbot_apply_link(vacancy.id)
+    vacancy.apply_url = effective_apply_url
+    final_post_title, final_post_body = _build_post_asset_from_form(request.form, apply_url=effective_apply_url)
+    if not final_post_body.strip():
+        db.rollback()
+        db.close()
+        return render_template(
+            "vacancy_new.html",
+            error="Final post content could not be built. Add body text or final post body.",
+            languages=[l.value for l in Language],
+            form_values=request.form,
+            templates=get_all_templates(),
+        )
+    vacancy.final_post_title = final_post_title
+    vacancy.final_post_body = final_post_body
 
     # Auto-create campaign if coming from quick-post modal (has interval_minutes)
     interval_minutes = request.form.get("interval_minutes", "").strip()
