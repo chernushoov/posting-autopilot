@@ -162,6 +162,44 @@ def get_groups():
     return jsonify({"groups": groups, "count": len(groups)})
 
 
+@bp.post("/posting-runs/<int:run_id>/smoke")
+@require_company
+def smoke_session_endpoint(run_id: int):
+    """
+    Open facebook.com headless with the saved session, screenshot, return state.
+    No posting happens. Use to verify the captured FB session is still valid
+    before triggering an auto-fire run.
+    """
+    db = db_session()
+    company_id, _owner_id, _company = _company_context(db)
+    run = (
+        db.query(FacebookPostingRun)
+        .filter(FacebookPostingRun.id == run_id, FacebookPostingRun.company_id == company_id)
+        .first()
+    )
+    db.close()
+    if not run:
+        return jsonify({"error": "run not found or not in current company"}), 404
+
+    try:
+        from common.fb_browser_poster import smoke_session, session_exists
+    except Exception as exc:
+        return jsonify({"error": f"browser poster unavailable: {exc!r}"}), 500
+
+    import os as _os
+    session_name = _os.environ.get(f"FB_BROWSER_SESSION_COMPANY_{company_id}") or _os.environ.get("FB_BROWSER_SESSION_NAME", "floordsgn")
+    if not session_exists(session_name):
+        return jsonify({
+            "ok": False,
+            "error": "session_missing",
+            "session_name": session_name,
+            "remediation": "Run scripts/fb_capture_session.py on operator's Mac to capture the FB session.",
+        }), 400
+
+    result = smoke_session(session_name)
+    return jsonify({"session_name": session_name, **result})
+
+
 @bp.post("/posting-runs/<int:run_id>/auto-fire")
 @require_company
 def auto_fire_run(run_id: int):

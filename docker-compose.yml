@@ -9,6 +9,9 @@ x-runtime-env: &runtime-env
   # plus Telethon connect/send margins so jobs don't silently expire mid-post.
   RQ_WORKER_TIMEOUT: ${RQ_WORKER_TIMEOUT:-900}
   DEFAULT_LANG: ${DEFAULT_LANG:-ru}
+  # Hot lead notifications fallback — sent when company.owner_id is not a TG user_id.
+  # Per-company override is RECRUIT_OPERATOR_NOTIFY_CHAT_<company_id>.
+  RECRUIT_OPERATOR_NOTIFY_CHAT: ${RECRUIT_OPERATOR_NOTIFY_CHAT:-}
 
 services:
   postgres:

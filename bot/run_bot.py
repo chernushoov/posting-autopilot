@@ -144,13 +144,16 @@ def classify_candidate(vacancy, candidate, questions: list, answers: list) -> st
 
 
 async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Candidate, vacancy: Vacancy):
-    """Send Telegram notification to business owner about a HOT lead."""
-    if not company.owner_id or not company.owner_id.strip():
-        return
-    # Only send to numeric Telegram user IDs
-    if not company.owner_id.replace("_", "").replace("admin", "").strip().isdigit():
-        return
+    """Send Telegram notification to business owner about a HOT lead.
 
+    Resolves the destination chat in this priority:
+      1. company.owner_id if it's a numeric Telegram user_id (legacy path).
+      2. RECRUIT_OPERATOR_NOTIFY_CHAT env var (per-deployment fallback).
+      3. RECRUIT_OPERATOR_NOTIFY_CHAT_<company_id> env var (per-company override).
+
+    Logs and returns silently if no usable destination exists rather than dropping
+    the notification with no trace.
+    """
     name = candidate.full_name or candidate.tg_username or "Unknown"
     phone = candidate.phone or "not provided"
     summary = candidate.summary or "No summary"
@@ -159,6 +162,7 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
     text = (
         f"🔥 HOT LEAD!\n\n"
         f"📋 Listing: {listing}\n"
+        f"🏢 Company: {company.name if company else '-'}\n"
         f"👤 Name: {name}\n"
         f"📞 Phone: {phone}\n"
         f"📊 Score: {candidate.score}\n"
@@ -166,17 +170,34 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
     )
     if candidate.tg_username:
         text += f"💬 Telegram: @{candidate.tg_username}\n"
-    # WhatsApp quick-contact link for the lead
     if candidate.phone:
         wa_num = candidate.phone.lstrip('+').replace('-', '').replace(' ', '')
         if not wa_num.startswith('972') and wa_num.startswith('0'):
             wa_num = '972' + wa_num[1:]
         text += f"📲 WhatsApp: https://wa.me/{wa_num}\n"
 
-    try:
-        await bot.send_message(chat_id=company.owner_id, text=text)
-    except Exception as e:
-        print(f"[bot] Failed to send hot lead notification to {company.owner_id}: {e}")
+    # Resolve destination chats (may be multiple if owner_id + env are both set)
+    targets: list[str] = []
+
+    if company.owner_id and company.owner_id.replace("_", "").replace("admin", "").strip().isdigit():
+        targets.append(company.owner_id)
+
+    per_company = os.environ.get(f"RECRUIT_OPERATOR_NOTIFY_CHAT_{company.id}")
+    if per_company and per_company.strip().isdigit() and per_company not in targets:
+        targets.append(per_company.strip())
+
+    fallback = os.environ.get("RECRUIT_OPERATOR_NOTIFY_CHAT")
+    if fallback and fallback.strip().isdigit() and fallback not in targets:
+        targets.append(fallback.strip())
+
+    if not targets:
+        print(f"[bot] hot lead for company {company.id}, no notify chat configured (set RECRUIT_OPERATOR_NOTIFY_CHAT or owner_id=<tg_user_id>)")
+    for chat_id in targets:
+        try:
+            await bot.send_message(chat_id=chat_id, text=text)
+            print(f"[bot] hot lead notification sent → {chat_id}")
+        except Exception as e:
+            print(f"[bot] Failed hot lead notification to {chat_id}: {e}")
 
     # Task 2.4: Email notification (async-safe — runs in thread)
     try:
