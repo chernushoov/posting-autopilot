@@ -207,9 +207,30 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
     summary = candidate.summary or "No summary"
     listing = vacancy.title if vacancy else "Unknown"
 
+    # Listing-type-driven header so notification copy matches what the operator
+    # is looking at. Recruiter doesn't want "Apartment inquiry"; realtor doesn't
+    # want "HOT LEAD" for a flat rental. Both still get the same fields below.
+    listing_type = (vacancy.listing_type or "recruitment") if vacancy else "recruitment"
+    headers_by_type = {
+        "recruitment": "🔥 HOT LEAD!",
+        "realestate":  "📩 Новая заявка на квартиру",
+        "auto":        "🚗 Запрос по авто",
+        "services":    "🔔 Новый запрос на услугу",
+        "custom":      "🔔 Новый отклик",
+    }
+    listing_label_by_type = {
+        "recruitment": "Listing",
+        "realestate":  "Объект",
+        "auto":        "Машина",
+        "services":    "Услуга",
+        "custom":      "Объявление",
+    }
+    header = headers_by_type.get(listing_type, headers_by_type["recruitment"])
+    listing_label = listing_label_by_type.get(listing_type, "Listing")
+
     text = (
-        f"🔥 HOT LEAD!\n\n"
-        f"📋 Listing: {listing}\n"
+        f"{header}\n\n"
+        f"📋 {listing_label}: {listing}\n"
         f"🏢 Company: {company.name if company else '-'}\n"
         f"👤 Name: {name}\n"
         f"📞 Phone: {phone}\n"
