@@ -162,6 +162,44 @@ def get_groups():
     return jsonify({"groups": groups, "count": len(groups)})
 
 
+@bp.post("/posting-runs/<int:run_id>/auto-fire")
+@require_company
+def auto_fire_run(run_id: int):
+    """Trigger browser-automation auto-poster for the whole queue with staggered delays."""
+    payload = _json_payload()
+    db = db_session()
+    company_id, _owner_id, _company = _company_context(db)
+    run = (
+        db.query(FacebookPostingRun)
+        .filter(FacebookPostingRun.id == run_id, FacebookPostingRun.company_id == company_id)
+        .first()
+    )
+    db.close()
+    if not run:
+        return jsonify({"error": "run not found or not in current company"}), 404
+
+    try:
+        from worker.fb_auto_post import fire_run_staggered
+    except Exception as exc:
+        return jsonify({"error": f"auto-poster unavailable: {exc!r}"}), 500
+
+    min_delay = int(payload.get("min_delay_seconds", 300))
+    max_delay = int(payload.get("max_delay_seconds", 600))
+    first_delay = int(payload.get("first_delay_seconds", 5))
+    if min_delay < 60:
+        return jsonify({"error": "min_delay_seconds must be >= 60 (anti-spam protection)"}), 400
+    if max_delay < min_delay:
+        return jsonify({"error": "max_delay_seconds must be >= min_delay_seconds"}), 400
+
+    result = fire_run_staggered(
+        run_id,
+        min_delay_seconds=min_delay,
+        max_delay_seconds=max_delay,
+        first_delay_seconds=first_delay,
+    )
+    return jsonify(result), 200 if result.get("ok") else 400
+
+
 @bp.post("/posting-runs")
 @require_company
 def create_run():
