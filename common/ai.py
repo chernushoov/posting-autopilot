@@ -92,6 +92,7 @@ def _score_with_openai(vacancy_title: str, questions: list[str], answers: list[s
     client = OpenAI(api_key=api_key)
     lang_name = LANG_NAMES.get(lang, "Russian")
     system_intro = SCORING_SYSTEM_PROMPT_BY_TYPE.get(listing_type, SCORING_SYSTEM_PROMPT_BY_TYPE["recruitment"])
+    today_iso = datetime.utcnow().date().isoformat()
 
     qa_text = ""
     for i, (q, a) in enumerate(zip(questions, answers), 1):
@@ -113,6 +114,8 @@ def _score_with_openai(vacancy_title: str, questions: list[str], answers: list[s
                 "role": "system",
                 "content": (
                     f"{system_intro} "
+                    f"TODAY'S DATE: {today_iso}. When the candidate states a date (e.g. 'June 1, 2026'), "
+                    f"compute the gap from {today_iso} accurately — do not hallucinate or round to years. "
                     f"Return the summary in {lang_name}. "
                     "Respond ONLY with valid JSON: {\"score\": <int>, \"summary\": \"<1-2 sentences>\"}"
                 ),

@@ -40,8 +40,20 @@ def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[
 @bp.get("/")
 @require_company
 def list_vacancies():
+    from ..models import Candidate
     db = db_session()
     vacancies = scoped(db, Vacancy).order_by(Vacancy.id.desc()).all()
+    funnel_by_vac: dict[int, dict] = {}
+    for v in vacancies:
+        cs = scoped(db, Candidate).filter(Candidate.vacancy_id == v.id).all()
+        scored = [c for c in cs if c.score]
+        funnel_by_vac[v.id] = {
+            "total": len(cs),
+            "hot": sum(1 for c in cs if c.classification == "hot"),
+            "warm": sum(1 for c in cs if c.classification == "warm"),
+            "cold": sum(1 for c in cs if c.classification == "cold"),
+            "avg_score": (round(sum(c.score for c in scored) / len(scored), 1) if scored else None),
+        }
     db.close()
     generated_apply_links = {
         vacancy.id: build_recruitbot_apply_link(vacancy.id) for vacancy in vacancies
@@ -49,6 +61,7 @@ def list_vacancies():
     return render_template(
         "vacancies.html",
         vacancies=vacancies,
+        funnel_by_vac=funnel_by_vac,
         generated_apply_links=generated_apply_links,
         error=request.args.get("error"),
         message=request.args.get("message"),
