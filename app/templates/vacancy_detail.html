@@ -116,6 +116,65 @@
   </div>
 
   <div class="v-section">
+    <h2>{{ ui('vac_funnel_title') if 'vac_funnel_title' else 'Candidate funnel' }}</h2>
+    {% if funnel.total == 0 %}
+    <p class="small">{{ ui('vac_funnel_empty') }}</p>
+    {% else %}
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px">
+      <div style="background:rgba(74,126,255,0.08);padding:10px 12px;border-radius:8px">
+        <div class="field-label">{{ ui('all') }}</div>
+        <div style="font-size:22px;font-weight:700">{{ funnel.total }}</div>
+      </div>
+      <div style="background:rgba(255,107,107,0.10);padding:10px 12px;border-radius:8px">
+        <div class="field-label">{{ ui('cls_hot') }}</div>
+        <div style="font-size:22px;font-weight:700;color:#d33">{{ funnel.hot }}</div>
+      </div>
+      <div style="background:rgba(255,170,80,0.10);padding:10px 12px;border-radius:8px">
+        <div class="field-label">{{ ui('cls_warm') }}</div>
+        <div style="font-size:22px;font-weight:700;color:#a86">{{ funnel.warm }}</div>
+      </div>
+      <div style="background:rgba(150,150,150,0.10);padding:10px 12px;border-radius:8px">
+        <div class="field-label">{{ ui('cls_cold') }}</div>
+        <div style="font-size:22px;font-weight:700;color:#666">{{ funnel.cold }}</div>
+      </div>
+      <div style="background:rgba(244,225,212,0.5);padding:10px 12px;border-radius:8px">
+        <div class="field-label">{{ ui('cls_duplicate') }}</div>
+        <div style="font-size:22px;font-weight:700;color:#7a4a1f">{{ funnel.duplicate }}</div>
+      </div>
+    </div>
+    <div class="small muted" style="margin-bottom:14px">
+      {% if funnel.avg_score %}{{ ui('vac_funnel_avg_score') }}: <b>{{ funnel.avg_score }}</b> · {% endif %}
+      {% if funnel.last_at %}{{ ui('vac_funnel_last_at') }}: {{ funnel.last_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+    </div>
+
+    <table class="table" style="font-size:13px">
+      <tr>
+        <th>ID</th><th>{{ ui('name') }}</th><th>{{ ui('phone_label_full') }}</th>
+        <th>{{ ui('class_label') }}</th><th>{{ ui('score') }}</th><th>{{ ui('when') if 'when' else 'When' }}</th><th></th>
+      </tr>
+      {% for c in recent_candidates %}
+      <tr {% if c.classification == 'duplicate' %}style="opacity:0.6"{% endif %}>
+        <td>{{ c.id }}</td>
+        <td>{{ c.full_name or c.tg_username or '-' }}</td>
+        <td>{{ c.phone or '-' }}</td>
+        <td>
+          {% if c.classification %}
+            <span class="pill {% if c.classification == 'hot' %}hot{% elif c.classification == 'cold' %}cold{% endif %}">{{ c.classification }}</span>
+          {% else %}-{% endif %}
+        </td>
+        <td>{{ c.score or '-' }}</td>
+        <td class="small muted">{{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '-' }}</td>
+        <td><a class="pill" href="/candidates/{{ c.id }}">{{ ui('open') }}</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if funnel.total > 8 %}
+    <a href="/candidates/?status=" class="small">{{ ui('view_all') }} ({{ funnel.total }}) →</a>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="v-section">
     <h2>Operator actions</h2>
     <div class="actions">
       <a href="/vacancies/{{ vacancy.id }}/edit" class="apply-link">{{ ui('edit_vacancy_action') }}</a>

@@ -66,11 +66,13 @@ def view_vacancy(vacancy_id: int):
     No edit form yet (would need a /new-template UPDATE refactor); use
     SQL or recreate via /new for now.
     """
+    from ..models import Candidate
     db = db_session()
     vacancy = scoped(db, Vacancy).filter(Vacancy.id == vacancy_id).first()
-    db.close()
     if not vacancy:
+        db.close()
         return redirect(url_for("vacancies.list_vacancies", error="Vacancy not found in this company."))
+
     bot_questions_list = []
     if vacancy.bot_qualifying_questions:
         try:
@@ -87,13 +89,36 @@ def view_vacancy(vacancy_id: int):
                 interview_questions_list = [str(q) for q in parsed if str(q).strip()]
         except Exception:
             pass
+
+    # Per-vacancy candidate funnel — primary daily-ops view
+    candidates_for_vac = (
+        scoped(db, Candidate)
+        .filter(Candidate.vacancy_id == vacancy_id)
+        .order_by(Candidate.id.desc())
+        .all()
+    )
+    scored = [c for c in candidates_for_vac if c.score]
+    funnel = {
+        "total": len(candidates_for_vac),
+        "hot": sum(1 for c in candidates_for_vac if c.classification == "hot"),
+        "warm": sum(1 for c in candidates_for_vac if c.classification == "warm"),
+        "cold": sum(1 for c in candidates_for_vac if c.classification == "cold"),
+        "duplicate": sum(1 for c in candidates_for_vac if c.classification == "duplicate"),
+        "avg_score": (round(sum(c.score for c in scored) / len(scored), 1) if scored else None),
+        "last_at": candidates_for_vac[0].created_at if candidates_for_vac else None,
+    }
+    recent_candidates = candidates_for_vac[:8]
+
     apply_link = vacancy.apply_url or build_recruitbot_apply_link(vacancy.id)
+    db.close()
     return render_template(
         "vacancy_detail.html",
         vacancy=vacancy,
         bot_questions_list=bot_questions_list,
         interview_questions_list=interview_questions_list,
         apply_link=apply_link,
+        funnel=funnel,
+        recent_candidates=recent_candidates,
     )
 
 

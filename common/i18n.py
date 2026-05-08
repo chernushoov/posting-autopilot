@@ -602,6 +602,20 @@ UI = {
         "he": "אם ריק — המערכת תשלים את הקישור לבוט אוטומטית.",
         "en": "If left empty, Posting Autopilot uses the connected RecruitBot deep link automatically.",
     },
+    "vac_funnel_title": {
+        "ru": "Воронка кандидатов по этой вакансии",
+        "he": "משפך מועמדים למודעה זו",
+        "en": "Candidate funnel for this listing",
+    },
+    "vac_funnel_empty": {
+        "ru": "Кандидатов по этой вакансии пока нет. Запусти кампанию или дождись первых откликов.",
+        "he": "עדיין אין מועמדים למודעה זו. הפעל קמפיין או המתן לפניות הראשונות.",
+        "en": "No candidates yet for this listing. Activate a campaign or wait for first applicants.",
+    },
+    "vac_funnel_avg_score": {"ru": "Средний балл", "he": "ציון ממוצע", "en": "Average score"},
+    "vac_funnel_last_at": {"ru": "Последний отклик", "he": "פנייה אחרונה", "en": "Last applicant"},
+    "view_all": {"ru": "Смотреть всех", "he": "הצג הכל", "en": "View all"},
+    "when": {"ru": "Когда", "he": "מתי", "en": "When"},
 }
 
 def ui(key: str, lang: str = "en", **kwargs) -> str:
