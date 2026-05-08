@@ -83,12 +83,12 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
     db.close()
 
     from .tasks import campaign_tick
-    job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger)
+    job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger, job_timeout=1800)
     return job, run_key
 
 def enqueue_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"):
     from .tasks import campaign_tick
-    return q_default.enqueue(campaign_tick, campaign_id, None, trigger)
+    return q_default.enqueue(campaign_tick, campaign_id, None, trigger, job_timeout=1800)
 
 def enqueue_daily_digest(company_id: int):
     from .tasks import daily_digest
