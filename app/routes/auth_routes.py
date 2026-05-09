@@ -1,22 +1,37 @@
 import time
+from datetime import datetime
+from hashlib import sha256
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from ..auth import admin_login_ok
+from common.i18n import ui
+from ..auth import admin_login_ok, is_logged_in
 from ..db import db_session
-from ..models import Company
+from ..models import Company, User
 
 bp = Blueprint("auth", __name__)
 
+
+def _safe_next(next_url, default):
+    """Only allow internal relative redirects to prevent open-redirect."""
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return next_url
+    return default
+
+
+def _ui(key):
+    return ui(key, session.get("ui_lang", "he"))
+
+
 @bp.get("/")
 def index():
-    if session.get("is_admin"):
+    if is_logged_in():
         return redirect(url_for("auth.dashboard"))
     return render_template("landing.html")
 
 @bp.get("/login")
 def login():
-    if session.get("is_admin"):
+    if is_logged_in():
         return redirect(url_for("auth.dashboard"))
-    return render_template("login.html")
+    return render_template("login.html", next=request.args.get("next", ""))
 
 def _check_rate_limit() -> bool:
     """Check if current IP has exceeded login rate limit."""
@@ -38,12 +53,36 @@ def _record_attempt():
 @bp.post("/login")
 def login_post():
     if not _check_rate_limit():
-        return render_template("login.html", error="Too many attempts. Please wait 5 minutes.")
+        return render_template("login.html", error=_ui("login_rate_limited"))
     _record_attempt()
-    login = request.form.get("login","")
-    password = request.form.get("password","")
-    if not admin_login_ok(login, password):
-        return render_template("login.html", error="Invalid credentials")
+    identifier = (request.form.get("login") or request.form.get("email") or "").strip()
+    password = request.form.get("password", "")
+    next_url = _safe_next(request.form.get("next") or request.args.get("next"), url_for("auth.dashboard"))
+
+    if not identifier or not password:
+        return render_template("login.html", error=_ui("login_missing_fields"), next=next_url)
+
+    if "@" in identifier:
+        email = identifier.lower()
+        db = db_session()
+        user = db.query(User).filter(User.email == email, User.is_active == True).first()
+        password_ok = bool(user and user.password_hash == sha256(password.encode()).hexdigest())
+        if not password_ok:
+            db.close()
+            return render_template("login.html", error=_ui("login_invalid"), next=next_url)
+        if user.trial_expires_at and datetime.utcnow() > user.trial_expires_at:
+            db.close()
+            return redirect(url_for("pricing.pricing_page"))
+        session["user_id"] = user.id
+        session["is_admin"] = True
+        session["owner_id"] = user.email
+        if user.company_id:
+            session["current_company_id"] = user.company_id
+        db.close()
+        return redirect(next_url)
+
+    if not admin_login_ok(identifier, password):
+        return render_template("login.html", error=_ui("login_invalid"), next=next_url)
     session["is_admin"] = True
     session["owner_id"] = "admin_owner"
     db = db_session()
@@ -51,7 +90,7 @@ def login_post():
     if len(companies) == 1:
         session["current_company_id"] = companies[0].id
     db.close()
-    return redirect(url_for("auth.dashboard"))
+    return redirect(next_url)
 
 @bp.get("/logout")
 def logout():
@@ -60,7 +99,7 @@ def logout():
 
 @bp.get("/dashboard")
 def dashboard():
-    if not session.get("is_admin"):
+    if not is_logged_in():
         return redirect(url_for("auth.login"))
     db = db_session()
     company_id = session.get("current_company_id")
