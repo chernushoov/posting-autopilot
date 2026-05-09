@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Posting Autopilot — {{ ui("pricing_title") }}</title>
+  <meta name="description" content="{{ ui('pricing_subtitle') }}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Posting Autopilot — {{ ui('pricing_title') }}">
+  <meta property="og:description" content="{{ ui('pricing_subtitle') }}">
+  <meta property="og:locale" content="{{ ui_lang or 'he' }}">
+  <link rel="icon" type="image/png" href="/static/favicon.ico">
   <link rel="stylesheet" href="/static/app.css">
   <style>
     .pricing-hero{text-align:center;padding:60px 20px 40px}
@@ -74,20 +80,20 @@
   <div class="faq">
     <h2>{{ ui("faq_title") }}</h2>
     <div class="faq-item">
-      <strong>How does the AI screening work?</strong>
-      <p>Candidates click "Apply" on your job posting in Telegram. The bot conducts a short interview (3-5 questions), evaluates answers with AI, and gives each candidate a score. You only see qualified candidates.</p>
+      <strong>{{ ui("faq_q1") }}</strong>
+      <p>{{ ui("faq_a1") }}</p>
     </div>
     <div class="faq-item">
-      <strong>What languages are supported?</strong>
-      <p>Russian, Hebrew, and English. The bot auto-detects the candidate's language from their Telegram settings.</p>
+      <strong>{{ ui("faq_q2") }}</strong>
+      <p>{{ ui("faq_a2") }}</p>
     </div>
     <div class="faq-item">
-      <strong>Can I try it for free?</strong>
-      <p>Yes! Free 2-week trial. Create one vacancy, post to a Telegram group, and see candidates flowing in.</p>
+      <strong>{{ ui("faq_q3") }}</strong>
+      <p>{{ ui("faq_a3") }}</p>
     </div>
     <div class="faq-item">
-      <strong>Do I need technical skills?</strong>
-      <p>No. Everything is managed through a web dashboard. Set up a vacancy, write screening questions, and the AI handles the rest.</p>
+      <strong>{{ ui("faq_q4") }}</strong>
+      <p>{{ ui("faq_a4") }}</p>
     </div>
   </div>
 

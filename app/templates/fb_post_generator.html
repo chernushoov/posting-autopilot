@@ -20,18 +20,18 @@
   <aside class="card stack">
     {% if continuity and continuity.unfinished_run_id %}
     <div class="alert">
-      Unfinished run detected for this vacancy.
-      <a href="{{ url_for('fb_ui.posting_queue', run_id=continuity.unfinished_run_id) }}">Resume queue</a>
+      {{ ui('fb_unfinished_in_generator') }}
+      <a href="{{ url_for('fb_ui.posting_queue', run_id=continuity.unfinished_run_id) }}">{{ ui('fb_resume_queue_text') }}</a>
     </div>
     {% elif continuity and continuity.latest_approved_variant %}
     <div class="alert">
-      A saved approved variant already exists.
-      <a href="{{ url_for('fb_ui.group_selector', vacancy_id=vacancy.id, variant_id=continuity.latest_approved_variant.id) }}">Continue to groups</a>
+      {{ ui('fb_saved_variant_exists') }}
+      <a href="{{ url_for('fb_ui.group_selector', vacancy_id=vacancy.id, variant_id=continuity.latest_approved_variant.id) }}">{{ ui('fb_continue_to_groups') }}</a>
     </div>
     {% endif %}
 
     <div class="section-head">
-      <h2>Vacancy Context</h2>
+      <h2>{{ ui('listing_context_title') }}</h2>
       <span class="badge">{{ vacancy.city or "No city" }}</span>
     </div>
     <div class="info-list">

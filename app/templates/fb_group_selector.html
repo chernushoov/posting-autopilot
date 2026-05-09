@@ -40,8 +40,8 @@
 
     {% if latest_unfinished_run %}
     <div class="alert">
-      There is already an unfinished run for this vacancy.
-      <a href="{{ url_for('fb_ui.posting_queue', run_id=latest_unfinished_run.id) }}">Jump back into queue</a>
+      {{ ui('fb_unfinished_run_alert') }}
+      <a href="{{ url_for('fb_ui.posting_queue', run_id=latest_unfinished_run.id) }}">{{ ui('fb_resume_queue_link') }}</a>
     </div>
     {% endif %}
 

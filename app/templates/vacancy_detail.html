@@ -26,11 +26,11 @@
 </style>
 
 <div class="v-detail">
-  <a href="{{ url_for('vacancies.list_vacancies') }}" class="small">← {{ t('back', 'Back', 'Назад') if t else 'Back' }}</a>
+  <a href="{{ url_for('vacancies.list_vacancies') }}" class="small">← {{ ui('back_link') }}</a>
 
   <h1>
     {{ vacancy.title }}
-    {% if vacancy.is_active %}<span class="badge">active</span>{% else %}<span class="badge cold">paused</span>{% endif %}
+    {% if vacancy.is_active %}<span class="badge">{{ ui('badge_active') }}</span>{% else %}<span class="badge cold">{{ ui('badge_paused') }}</span>{% endif %}
   </h1>
   <p class="v-meta">id={{ vacancy.id }} · company_id={{ vacancy.company_id }} · lang={{ vacancy.language.value if vacancy.language else 'ru' }} · created {{ vacancy.created_at.strftime('%Y-%m-%d %H:%M') if vacancy.created_at else '?' }}</p>
 
@@ -48,51 +48,51 @@
   {% endif %}
 
   <div class="v-section">
-    <h2>Vacancy core</h2>
+    <h2>{{ ui('listing_core_title') }}</h2>
     <div class="field">
-      <div class="field-label">Body (intake / context)</div>
+      <div class="field-label">{{ ui('field_body_intake') }}</div>
       <div class="field-value"><pre>{{ vacancy.body }}</pre></div>
     </div>
     <div class="field">
-      <div class="field-label">City · Salary · Schedule · Contact</div>
+      <div class="field-label">{{ ui('field_pay_schedule_contact') }}</div>
       <div class="field-value">
         {{ vacancy.city or '—' }}<br>
-        <span class="small">Pay:</span> {{ vacancy.salary_text or '—' }}<br>
-        <span class="small">Schedule:</span> {{ vacancy.schedule_text or '—' }}<br>
-        <span class="small">Contact:</span> {{ vacancy.contact_text or '—' }}<br>
+        <span class="small">{{ ui('field_pay_inline') }}:</span> {{ vacancy.salary_text or '—' }}<br>
+        <span class="small">{{ ui('field_schedule_inline') }}:</span> {{ vacancy.schedule_text or '—' }}<br>
+        <span class="small">{{ ui('field_contact_inline') }}:</span> {{ vacancy.contact_text or '—' }}<br>
         <span class="small">WhatsApp:</span> {{ vacancy.whatsapp_number or '—' }}
       </div>
     </div>
   </div>
 
   <div class="v-section">
-    <h2>What gets posted</h2>
+    <h2>{{ ui('what_gets_posted') }}</h2>
     <div class="field">
-      <div class="field-label">Final post title</div>
+      <div class="field-label">{{ ui('final_post_title') }}</div>
       <div class="field-value">{{ vacancy.final_post_title or vacancy.title }}</div>
     </div>
     <div class="field">
-      <div class="field-label">Final post body
-        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText)">copy</button>
+      <div class="field-label">{{ ui('final_post_body') }}
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText)">{{ ui('copy_btn') }}</button>
       </div>
       <div class="post-preview">{{ vacancy.final_post_body or vacancy.body }}</div>
     </div>
     <div class="actions">
-      <a class="apply-link" href="{{ apply_link }}" target="_blank">Open apply link →</a>
-      <button class="copy-btn" style="font-size:12px" onclick="navigator.clipboard.writeText('{{ apply_link }}')">copy apply link</button>
+      <a class="apply-link" href="{{ apply_link }}" target="_blank">{{ ui('open_apply_link') }} →</a>
+      <button class="copy-btn" style="font-size:12px" onclick="navigator.clipboard.writeText('{{ apply_link }}')">{{ ui('copy_apply_link') }}</button>
     </div>
   </div>
 
   <div class="v-section">
-    <h2>Bot screening setup</h2>
+    <h2>{{ ui('bot_screening_setup_title') }}</h2>
     {% if vacancy.bot_introduction %}
     <div class="field">
-      <div class="field-label">Greeting (bot says first)</div>
+      <div class="field-label">{{ ui('field_greeting_label') }}</div>
       <div class="field-value"><pre>{{ vacancy.bot_introduction }}</pre></div>
     </div>
     {% endif %}
     <div class="field">
-      <div class="field-label">Qualifying questions (bot asks in order)</div>
+      <div class="field-label">{{ ui('field_qq_label') }}</div>
       <div class="field-value">
         {% if bot_questions_list %}
           <ol class="bot-q-list">
@@ -102,9 +102,8 @@
           <ol class="bot-q-list">
             {% for q in interview_questions_list %}<li>{{ q }}</li>{% endfor %}
           </ol>
-          <p class="small">(legacy interview_questions_json — bot uses these as fallback)</p>
         {% else %}
-          <p class="small">No custom questions — bot uses default screening.</p>
+          <p class="small">{{ ui('field_no_custom_q') }}</p>
         {% endif %}
       </div>
     </div>
@@ -122,7 +121,7 @@
     {% endif %}
     {% if vacancy.bot_faq_knowledge %}
     <div class="field">
-      <div class="field-label">FAQ knowledge (bot uses for context)</div>
+      <div class="field-label">{{ ui('field_faq_knowledge') }}</div>
       <div class="field-value"><pre>{{ vacancy.bot_faq_knowledge }}</pre></div>
     </div>
     {% endif %}
@@ -188,15 +187,15 @@
   </div>
 
   <div class="v-section">
-    <h2>Operator actions</h2>
+    <h2>{{ ui('operator_actions') }}</h2>
     <div class="actions">
       <a href="/vacancies/{{ vacancy.id }}/edit" class="apply-link">{{ ui('edit_vacancy_action') }}</a>
       <form method="post" action="{{ url_for('vacancies.toggle_vacancy', vacancy_id=vacancy.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">{{ 'Pause' if vacancy.is_active else 'Resume' }}</button>
+        <button type="submit">{{ ui('pause') if vacancy.is_active else ui('resume_btn') }}</button>
       </form>
-      <a href="/demo/" target="_blank">▶ Run demo (fire hot lead)</a>
-      <a href="{{ url_for('vacancies.list_vacancies') }}">All vacancies</a>
+      <a href="/demo/" target="_blank">{{ ui('run_demo_action') }}</a>
+      <a href="{{ url_for('vacancies.list_vacancies') }}">{{ ui('all_listings_link') }}</a>
     </div>
   </div>
 </div>
