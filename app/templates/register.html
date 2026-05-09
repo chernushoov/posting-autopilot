@@ -1,20 +1,20 @@
 {% extends "_layout.html" %}
 {% block content %}
-<div style="max-width:400px;margin:40px auto">
-  <h1>Create Account</h1>
-  <p style="color:var(--muted);margin-bottom:1.5rem">14-day free trial. No credit card required.</p>
+<div style="max-width:420px;margin:48px auto">
+  <h1 style="margin-bottom:8px">{{ ui("register_title") }}</h1>
+  <p style="color:var(--muted);margin-bottom:1.5rem">{{ ui("register_subtitle") }}</p>
   {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
   <form method="post" class="card" style="padding:1.5rem">
-    <label>Email</label>
-    <input name="email" type="email" required placeholder="you@company.com">
-    <label>Password</label>
-    <input name="password" type="password" required minlength="6" placeholder="Min 6 characters">
-    <label>Company Name</label>
-    <input name="company_name" required placeholder="Your business name">
-    <button class="btn" type="submit" style="width:100%;margin-top:1rem">Start Free Trial</button>
+    <label>{{ ui("register_email_label") }}</label>
+    <input name="email" type="email" required autocomplete="email" placeholder="{{ ui('register_email_ph') }}">
+    <label style="margin-top:1rem">{{ ui("register_password_label") }}</label>
+    <input name="password" type="password" required minlength="6" autocomplete="new-password" placeholder="{{ ui('register_password_ph') }}">
+    <label style="margin-top:1rem">{{ ui("register_company_label") }}</label>
+    <input name="company_name" required placeholder="{{ ui('register_company_ph') }}">
+    <button class="btn" type="submit" style="width:100%;margin-top:1.25rem">{{ ui("register_submit") }}</button>
   </form>
   <p style="text-align:center;margin-top:1rem;color:var(--muted)">
-    Already have an account? <a href="/user-login">Sign in</a>
+    {{ ui("login_have_account") }} <a href="/login">{{ ui("enter_btn") }}</a>
   </p>
 </div>
 {% endblock %}

@@ -5,6 +5,7 @@ import re
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
 
+from common.i18n import ui
 from ..db import db_session
 from ..models import User, UserRole, Company
 
@@ -22,6 +23,10 @@ def _valid_email(email: str) -> bool:
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
 
 
+def _ui(key):
+    return ui(key, session.get("ui_lang", "he"))
+
+
 @bp.get("/register")
 def register():
     if session.get("is_admin") or session.get("user_id"):
@@ -36,19 +41,18 @@ def register_post():
     company_name = request.form.get("company_name", "").strip()
 
     if not email or not password or not company_name:
-        return render_template("register.html", error="All fields are required.")
+        return render_template("register.html", error=_ui("register_required"))
     if not _valid_email(email):
-        return render_template("register.html", error="Invalid email address.")
+        return render_template("register.html", error=_ui("register_email_invalid"))
     if len(password) < 6:
-        return render_template("register.html", error="Password must be at least 6 characters.")
+        return render_template("register.html", error=_ui("register_password_short"))
 
     db = db_session()
     existing = db.query(User).filter(User.email == email).first()
     if existing:
         db.close()
-        return render_template("register.html", error="Email already registered.")
+        return render_template("register.html", error=_ui("register_email_taken"))
 
-    # Create company
     company = Company(
         owner_id=email,
         name=company_name,
@@ -57,7 +61,6 @@ def register_post():
     db.add(company)
     db.flush()
 
-    # Create user with trial
     user = User(
         email=email,
         password_hash=_hash_password(password),
@@ -68,7 +71,6 @@ def register_post():
     db.add(user)
     db.commit()
 
-    # Auto-login
     session["user_id"] = user.id
     session["is_admin"] = True
     session["owner_id"] = email
@@ -80,35 +82,9 @@ def register_post():
 
 @bp.get("/user-login")
 def user_login():
-    if session.get("is_admin") or session.get("user_id"):
-        return redirect(url_for("auth.dashboard"))
-    return render_template("user_login.html")
+    return redirect(url_for("auth.login", **request.args))
 
 
 @bp.post("/user-login")
 def user_login_post():
-    email = request.form.get("email", "").strip().lower()
-    password = request.form.get("password", "").strip()
-
-    if not email or not password:
-        return render_template("user_login.html", error="Email and password required.")
-
-    db = db_session()
-    user = db.query(User).filter(User.email == email, User.is_active == True).first()
-    if not user or user.password_hash != _hash_password(password):
-        db.close()
-        return render_template("user_login.html", error="Invalid email or password.")
-
-    # Check trial expiration
-    if user.trial_expires_at and datetime.utcnow() > user.trial_expires_at:
-        db.close()
-        return redirect(url_for("pricing.pricing_page"))
-
-    session["user_id"] = user.id
-    session["is_admin"] = True
-    session["owner_id"] = user.email
-    if user.company_id:
-        session["current_company_id"] = user.company_id
-    db.close()
-
-    return redirect(url_for("auth.dashboard"))
+    return redirect(url_for("auth.login"), code=307)

@@ -1,43 +1,16 @@
-<!DOCTYPE html>
-<html lang="{{ ui_lang or 'en' }}" {% if is_rtl %}dir="rtl"{% endif %}>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{ ui("login_title") }} — Posting Autopilot</title>
-<link rel="stylesheet" href="/static/app.css">
-{% if is_rtl %}
-<style>body{direction:rtl;text-align:right}.login-card form{text-align:right}</style>
-{% endif %}
-</head>
-<body>
-<div class="login-shell">
-  <div class="login-card">
-    <div class="brand" style="font-size:24px;margin-bottom:4px">Posting<em>Autopilot</em></div>
-    <p class="muted" style="font-size:14px">{{ ui("login_title") }}</p>
-    <div class="lang-switcher" style="display:flex;gap:4px;justify-content:center;margin-bottom:20px">
-      {% for l in (supported_langs or ['en','ru','he']) %}
-        {% if l == (ui_lang or 'en') %}
-          <span class="pill" style="background:var(--accent);color:#fff;border-color:var(--accent)">{{ l.upper() }}</span>
-        {% else %}
-          <a class="pill" href="/set-lang/{{ l }}">{{ l.upper() }}</a>
-        {% endif %}
-      {% endfor %}
-    </div>
-    <form method="post" class="stack">
-      <div>
-        <label>{{ ui("login_field") }}</label>
-        <input name="login" placeholder="{{ ui('login_field') }}" required autofocus>
-      </div>
-      <div>
-        <label>{{ ui("password_field") }}</label>
-        <input name="password" type="password" placeholder="{{ ui('password_field') }}" required>
-      </div>
-      <button type="submit" class="btn">{{ ui("enter_btn") }}</button>
-      {% if error %}
-      <div class="login-error">{{ error }}</div>
-      {% endif %}
-    </form>
-  </div>
+{% extends "_layout.html" %}
+{% block content %}
+<div style="max-width:420px;margin:48px auto">
+  <h1 style="margin-bottom:8px">{{ ui("login_title") }}</h1>
+  <p style="color:var(--muted);margin-bottom:1.5rem">{{ ui("login_no_account") }} <a href="/register">{{ ui("login_register_cta") }}</a></p>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <form method="post" class="card" style="padding:1.5rem">
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <label>{{ ui("login_id_label") }}</label>
+    <input name="login" required autofocus autocomplete="username" placeholder="{{ ui('login_id_placeholder') }}">
+    <label style="margin-top:1rem">{{ ui("password_field") }}</label>
+    <input name="password" type="password" required autocomplete="current-password">
+    <button class="btn" type="submit" style="width:100%;margin-top:1.25rem">{{ ui("enter_btn") }}</button>
+  </form>
 </div>
-</body>
-</html>
+{% endblock %}

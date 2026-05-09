@@ -8,11 +8,8 @@ def is_logged_in():
     return session.get("is_admin") is True or session.get("user_id") is not None
 
 def _login_redirect():
-    """Redirect to the appropriate login page."""
-    try:
-        return redirect(url_for("registration.user_login", next=request.path))
-    except Exception:
-        return redirect(url_for("auth.login", next=request.path))
+    """Redirect to the unified /login page, preserving the original target."""
+    return redirect(url_for("auth.login", next=request.path))
 
 def login_required(fn):
     @wraps(fn)

@@ -1,31 +1,31 @@
 {% extends "_layout.html" %}
 {% block content %}
-<div style="max-width:700px;margin:0 auto">
-  <h1>Terms of Service</h1>
-  <p style="color:var(--muted)">Last updated: April 2026</p>
+<div style="max-width:720px;margin:0 auto">
+  <h1>{{ ui("terms_title") }}</h1>
+  <p style="color:var(--muted)">{{ ui("terms_updated") }}</p>
 
-  <h3>1. Service Description</h3>
-  <p>Posting Autopilot provides automated posting and AI-powered lead screening for businesses. The service posts your listings to Telegram groups and Facebook communities, and processes incoming responses through an AI assistant.</p>
+  <h3>{{ ui("terms_h1") }}</h3>
+  <p>{{ ui("terms_p1") }}</p>
 
-  <h3>2. Account & Trial</h3>
-  <p>New accounts receive a 14-day free trial. After the trial, a paid subscription is required. You are responsible for maintaining the security of your account credentials.</p>
+  <h3>{{ ui("terms_h2") }}</h3>
+  <p>{{ ui("terms_p2") }}</p>
 
-  <h3>3. Acceptable Use</h3>
-  <p>You agree not to use the service for spam, illegal content, misleading posts, or any activity that violates Telegram's or Facebook's terms of service. We reserve the right to suspend accounts that violate these terms.</p>
+  <h3>{{ ui("terms_h3") }}</h3>
+  <p>{{ ui("terms_p3") }}</p>
 
-  <h3>4. Anti-Spam Policy</h3>
-  <p>The system enforces posting rate limits to prevent spam. Attempts to circumvent these limits may result in account suspension.</p>
+  <h3>{{ ui("terms_h4") }}</h3>
+  <p>{{ ui("terms_p4") }}</p>
 
-  <h3>5. Data & Privacy</h3>
-  <p>We store your listing data, Telegram session credentials (encrypted), and conversation logs. Lead data (names, phones, messages) is stored for your business use. We do not sell personal data to third parties.</p>
+  <h3>{{ ui("terms_h5") }}</h3>
+  <p>{{ ui("terms_p5") }}</p>
 
-  <h3>6. Limitation of Liability</h3>
-  <p>The service is provided "as is." We are not responsible for Telegram account bans resulting from posting activity, though our anti-spam measures are designed to minimize this risk.</p>
+  <h3>{{ ui("terms_h6") }}</h3>
+  <p>{{ ui("terms_p6") }}</p>
 
-  <h3>7. Cancellation</h3>
-  <p>You may cancel your subscription at any time. Your data will be retained for 30 days after cancellation.</p>
+  <h3>{{ ui("terms_h7") }}</h3>
+  <p>{{ ui("terms_p7") }}</p>
 
-  <h3>8. Contact</h3>
-  <p>For questions about these terms, contact us through the platform dashboard.</p>
+  <h3>{{ ui("terms_h8") }}</h3>
+  <p>{{ ui("terms_p8") }}</p>
 </div>
 {% endblock %}
