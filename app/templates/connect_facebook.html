@@ -55,6 +55,20 @@
       {% else %}Примечание: группы + Marketplace работают через браузерную сессию. App ID/Secret ниже — только для официальных Meta-страниц (необязательно).{% endif %}
     </p>
   </details>
+
+  {% if fb_groups_list %}
+  <div style="margin-top:16px">
+    <div style="font-weight:600;margin-bottom:8px">{% if ui_lang=='he' %}קבוצות מסונכרנות{% elif ui_lang=='en' %}Synced groups{% else %}Синхронизированные группы{% endif %} ({{ fb_groups_list|length }})</div>
+    <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-sm)">
+      {% for g in fb_groups_list %}
+      <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:13px">
+        <a href="{{ g.url }}" target="_blank" rel="noopener" style="color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</a>
+        {% if g.members %}<span class="small muted" style="flex-shrink:0">{{ g.members }} 👥</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 {% if not fb_connected %}

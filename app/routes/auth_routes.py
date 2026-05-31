@@ -505,6 +505,23 @@ def connect_facebook():
     fb_group_count = db.query(FacebookGroup).filter(FacebookGroup.company_id == company_id).count() if company_id else 0
     if fb_browser_connected and fb_group_count > 0:
         fb_connected = True
+    # Materialize the imported groups into plain dicts (so the template can list
+    # them after the session closes). These are the browser-synced groups — the
+    # FacebookGroup table — separate from the legacy Source-based facebook_sources.
+    fb_groups_list = [
+        {
+            "name": g.name,
+            "url": g.facebook_url_normalized or g.facebook_url or "",
+            "members": g.member_count_estimate,
+        }
+        for g in (
+            db.query(FacebookGroup)
+            .filter(FacebookGroup.company_id == company_id)
+            .order_by(FacebookGroup.name)
+            .limit(500)
+            .all()
+        )
+    ] if company_id else []
 
     # Load synced pages from cache
     fb_pages = []
@@ -529,6 +546,7 @@ def connect_facebook():
         fb_connected=fb_connected,
         fb_browser_connected=fb_browser_connected,
         fb_group_count=fb_group_count,
+        fb_groups_list=fb_groups_list,
         fb_user_name=fb_user_name,
         fb_pages=fb_pages,
         official_pages_sync_enabled=True,
