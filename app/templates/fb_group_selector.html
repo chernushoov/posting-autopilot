@@ -4,7 +4,7 @@
   <div>
     <div class="eyebrow">Facebook Safe Workflow</div>
     <h1>Group Selector</h1>
-    <p class="muted">Pick the best groups for this vacancy, then create a posting run in one step.</p>
+    <p class="muted">{{ ui("fb_group_pick_intro") }}</p>
   </div>
   <div class="actions">
     <a class="pill" href="{{ url_for('fb_ui.post_generator', vacancy_id=vacancy.id) }}">Back to Generator</a>
