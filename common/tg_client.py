@@ -37,6 +37,29 @@ _BOT_API_FALLBACK_ERROR_MARKERS = (
 )
 
 
+def shared_app_credentials():
+    """Managed Telegram *app* credentials shared across tenants for phone-only onboarding.
+
+    api_id/api_hash identify the registered application, NOT the end user — Telegram
+    lets many accounts authenticate against one app. When the service operator sets
+    RECRUITBOT_TG_API_ID / RECRUITBOT_TG_API_HASH (one app registered once at
+    my.telegram.org), new users connect with only phone + SMS code; we never ask them
+    to create a developer app. When unset, the UI falls back to bring-your-own
+    credentials, so nothing breaks without configuration.
+
+    Returns (api_id:int, api_hash:str) or (None, None).
+    """
+    raw_id = os.getenv("RECRUITBOT_TG_API_ID", "").strip()
+    api_hash = os.getenv("RECRUITBOT_TG_API_HASH", "").strip()
+    if raw_id.isdigit() and len(api_hash) >= 8:
+        return int(raw_id), api_hash
+    return None, None
+
+
+def has_shared_app_credentials() -> bool:
+    return shared_app_credentials()[0] is not None
+
+
 def _session_path(company_id: int) -> str:
     return os.path.join(SESSION_DIR, f"company_{company_id}")
 

@@ -286,12 +286,16 @@ def connect_telegram():
 
     db.close()
 
+    from common.tg_client import has_shared_app_credentials
+    tg_shared_creds = has_shared_app_credentials()
+
     return render_template("connect_telegram.html",
         telegram_sources=telegram_sources,
         existing_ids=existing_ids,
         recent_conversations=recent_conversations,
         tg_api_id=tg_api_id, tg_phone=tg_phone,
         tg_authorized=tg_authorized,
+        tg_shared_creds=tg_shared_creds,
         tg_user=tg_user,
         synced_groups=synced_groups,
         awaiting_code=awaiting_code,
@@ -308,8 +312,20 @@ def tg_send_code():
     api_hash = request.form.get("api_hash", "").strip()
     phone = request.form.get("phone", "").strip()
 
-    if not api_id or not api_hash or not phone:
-        return redirect(url_for("auth.connect_telegram", error="All fields required"))
+    # Phone-only onboarding: if the user didn't supply their own developer app
+    # credentials, fall back to the service's managed shared app. This removes the
+    # #1 onboarding wall (my.telegram.org → create app → copy 2 secrets).
+    if not api_id or not api_hash:
+        from common.tg_client import shared_app_credentials
+        shared_id, shared_hash = shared_app_credentials()
+        if shared_id and shared_hash:
+            api_id = api_id or str(shared_id)
+            api_hash = api_hash or shared_hash
+
+    if not phone:
+        return redirect(url_for("auth.connect_telegram", error="Phone number is required"))
+    if not api_id or not api_hash:
+        return redirect(url_for("auth.connect_telegram", error="Telegram API credentials are not configured. Open Advanced and enter your API ID and API Hash, or ask the operator to enable phone-only connect."))
 
     try:
         from common.tg_client import send_code

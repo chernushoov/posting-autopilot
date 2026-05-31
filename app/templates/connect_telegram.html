@@ -62,17 +62,37 @@
 <div style="max-width:440px;margin:40px auto">
   <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
   <h1>{{ ui("tg_connect_title") }}</h1>
-  <p class="muted" style="margin-bottom:24px">{{ ui("tg_connect_desc") }}</p>
+  <p class="muted" style="margin-bottom:24px">{% if tg_shared_creds %}{{ ui("tg_connect_desc_phone") }}{% else %}{{ ui("tg_connect_desc") }}{% endif %}</p>
   <div class="card">
-    <div class="eyebrow">{{ ui("tg_credentials") }}</div>
-    <p class="small muted" style="margin-bottom:16px">{{ ui("tg_credentials_desc") }}</p>
     <form method="post" action="/connect/telegram/send-code" class="stack">
+      {% if tg_shared_creds %}
+      {# Phone-only onboarding: managed shared app credential is configured. #}
+      <div>
+        <label>{{ ui("tg_phone") }}</label>
+        <input name="phone" type="tel" placeholder="+972 50 000 0000" value="{{ tg_phone or '' }}" required autofocus
+               style="font-size:20px;padding:14px;letter-spacing:1px">
+        <p class="small muted" style="margin-top:8px">{{ ui("tg_phone_only_hint") }}</p>
+      </div>
+      <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>
+      <details style="margin-top:6px">
+        <summary class="small muted" style="cursor:pointer">{{ ui("tg_advanced_creds") }}</summary>
+        <p class="small muted" style="margin:10px 0">{{ ui("tg_advanced_creds_hint") }}</p>
+        <div class="grid2">
+          <div><label>API ID</label><input name="api_id" type="number" value="" autocomplete="off"></div>
+          <div><label>API Hash</label><input name="api_hash" value="" autocomplete="off"></div>
+        </div>
+      </details>
+      {% else %}
+      {# Bring-your-own credentials (operator has not configured a shared app). #}
+      <div class="eyebrow">{{ ui("tg_credentials") }}</div>
+      <p class="small muted" style="margin-bottom:16px">{{ ui("tg_credentials_desc") }}</p>
       <div class="grid2">
         <div><label>API ID</label><input name="api_id" type="number" value="{{ tg_api_id or '' }}" required></div>
         <div><label>API Hash</label><input name="api_hash" value="" required autocomplete="off"></div>
       </div>
       <div><label>{{ ui("tg_phone") }}</label><input name="phone" type="tel" placeholder="+972..." value="{{ tg_phone or '' }}" required></div>
       <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>
+      {% endif %}
     </form>
   </div>
 </div>
