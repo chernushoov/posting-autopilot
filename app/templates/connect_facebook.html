@@ -23,6 +23,40 @@
 {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
 {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
 
+<!-- Browser-session FB status + cheat-sheet -->
+<div class="card" style="margin-bottom:20px">
+  {% if fb_browser_connected and fb_group_count > 0 %}
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">✅</span>
+      <strong>{% if ui_lang=='he' %}פייסבוק מחובר (סשן דפדפן){% elif ui_lang=='en' %}Facebook connected (browser session){% else %}Facebook подключён (браузерная сессия){% endif %}</strong>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">
+      {% if ui_lang=='he' %}{{ fb_group_count }} קבוצות נטענו מהחשבון שלך. בחר קבוצות בעת יצירת פוסט למשרה (Facebook → מחולל פוסט).
+      {% elif ui_lang=='en' %}{{ fb_group_count }} groups loaded from your account. Pick groups when creating a post for a vacancy (Facebook → post generator).
+      {% else %}{{ fb_group_count }} групп загружено из твоего аккаунта. Выбирай группы при создании поста по вакансии (Facebook → генератор поста).{% endif %}
+    </p>
+  {% else %}
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">⚠️</span>
+      <strong>{% if ui_lang=='he' %}פייסבוק לא מחובר עדיין{% elif ui_lang=='en' %}Facebook not connected yet{% else %}Facebook ещё не подключён{% endif %}</strong>
+    </div>
+  {% endif %}
+
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;font-weight:600">{% if ui_lang=='he' %}איך לחבר פייסבוק — קבוצות + Marketplace{% elif ui_lang=='en' %}How to connect Facebook — groups + Marketplace{% else %}Как подключить Facebook — группы + Marketplace{% endif %}</summary>
+    <ol class="small" style="margin:12px 0 0;padding-inline-start:20px;line-height:1.8">
+      <li>{% if ui_lang=='he' %}חיבור חד-פעמי: נפתח חלון דפדפן ואתה מתחבר לחשבון הפייסבוק הרגיל שלך (כולל אימות דו-שלבי).{% elif ui_lang=='en' %}One-time login: a browser window opens and you sign into your normal Facebook (incl. 2FA).{% else %}Один раз: открывается окно браузера, и ты входишь в свой обычный Facebook (включая 2FA).{% endif %}</li>
+      <li>{% if ui_lang=='he' %}המערכת קוראת את הקבוצות שאתה חבר בהן ומוסיפה אותן לכאן אוטומטית.{% elif ui_lang=='en' %}The system reads the groups you belong to and adds them here automatically.{% else %}Система читает группы, где ты состоишь, и добавляет их сюда автоматически.{% endif %}</li>
+      <li>{% if ui_lang=='he' %}ביצירת פוסט למשרה — בוחרים קבוצות + Marketplace, והפרסום יוצא מטעמך.{% elif ui_lang=='en' %}When posting a vacancy — pick groups + Marketplace, and posts go out on your behalf.{% else %}При создании поста по вакансии — выбираешь группы + Marketplace, и публикация идёт от твоего имени.{% endif %}</li>
+    </ol>
+    <p class="small muted" style="margin-top:10px">
+      {% if ui_lang=='he' %}הערה: סשן הדפדפן הוא מה שמפעיל קבוצות + Marketplace. ה-App ID/Secret למטה הם רק לעמודי Meta הרשמיים (לא חובה).
+      {% elif ui_lang=='en' %}Note: the browser session is what powers groups + Marketplace. The App ID/Secret below are only for official Meta Pages (optional).
+      {% else %}Примечание: группы + Marketplace работают через браузерную сессию. App ID/Secret ниже — только для официальных Meta-страниц (необязательно).{% endif %}
+    </p>
+  </details>
+</div>
+
 {% if not fb_connected %}
 <!-- ═══ NOT CONNECTED ═══ -->
 <div style="max-width:500px;margin:40px auto">
@@ -31,16 +65,16 @@
   <p class="muted" style="margin-bottom:28px">{{ ui("fb_connect_desc") }}</p>
 
   <div class="card">
-    <div class="eyebrow">{{ ui("tg_credentials") }}</div>
+    <div class="eyebrow">Official Meta Pages OAuth</div>
     <p class="small muted" style="margin-bottom:16px">
-      {% if ui_lang == 'ru' %}Перейдите на <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; скопируйте App ID и App Secret.
-      {% elif ui_lang == 'he' %}עבור ל-<a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; העתק App ID ו-App Secret.
-      {% else %}Go to <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; copy App ID and App Secret.{% endif %}
+      {% if ui_lang == 'ru' %}Подключение ниже ведёт только по официальному Meta Pages path. Синхронизация групп из профиля и автоматический Marketplace API path здесь намеренно не обещаются, потому что мы держим продукт только в белом режиме.
+      {% elif ui_lang == 'he' %}החיבור למטה משתמש רק בנתיב הרשמי של Meta Pages. סנכרון קבוצות מהפרופיל ו-Marketplace אוטומטי לא מוצגים כאן כיכולת רשמית, כי המוצר נשאר בנתיב לבן בלבד.
+      {% else %}The connection below uses only the official Meta Pages path. Profile-based group sync and automated Marketplace posting are intentionally not presented here as official capabilities because this product stays on the white-hat path only.{% endif %}
     </p>
     <form method="post" action="/connect/facebook/setup" class="stack">
       <div class="grid2">
-        <div><label>Facebook App ID</label><input name="fb_app_id" value="{{ session.get('fb_app_id', '') }}" required placeholder="123456789012345"></div>
-        <div><label>Facebook App Secret</label><input name="fb_app_secret" value="" required placeholder="abc123def456..."></div>
+        <div><label>Facebook App ID</label><input name="fb_app_id" value="{{ fb_app_id or '' }}" required placeholder="123456789012345"></div>
+        <div><label>Facebook App Secret</label><input name="fb_app_secret" value="{{ fb_app_secret or '' }}" required autocomplete="off" placeholder="abc123def456..."></div>
       </div>
       <button class="fb-login-btn" type="submit">
         {% if ui_lang == 'ru' %}Подключить Facebook{% elif ui_lang == 'he' %}חבר פייסבוק{% else %}Connect Facebook{% endif %}
@@ -104,7 +138,12 @@
             {% if fb_user_name %}<span class="small muted">{{ fb_user_name }}</span>{% endif %}
           </div>
         </div>
-        <form method="post" action="/connect/facebook/sync" style="display:inline"><button class="btn" type="submit">{{ ui("fb_sync_btn") }}</button></form>
+        <form method="post" action="/connect/facebook/sync" style="display:inline"><button class="btn" type="submit">Sync Pages</button></form>
+      </div>
+      <div class="small muted" style="margin-top:10px">
+        {% if ui_lang == 'ru' %}Белый режим: официально синхронизируем только Facebook Pages. Groups и Marketplace остаются manual-assisted поверх подготовленного текста и destination links.
+        {% elif ui_lang == 'he' %}מצב לבן: מסנכרנים רשמית רק Facebook Pages. Groups ו-Marketplace נשארים ב-manual-assisted עם טקסט מוכן וקישורי יעד.
+        {% else %}White-hat mode: only Facebook Pages are synced officially. Groups and Marketplace remain manual-assisted with prepared text and destination links.{% endif %}
       </div>
     </div>
 
@@ -112,46 +151,64 @@
     <div class="card">
       <div class="tab-bar">
         <button class="tab-btn active" onclick="showTab('groups',this)">
-          {% if ui_lang == 'ru' %}Группы{% elif ui_lang == 'he' %}קבוצות{% else %}Groups{% endif %}
+          {% if ui_lang == 'ru' %}Pages{% elif ui_lang == 'he' %}עמודים{% else %}Pages{% endif %}
         </button>
         <button class="tab-btn" onclick="showTab('pages',this)">
-          {% if ui_lang == 'ru' %}Сообщества{% elif ui_lang == 'he' %}קהילות{% else %}Communities{% endif %}
+          {% if ui_lang == 'ru' %}Groups (manual){% elif ui_lang == 'he' %}קבוצות (ידני){% else %}Groups (manual){% endif %}
         </button>
         <button class="tab-btn" onclick="showTab('marketplace',this)">
-          {% if ui_lang == 'ru' %}Маркетплейс{% elif ui_lang == 'he' %}שוק{% else %}Marketplace{% endif %}
+          {% if ui_lang == 'ru' %}Marketplace (manual){% elif ui_lang == 'he' %}Marketplace (ידני){% else %}Marketplace (manual){% endif %}
         </button>
       </div>
 
-      <!-- ─── Groups tab ─── -->
+      <!-- ─── Pages tab ─── -->
       <div class="tab-content active" id="tab-groups">
         <p class="small muted" style="margin-bottom:14px">
-          {% if ui_lang == 'ru' %}Добавьте Facebook-группы для публикации объявлений.{% elif ui_lang == 'he' %}הוסף קבוצות פייסבוק לפרסום מודעות.{% else %}Add Facebook groups where your listings will be posted.{% endif %}
+          {% if ui_lang == 'ru' %}Это официальный Meta path: синхронизируйте Pages, к которым у подключённого пользователя есть доступ.
+          {% elif ui_lang == 'he' %}זהו הנתיב הרשמי של Meta: סנכרן עמודים שלמשתמש המחובר יש אליהם גישה.
+          {% else %}This is the official Meta path: sync Pages the connected user can manage.{% endif %}
         </p>
-        <!-- Synced groups -->
-        {% if fb_groups %}
+        {% if fb_pages %}
         <div style="margin-bottom:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span class="small" style="font-weight:600">{% if ui_lang == 'ru' %}Найденные группы ({{ fb_groups|length }}){% elif ui_lang == 'he' %}קבוצות שנמצאו ({{ fb_groups|length }}){% else %}Found groups ({{ fb_groups|length }}){% endif %}</span>
-            <form method="post" action="/connect/facebook/add-selected">
-              <input type="hidden" name="group_ids" id="fb-selected" value="">
-              <button class="btn" type="submit" id="fb-add-btn" disabled style="font-size:12px;padding:6px 14px">{{ ui("fb_add_selected") }} (0)</button>
+            <span class="small" style="font-weight:600">{% if ui_lang == 'ru' %}Найденные Pages ({{ fb_pages|length }}){% elif ui_lang == 'he' %}עמודים שנמצאו ({{ fb_pages|length }}){% else %}Found Pages ({{ fb_pages|length }}){% endif %}</span>
+            <form method="post" action="/connect/facebook/add-selected-pages">
+              <input type="hidden" name="page_ids" id="fb-pages-selected" value="">
+              <button class="btn" type="submit" id="fb-pages-add-btn" disabled style="font-size:12px;padding:6px 14px">Add Selected (0)</button>
             </form>
           </div>
           <div style="display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:4px">
-            {% for g in fb_groups %}
+            {% for page in fb_pages %}
             <label class="fg">
-              <input type="checkbox" class="fb-gc" value="{{ g.id }}" {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}checked disabled{% endif %}>
+              {% set page_link = page.link or ('https://facebook.com/' ~ page.id) %}
+              <input type="checkbox" class="fb-page-cb" value="{{ page.id }}" {% if page_link in existing_urls %}checked disabled{% endif %}>
               <div style="flex:1;min-width:0">
-                <div style="font-weight:500">{{ g.name }}</div>
-                <div style="font-size:11px;color:var(--muted)">{{ g.member_count or 0 }} {{ ui("fb_members") }} · {{ g.privacy or '' }}</div>
+                <div style="font-weight:500">{{ page.name }}</div>
+                <div style="font-size:11px;color:var(--muted)">{{ page.category or 'Page' }}</div>
               </div>
-              {% if ('https://facebook.com/groups/' ~ g.id) in existing_urls %}<span style="font-size:10px;color:var(--success);font-weight:600">{{ ui("fb_added") }}</span>{% endif %}
+              {% if page_link in existing_urls %}<span style="font-size:10px;color:var(--success);font-weight:600">{{ ui("fb_added") }}</span>{% endif %}
             </label>
             {% endfor %}
           </div>
         </div>
+        {% else %}
+        <div class="card" style="padding:18px;margin-bottom:16px">
+          <div class="small muted">
+            {% if ui_lang == 'ru' %}Пока нет синхронизированных Pages. Нажмите Sync Pages после подключения Meta OAuth.
+            {% elif ui_lang == 'he' %}עדיין אין עמודים מסונכרנים. לחץ על Sync Pages אחרי חיבור Meta OAuth.
+            {% else %}No synced Pages yet. Click Sync Pages after completing Meta OAuth.{% endif %}
+          </div>
+        </div>
         {% endif %}
-        <!-- Manual add group -->
+      </div>
+
+      <!-- ─── Groups tab ─── -->
+      <div class="tab-content" id="tab-pages">
+        <p class="small muted" style="margin-bottom:14px">
+          {% if ui_lang == 'ru' %}Официальной безопасной синхронизации групп из профиля здесь нет. Для групп оставляем только manual-assisted режим: добавить URL, открыть правильный контекст, вставить подготовленный пост, записать результат.
+          {% elif ui_lang == 'he' %}אין כאן סנכרון רשמי ובטוח של קבוצות מהפרופיל. לקבוצות נשאר רק manual-assisted: להוסיף URL, לפתוח את ההקשר הנכון, להדביק את הפוסט המוכן ולרשום תוצאה.
+          {% else %}There is no official safe profile-based group sync here. Groups stay manual-assisted only: save the URL, open the right context, paste the prepared post, and record the result.{% endif %}
+        </p>
         <div style="border-top:1px solid var(--border-light);padding-top:16px">
           <span class="small" style="font-weight:600;display:block;margin-bottom:10px">{% if ui_lang == 'ru' %}Добавить вручную{% elif ui_lang == 'he' %}הוסף ידנית{% else %}Add manually{% endif %}</span>
           <form method="post" action="/sources/new" style="display:flex;gap:8px;align-items:flex-end">
@@ -167,43 +224,12 @@
         </div>
       </div>
 
-      <!-- ─── Communities/Pages tab ─── -->
-      <div class="tab-content" id="tab-pages">
-        <p class="small muted" style="margin-bottom:14px">
-          {% if ui_lang == 'ru' %}Добавьте сообщества, открытые страницы и доски объявлений.{% elif ui_lang == 'he' %}הוסף קהילות, דפים פתוחים ולוחות מודעות.{% else %}Add communities, open pages and bulletin boards.{% endif %}
-        </p>
-        <!-- List existing community destinations -->
-        {% set community_sources = facebook_sources|selectattr('folder', 'equalto', 'communities')|list %}
-        {% if community_sources %}
-        <div style="margin-bottom:16px;display:flex;flex-direction:column;gap:4px">
-          {% for s in community_sources %}
-          <div class="dest-fb">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></div>
-            <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">{{ s.label }}</div><div style="font-size:11px;color:var(--muted)">{{ s.destination_url or '' }}</div></div>
-            <form method="post" action="/sources/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Remove?')"><button type="submit" style="background:none;border:none;color:var(--light);cursor:pointer;font-size:14px">&times;</button></form>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        <!-- Add community -->
-        <div style="border-top:1px solid var(--border-light);padding-top:16px">
-          <form method="post" action="/sources/new" style="display:flex;gap:8px;align-items:flex-end">
-            <input type="hidden" name="platform" value="facebook">
-            <input type="hidden" name="posting_mode" value="assisted_manual">
-            <input type="hidden" name="destination_kind" value="group">
-            <input type="hidden" name="tg_ref" value="">
-            <input type="hidden" name="folder" value="communities">
-            <div style="flex:1"><label class="small">{% if ui_lang == 'ru' %}Название{% elif ui_lang == 'he' %}שם{% else %}Name{% endif %}</label><input name="label" required placeholder=""></div>
-            <div style="flex:1"><label class="small">URL</label><input name="destination_url" required placeholder="https://facebook.com/..."></div>
-            <button type="submit" class="btn" style="padding:10px 16px;white-space:nowrap">+</button>
-          </form>
-        </div>
-      </div>
-
       <!-- ─── Marketplace tab ─── -->
       <div class="tab-content" id="tab-marketplace">
         <p class="small muted" style="margin-bottom:14px">
-          {% if ui_lang == 'ru' %}Публикуйте на Facebook Marketplace: авто, недвижимость, товары, услуги. Создайте объявление — система подготовит текст для размещения.{% elif ui_lang == 'he' %}פרסם ב-Facebook Marketplace: רכב, נדל"ן, מוצרים, שירותים. צור מודעה והמערכת תכין את הטקסט.{% else %}Post to Facebook Marketplace: cars, real estate, items, services. Create a listing and the system prepares the text.{% endif %}
+          {% if ui_lang == 'ru' %}Автоматической официальной Marketplace API интеграции здесь нет. Этот раздел только для manual-assisted shortcuts: сохранить ссылку/регион, открыть Marketplace вручную и вставить подготовленный текст.
+          {% elif ui_lang == 'he' %}אין כאן אינטגרציית Marketplace API אוטומטית ורשמית. האזור הזה הוא רק ל-manual-assisted shortcuts: לשמור קישור/אזור, לפתוח Marketplace ידנית ולהדביק את הטקסט המוכן.
+          {% else %}There is no official automated Marketplace API integration here. This section is manual-assisted only: save a shortcut, open Marketplace manually, and paste the prepared text.{% endif %}
         </p>
         <!-- List existing marketplace destinations -->
         {% set mp_sources = facebook_sources|selectattr('folder', 'equalto', 'marketplace')|list %}
@@ -224,7 +250,7 @@
           <form method="post" action="/sources/new" class="stack" style="gap:10px">
             <input type="hidden" name="platform" value="facebook">
             <input type="hidden" name="posting_mode" value="assisted_manual">
-            <input type="hidden" name="destination_kind" value="group">
+            <input type="hidden" name="destination_kind" value="marketplace">
             <input type="hidden" name="tg_ref" value="">
             <input type="hidden" name="folder" value="marketplace">
             <div class="grid2">
@@ -285,9 +311,9 @@ function showTab(name,btn){
 
 // Group selection
 (function(){
-  var cc=document.querySelectorAll('.fb-gc:not(:disabled)'),h=document.getElementById('fb-selected'),b=document.getElementById('fb-add-btn');
+  var cc=document.querySelectorAll('.fb-page-cb:not(:disabled)'),h=document.getElementById('fb-pages-selected'),b=document.getElementById('fb-pages-add-btn');
   if(!cc.length||!h||!b)return;
-  function u(){var ids=[];cc.forEach(function(c){if(c.checked)ids.push(c.value)});h.value=ids.join(',');b.disabled=ids.length===0;b.textContent='{{ ui("fb_add_selected") }} ('+ids.length+')';}
+  function u(){var ids=[];cc.forEach(function(c){if(c.checked)ids.push(c.value)});h.value=ids.join(',');b.disabled=ids.length===0;b.textContent='Add Selected ('+ids.length+')';}
   cc.forEach(function(c){c.addEventListener('change',u)});
 })();
 </script>

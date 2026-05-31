@@ -1,8 +1,17 @@
 import time
+import secrets
+from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from ..auth import admin_login_ok
 from ..db import db_session
-from ..models import Company
+from ..models import Company, User
+from common.connection_flows import (
+    create_connection_flow,
+    delete_connection_flow,
+    get_connection_flow,
+    update_connection_flow,
+)
+from common.passwords import hash_password, verify_password
 
 bp = Blueprint("auth", __name__)
 
@@ -35,23 +44,54 @@ def _record_attempt():
     _login_attempts.setdefault(ip, []).append(time.time())
 
 
+def _log_in_owner_session(owner_id: str, company_id=None, user_id=None):
+    session["is_admin"] = True
+    session["owner_id"] = owner_id
+    if user_id is not None:
+        session["user_id"] = user_id
+    else:
+        session.pop("user_id", None)
+    if company_id is not None:
+        session["current_company_id"] = company_id
+    else:
+        session.pop("current_company_id", None)
+
+
 @bp.post("/login")
 def login_post():
     if not _check_rate_limit():
         return render_template("login.html", error="Too many attempts. Please wait 5 minutes.")
     _record_attempt()
-    login = request.form.get("login","")
-    password = request.form.get("password","")
-    if not admin_login_ok(login, password):
-        return render_template("login.html", error="Invalid credentials")
-    session["is_admin"] = True
-    session["owner_id"] = "admin_owner"
+    login = request.form.get("login", "").strip()
+    password = request.form.get("password", "").strip()
+
+    if admin_login_ok(login, password):
+        _log_in_owner_session("admin_owner")
+        db = db_session()
+        companies = db.query(Company).filter(Company.owner_id == session["owner_id"], Company.is_active == True).order_by(Company.id.asc()).all()
+        if len(companies) == 1:
+            session["current_company_id"] = companies[0].id
+        db.close()
+        return redirect(url_for("auth.dashboard"))
+
     db = db_session()
-    companies = db.query(Company).filter(Company.owner_id == session["owner_id"], Company.is_active == True).order_by(Company.id.asc()).all()
-    if len(companies) == 1:
-        session["current_company_id"] = companies[0].id
+    user = db.query(User).filter(User.email == login.lower(), User.is_active == True).first()
+    password_ok = False
+    should_upgrade_hash = False
+    if user:
+        password_ok, should_upgrade_hash = verify_password(user.password_hash, password)
+    if user and password_ok:
+        if user.trial_expires_at and datetime.utcnow() > user.trial_expires_at:
+            db.close()
+            return redirect(url_for("pricing.pricing_page"))
+        if should_upgrade_hash:
+            user.password_hash = hash_password(password)
+            db.commit()
+        _log_in_owner_session(user.email, company_id=user.company_id, user_id=user.id)
+        db.close()
+        return redirect(url_for("auth.dashboard"))
     db.close()
-    return redirect(url_for("auth.dashboard"))
+    return render_template("login.html", error="Invalid login or password.")
 
 @bp.get("/logout")
 def logout():
@@ -200,9 +240,9 @@ def connect_telegram():
             "created_at": cand.created_at,
         })
 
-    tg_api_id = session.get("tg_api_id")
-    tg_api_hash = session.get("tg_api_hash")
-    tg_phone = session.get("tg_phone")
+    tg_flow = get_connection_flow(session.get("tg_flow_id"), kind="telegram", company_id=company_id)
+    tg_api_id = tg_flow.get("api_id") if tg_flow else None
+    tg_phone = tg_flow.get("phone") if tg_flow else None
     tg_authorized = False
     tg_user = session.get("tg_user")
     # Load synced groups from file cache (too large for session cookie)
@@ -218,22 +258,20 @@ def connect_telegram():
         pass
 
     # Check authorization — also check DB credentials if session is empty
-    awaiting_code = session.get("tg_awaiting_code", False)
-    check_api_id = tg_api_id
-    check_api_hash = tg_api_hash
-    if not check_api_id or not check_api_hash:
-        # Try from DB (Company) — fresh session in case old one expired
-        try:
-            db2 = db_session()
-            comp = db2.query(Company).filter(Company.id == company_id).first() if company_id else None
-            db2.close()
-        except Exception:
-            comp = None
-        if comp and getattr(comp, 'tg_api_id', None) and getattr(comp, 'tg_api_hash', None):
-            check_api_id = comp.tg_api_id
-            check_api_hash = comp.tg_api_hash
-            tg_api_id = check_api_id
-            tg_api_hash = check_api_hash
+    awaiting_code = bool(tg_flow and tg_flow.get("awaiting_code"))
+    check_api_id = None
+    check_api_hash = None
+    # Try from DB (Company) — credentials are never copied into the browser session.
+    try:
+        db2 = db_session()
+        comp = db2.query(Company).filter(Company.id == company_id).first() if company_id else None
+        db2.close()
+    except Exception:
+        comp = None
+    if comp and getattr(comp, 'tg_api_id', None) and getattr(comp, 'tg_api_hash', None):
+        check_api_id = comp.tg_api_id
+        check_api_hash = comp.tg_api_hash
+        tg_api_id = tg_api_id or check_api_id
 
     if check_api_id and check_api_hash:
         try:
@@ -244,7 +282,7 @@ def connect_telegram():
     # If actually authorized, clear awaiting_code (session may be stale)
     if tg_authorized:
         awaiting_code = False
-        session.pop("tg_awaiting_code", None)
+        delete_connection_flow(session.pop("tg_flow_id", None))
 
     db.close()
 
@@ -252,12 +290,11 @@ def connect_telegram():
         telegram_sources=telegram_sources,
         existing_ids=existing_ids,
         recent_conversations=recent_conversations,
-        tg_api_id=tg_api_id, tg_api_hash=tg_api_hash, tg_phone=tg_phone,
+        tg_api_id=tg_api_id, tg_phone=tg_phone,
         tg_authorized=tg_authorized,
         tg_user=tg_user,
         synced_groups=synced_groups,
         awaiting_code=awaiting_code,
-        phone_code_hash=session.get("tg_phone_code_hash"),
         error=request.args.get("error"),
         message=request.args.get("message"),
     )
@@ -274,20 +311,24 @@ def tg_send_code():
     if not api_id or not api_hash or not phone:
         return redirect(url_for("auth.connect_telegram", error="All fields required"))
 
-    session["tg_api_id"] = api_id
-    session["tg_api_hash"] = api_hash
-    session["tg_phone"] = phone
-
     try:
         from common.tg_client import send_code
         phone_code_hash = send_code(int(api_id), api_hash, phone, company_id)
-        session["tg_phone_code_hash"] = phone_code_hash
-        session["tg_awaiting_code"] = True
+        delete_connection_flow(session.pop("tg_flow_id", None))
+        session["tg_flow_id"] = create_connection_flow(
+            "telegram",
+            company_id,
+            {
+                "api_id": api_id,
+                "api_hash": api_hash,
+                "phone": phone,
+                "phone_code_hash": phone_code_hash,
+                "awaiting_code": True,
+            },
+        )
         return redirect(url_for("auth.connect_telegram", message="Code sent! Check your Telegram app."))
     except Exception as e:
-        # Clear awaiting state on error
-        session.pop("tg_awaiting_code", None)
-        session.pop("tg_phone_code_hash", None)
+        delete_connection_flow(session.pop("tg_flow_id", None))
         return redirect(url_for("auth.connect_telegram", error=str(e)[:200]))
 
 @bp.post("/connect/telegram/verify")
@@ -295,11 +336,15 @@ def tg_verify():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
-    api_id = request.form.get("api_id", "").strip() or session.get("tg_api_id", "")
-    api_hash = request.form.get("api_hash", "").strip() or session.get("tg_api_hash", "")
-    phone = request.form.get("phone", "").strip() or session.get("tg_phone", "")
+    tg_flow_id = session.get("tg_flow_id")
+    tg_flow = get_connection_flow(tg_flow_id, kind="telegram", company_id=company_id)
+    if not tg_flow:
+        return redirect(url_for("auth.connect_telegram", error="Telegram verification expired. Send a new code."))
+    api_id = str(tg_flow.get("api_id", "")).strip()
+    api_hash = str(tg_flow.get("api_hash", "")).strip()
+    phone = str(tg_flow.get("phone", "")).strip()
     code = request.form.get("code", "").strip()
-    phone_code_hash = request.form.get("phone_code_hash", "").strip() or session.get("tg_phone_code_hash", "")
+    phone_code_hash = str(tg_flow.get("phone_code_hash", "")).strip()
     password = request.form.get("password", "").strip() or None
 
     if not code:
@@ -310,8 +355,7 @@ def tg_verify():
         result = verify_code(int(api_id), api_hash, phone, code, phone_code_hash, company_id, password)
         if result.get("ok"):
             session["tg_user"] = result
-            session["tg_awaiting_code"] = False
-            session.pop("tg_phone_code_hash", None)
+            delete_connection_flow(session.pop("tg_flow_id", None))
             # Persist Telethon credentials to Company for worker access
             db = db_session()
             comp = db.query(Company).filter(Company.id == company_id).first()
@@ -323,15 +367,14 @@ def tg_verify():
             return redirect(url_for("auth.connect_telegram", message="Telegram connected!"))
         elif result.get("error") == "2FA_REQUIRED":
             # Stay on Step 2 but ask for 2FA password
-            session["tg_awaiting_code"] = True
+            update_connection_flow(tg_flow_id, {"awaiting_code": True})
             return redirect(url_for("auth.connect_telegram", error="Two-factor password required. Enter it and try again."))
         else:
             # Code wrong — send a NEW code automatically and stay on Step 2
             try:
                 from common.tg_client import send_code
                 new_hash = send_code(int(api_id), api_hash, phone, company_id)
-                session["tg_phone_code_hash"] = new_hash
-                session["tg_awaiting_code"] = True
+                update_connection_flow(tg_flow_id, {"phone_code_hash": new_hash, "awaiting_code": True})
             except Exception:
                 pass
             return redirect(url_for("auth.connect_telegram", error="Wrong code. A new code was sent — check Telegram."))
@@ -342,8 +385,7 @@ def tg_verify():
             try:
                 from common.tg_client import send_code
                 new_hash = send_code(int(api_id), api_hash, phone, company_id)
-                session["tg_phone_code_hash"] = new_hash
-                session["tg_awaiting_code"] = True
+                update_connection_flow(tg_flow_id, {"phone_code_hash": new_hash, "awaiting_code": True})
             except Exception:
                 pass
             return redirect(url_for("auth.connect_telegram", error="Code expired. New code sent — check Telegram."))
@@ -354,19 +396,15 @@ def tg_sync():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
-    api_id = session.get("tg_api_id")
-    api_hash = session.get("tg_api_hash")
+    api_id = None
+    api_hash = None
 
-    # Fallback to DB credentials
-    if not api_id or not api_hash:
-        db = db_session()
-        comp = db.query(Company).filter(Company.id == company_id).first() if company_id else None
-        if comp and comp.tg_api_id and comp.tg_api_hash:
-            api_id = comp.tg_api_id
-            api_hash = comp.tg_api_hash
-            session["tg_api_id"] = api_id
-            session["tg_api_hash"] = api_hash
-        db.close()
+    db = db_session()
+    comp = db.query(Company).filter(Company.id == company_id).first() if company_id else None
+    if comp and comp.tg_api_id and comp.tg_api_hash:
+        api_id = comp.tg_api_id
+        api_hash = comp.tg_api_hash
+    db.close()
 
     if not api_id or not api_hash:
         return redirect(url_for("auth.connect_telegram", error="API credentials missing"))
@@ -456,6 +494,18 @@ def connect_facebook():
     fb_connected = bool(comp and comp.fb_access_token)
     fb_user_name = comp.fb_user_name if comp else None
 
+    # Browser-session connection (the EZPost-style path): a captured FB session +
+    # imported groups count as "connected" even without an OAuth token — which
+    # can't read groups or post to Marketplace anyway. This is what actually
+    # powers group/Marketplace automation.
+    import os as _os
+    from ..models import FacebookGroup
+    _session_file = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'fb_sessions', 'floordsgn.json')
+    fb_browser_connected = _os.path.exists(_session_file)
+    fb_group_count = db.query(FacebookGroup).filter(FacebookGroup.company_id == company_id).count() if company_id else 0
+    if fb_browser_connected and fb_group_count > 0:
+        fb_connected = True
+
     # Load synced pages from cache
     fb_pages = []
     try:
@@ -475,7 +525,10 @@ def connect_facebook():
         existing_urls=existing_urls,
         fb_configured=is_configured(),
         fb_app_id=FB_APP_ID,
+        fb_app_secret=_os.getenv("FB_APP_SECRET", ""),
         fb_connected=fb_connected,
+        fb_browser_connected=fb_browser_connected,
+        fb_group_count=fb_group_count,
         fb_user_name=fb_user_name,
         fb_pages=fb_pages,
         official_pages_sync_enabled=True,
@@ -496,19 +549,21 @@ def fb_setup():
     if not fb_app_id or not fb_app_secret:
         return redirect(url_for("auth.connect_facebook", error="App ID and Secret required"))
 
-    # Save to session for callback
-    session["fb_app_id"] = fb_app_id
-    session["fb_app_secret"] = fb_app_secret
-
-    # Also save to env-like storage for fb_client
-    import os
-    os.environ["FB_APP_ID"] = fb_app_id
-    os.environ["FB_APP_SECRET"] = fb_app_secret
-
     # Redirect to Facebook OAuth
     from common.fb_client import get_login_url
     redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
-    oauth_url = get_login_url(redirect_uri)
+    oauth_state = secrets.token_urlsafe(32)
+    delete_connection_flow(session.pop("fb_flow_id", None))
+    session["fb_flow_id"] = create_connection_flow(
+        "facebook",
+        company_id=session.get("current_company_id"),
+        payload={
+            "app_id": fb_app_id,
+            "app_secret": fb_app_secret,
+            "state": oauth_state,
+        },
+    )
+    oauth_url = get_login_url(redirect_uri, state=oauth_state, app_id=fb_app_id)
     return redirect(oauth_url)
 
 
@@ -519,30 +574,34 @@ def fb_callback():
         return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     code = request.args.get("code")
+    state = request.args.get("state", "")
     error = request.args.get("error")
 
     if error or not code:
         return redirect(url_for("auth.connect_facebook", error=error or "Facebook login cancelled"))
 
-    # Use credentials from session (set during setup)
-    import os
-    fb_app_id = session.get("fb_app_id") or os.getenv("FB_APP_ID", "")
-    fb_app_secret = session.get("fb_app_secret") or os.getenv("FB_APP_SECRET", "")
-    if fb_app_id:
-        os.environ["FB_APP_ID"] = fb_app_id
-    if fb_app_secret:
-        os.environ["FB_APP_SECRET"] = fb_app_secret
+    fb_flow_id = session.get("fb_flow_id")
+    fb_flow = get_connection_flow(fb_flow_id, kind="facebook", company_id=company_id)
+    if not fb_flow or not state or state != fb_flow.get("state"):
+        delete_connection_flow(session.pop("fb_flow_id", None))
+        return redirect(url_for("auth.connect_facebook", error="Facebook OAuth state mismatch. Please reconnect."))
+    fb_app_id = fb_flow.get("app_id", "")
+    fb_app_secret = fb_flow.get("app_secret", "")
+    if not fb_app_id or not fb_app_secret:
+        delete_connection_flow(session.pop("fb_flow_id", None))
+        return redirect(url_for("auth.connect_facebook", error="Facebook credentials expired. Please reconnect."))
 
     from common.fb_client import exchange_code, get_long_lived_token, get_user_info, get_user_pages
     redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
 
     # Exchange code for token
-    result = exchange_code(code, redirect_uri)
+    result = exchange_code(code, redirect_uri, app_id=fb_app_id, app_secret=fb_app_secret)
     if not result.get("ok"):
+        delete_connection_flow(session.pop("fb_flow_id", None))
         return redirect(url_for("auth.connect_facebook", error=result.get("error", "Token exchange failed")))
 
     # Get long-lived token
-    long = get_long_lived_token(result["access_token"])
+    long = get_long_lived_token(result["access_token"], app_id=fb_app_id, app_secret=fb_app_secret)
     token = long["access_token"] if long.get("ok") else result["access_token"]
 
     # Get user info
@@ -572,6 +631,7 @@ def fb_callback():
     else:
         msg = "Facebook connected but could not sync Pages: " + pages_result.get("error", "")
 
+    delete_connection_flow(session.pop("fb_flow_id", None))
     return redirect(url_for("auth.connect_facebook", message=msg))
 
 
