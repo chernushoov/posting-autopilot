@@ -79,7 +79,9 @@ services:
   bot:
     build: .
     command: ["bash", "-lc", "sleep 5 && python -u -m bot.run_bot"]
-    restart: "no"
+    # R5: was "no" — a crashed DM bot silently stopped all candidate screening
+    # while ads kept posting. Keep it alive so the inbound side never dies quietly.
+    restart: unless-stopped
     dns:
       - 8.8.8.8
       - 1.1.1.1

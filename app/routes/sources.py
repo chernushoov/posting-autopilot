@@ -185,7 +185,10 @@ def check_source(source_id: int):
         db.close()
         return redirect(url_for("sources.list_sources", message="Facebook destination marked ready for assisted/manual pilot posting."))
     db.close()
-    enqueue_check_source(source_id)
+    try:
+        enqueue_check_source(source_id)
+    except Exception:
+        return redirect(url_for("sources.list_sources", error="Background queue is offline (Redis/worker not running). Start the stack and try again."))
     return redirect(url_for("sources.list_sources", message="Destination check queued."))
 
 

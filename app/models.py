@@ -139,6 +139,7 @@ class Company(Base):
     email = Column(String(300), nullable=True)
     website = Column(String(500), nullable=True)
     logo_emoji = Column(String(10), nullable=True)  # simple emoji avatar
+    owner_telegram_id = Column(String(64), nullable=True)  # explicit notify target for HOT lead alerts
 
     # AI settings
     ai_positive_prompt = Column(Text, nullable=False, default="")
@@ -309,6 +310,11 @@ class Candidate(Base):
 
 class PostingAttempt(Base):
     __tablename__ = "posting_attempts"
+    # R3: one attempt row per (run_key, source) — idempotency guard so a retried
+    # job can't double-insert and double-post to the same destination within a run.
+    __table_args__ = (
+        UniqueConstraint("run_key", "source_id", name="uq_posting_run_source"),
+    )
     id = Column(Integer, primary_key=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
     campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=True, index=True)

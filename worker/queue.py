@@ -56,6 +56,25 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
         db.close()
         return None, None
 
+    # R2 in-flight guard: refuse a duplicate concurrent run for the same campaign.
+    # A double-clicked "Run now", or a scheduler tick racing a manual run, would
+    # otherwise mint a second batch of attempts and post the same ad twice to
+    # every group. If a run for this campaign was started in the last 90s and is
+    # still scheduled/pending/posting, skip this one.
+    recent_cutoff = datetime.utcnow() - timedelta(seconds=90)
+    inflight = (
+        db.query(PostingAttempt)
+        .filter(
+            PostingAttempt.campaign_id == campaign.id,
+            PostingAttempt.result_status.in_(["scheduled", "pending", "posting"]),
+            PostingAttempt.created_at >= recent_cutoff,
+        )
+        .first()
+    )
+    if inflight:
+        db.close()
+        return None, None
+
     vacancy = db.query(Vacancy).filter(Vacancy.id == campaign.vacancy_id).first()
     links = db.query(CampaignSource).filter(CampaignSource.campaign_id == campaign.id).all()
     run_key = f"run_{campaign.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:8]}"
@@ -83,7 +102,26 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
     db.close()
 
     from .tasks import campaign_tick
-    job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger, job_timeout=1800)
+    try:
+        job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger, job_timeout=1800)
+    except Exception:
+        # R1: background queue (Redis) is offline. Don't leave phantom "scheduled"
+        # rows that nothing will ever process — mark them failed, then re-raise so
+        # the caller can surface a friendly "queue offline" message.
+        cleanup = db_session()
+        try:
+            cleanup.query(PostingAttempt).filter(
+                PostingAttempt.run_key == run_key,
+                PostingAttempt.result_status == "scheduled",
+            ).update(
+                {PostingAttempt.result_status: "failed",
+                 PostingAttempt.error_message: "Background queue offline (Redis); run not dispatched."},
+                synchronize_session=False,
+            )
+            cleanup.commit()
+        finally:
+            cleanup.close()
+        raise
     return job, run_key
 
 def enqueue_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"):

@@ -81,6 +81,42 @@ def _valid_tg_ref(value: str) -> bool:
         return True
     return False
 
+
+def _source_destination_kind(source: Source) -> str:
+    if source.destination_kind:
+        return source.destination_kind.lower()
+    if getattr(source, "source_type", None):
+        source_type = getattr(source.source_type, "value", source.source_type)
+        return str(source_type).lower()
+    return "group"
+
+
+def _send_telegram_post(source: Source, company: Company | None, text: str, file_path: str | None = None) -> tuple[bool, str, str]:
+    kind = _source_destination_kind(source)
+    use_telethon = bool(company and company.tg_api_id and company.tg_api_hash) and kind != "chat"
+    if use_telethon:
+        from common.tg_client import post_to_group, should_fallback_to_bot_api
+
+        ok, msg = post_to_group(
+            api_id=int(company.tg_api_id),
+            api_hash=company.tg_api_hash,
+            company_id=company.id,
+            group_id=source.tg_ref,
+            text=text,
+            file_path=file_path,
+        )
+        logger.info(f"[telegram_post] Telethon post to {source.tg_ref}: ok={ok}, msg={msg}")
+        if not ok and should_fallback_to_bot_api(msg):
+            logger.info(f"[telegram_post] Telethon could not resolve {source.tg_ref}, falling back to Bot API")
+            ok, msg = tg_send_message_safe(source.tg_ref, text)
+            logger.info(f"[telegram_post] Bot API fallback post to {source.tg_ref}: ok={ok}, msg={msg}")
+            return ok, msg, "bot_api"
+        return ok, msg, "telethon"
+
+    ok, msg = tg_send_message_safe(source.tg_ref, text)
+    logger.info(f"[telegram_post] Bot API post to {source.tg_ref}: ok={ok}, msg={msg}")
+    return ok, msg, "bot_api"
+
 def check_source_access(source_id: int):
     db = db_session()
     s = db.query(Source).filter(Source.id == source_id).first()
@@ -102,8 +138,11 @@ def check_source_access(source_id: int):
 
     company = db.query(Company).filter(Company.id == s.company_id).first()
     if not company or not company.tg_api_id or not company.tg_api_hash:
-        s.last_check_ok = True
-        s.last_check_message = "format looks valid, but Telegram account is not connected yet"
+        # R6: don't green-light a destination we can't actually post to. Without a
+        # connected Telegram account the source can't be verified OR posted, so
+        # marking it READY was a false green light that fails silently at run time.
+        s.last_check_ok = False
+        s.last_check_message = "Connect your Telegram account first (Connect Telegram), then re-check this destination."
         db.commit()
         db.close()
         return
@@ -125,7 +164,8 @@ def send_test_message(source_id: int, text: str):
     s = db.query(Source).filter(Source.id == source_id).first()
     if not s:
         db.close(); return
-    ok, msg = tg_send_message_safe(s.tg_ref, text)
+    company = db.query(Company).filter(Company.id == s.company_id).first()
+    ok, msg, _delivery_method = _send_telegram_post(s, company, text)
     if ok:
         s.last_check_ok = True
     elif _should_clear_source_ready(msg):
@@ -166,8 +206,12 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
     posted_today = 0
     for link in links:
         s = db.query(Source).filter(Source.id == link.source_id, Source.company_id == c.company_id).first()
-        if s and s.last_post_at and s.last_post_at.date() == now.date():
-            posted_today += 1
+        if s and s.last_post_at:
+            # R4: last_post_at is stored naive UTC; compare in Israel-local date so
+            # the per-day cap doesn't miscount near midnight Israel time.
+            last_local_date = s.last_post_at.replace(tzinfo=timezone.utc).astimezone(ISRAEL_TZ).date()
+            if last_local_date == now.date():
+                posted_today += 1
     remaining_posts = max(c.max_posts_per_day - posted_today, 0)
 
     for link in links:
@@ -245,38 +289,15 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
         #   Bot API can DM any user who has /start'd the bot — perfect for pilot DM destinations.
         # - Otherwise: try Telethon (user-account, posts to any group the user is in), Bot API as fallback.
         company = db.query(Company).filter(Company.id == c.company_id).first()
-        telethon_ok = False
-        kind = (s.destination_kind or s.source_type.value if hasattr(s, 'source_type') and s.source_type else 'group').lower()
-        use_telethon = bool(company and company.tg_api_id and company.tg_api_hash) and kind != "chat"
-        if use_telethon:
-            from common.tg_client import post_to_group
-            image = getattr(v, 'image_path', None)
-            ok, msg = post_to_group(
-                api_id=int(company.tg_api_id),
-                api_hash=company.tg_api_hash,
-                company_id=company.id,
-                group_id=s.tg_ref,
-                text=post_text,
-                file_path=image,
-            )
-            telethon_ok = True
-            logger.info(f"[campaign_tick] Telethon post to {s.tg_ref}: ok={ok}, msg={msg}")
-            if not ok and ("Cannot find any entity" in (msg or "") or "PEER_ID_INVALID" in (msg or "")):
-                logger.info(f"[campaign_tick] Telethon could not resolve {s.tg_ref}, falling back to Bot API")
-                ok, msg = tg_send_message_safe(s.tg_ref, post_text)
-                telethon_ok = False
-                logger.info(f"[campaign_tick] Bot API fallback post to {s.tg_ref}: ok={ok}, msg={msg}")
-        else:
-            # Bot API path (only works if bot is admin in the group OR target user has /start'd the bot)
-            ok, msg = tg_send_message_safe(s.tg_ref, post_text)
-            logger.info(f"[campaign_tick] Bot API post to {s.tg_ref}: ok={ok}, msg={msg}")
+        image = getattr(v, 'image_path', None)
+        ok, msg, delivery_method = _send_telegram_post(s, company, post_text, file_path=image)
 
         s.last_check_message = msg
         if ok:
             s.last_check_ok = True
             s.last_post_at = datetime.utcnow()
             attempt.result_status = "posted"
-            attempt.operator_notes = f"Telegram post sent via {'Telethon' if telethon_ok else 'Bot API'}."
+            attempt.operator_notes = f"Telegram post sent via {'Telethon' if delivery_method == 'telethon' else 'Bot API'}."
             remaining_posts -= 1
         else:
             if _should_clear_source_ready(msg):

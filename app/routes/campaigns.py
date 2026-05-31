@@ -343,7 +343,12 @@ def run_campaign_now(campaign_id: int):
     if _count_eligible_sources(linked_sources) == 0:
         return redirect(url_for("campaigns.list_campaigns", error="Cannot run until at least one destination is pilot-ready. Telegram must be READY. Facebook must have a direct URL."))
 
-    schedule_campaign_tick(campaign_id, "operator_run_now")
+    try:
+        job, _run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
+    except Exception:
+        return redirect(url_for("campaigns.list_campaigns", error="Background queue is offline (Redis/worker not running). Start the stack and try again."))
+    if job is None:
+        return redirect(url_for("campaigns.list_campaigns", message="A posting cycle is already in progress for this pilot — not starting a duplicate. Watch the log below."))
     return redirect(url_for("campaigns.list_campaigns", message="Posting cycle queued immediately. Watch the destination log below for results."))
 
 
@@ -367,7 +372,12 @@ def retry_attempt(attempt_id: int):
         return redirect(url_for("campaigns.list_campaigns", error="Only failed entries can be retried."))
     campaign_id = attempt.campaign_id
     db.close()
-    schedule_campaign_tick(campaign_id, "operator_run_now")
+    try:
+        job, _run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
+    except Exception:
+        return redirect(url_for("campaigns.list_campaigns", error="Background queue is offline (Redis/worker not running). Start the stack and try again."))
+    if job is None:
+        return redirect(url_for("campaigns.list_campaigns", message="A posting cycle is already in progress — retry not duplicated."))
     return redirect(url_for(
         "campaigns.list_campaigns",
         message="Retry queued. The next posting cycle will reuse the existing campaign + destinations.",
