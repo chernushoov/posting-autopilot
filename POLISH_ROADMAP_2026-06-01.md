@@ -56,8 +56,22 @@
 
 ## EXECUTION ORDER (this session)
 - [x] feedback synthesized (this file)
-- [ ] Q1 hide scary Демо card from customers (#8) — quick, trust
-- [ ] Q2 FB page: one honest story, remove white-hat/manual/App-ID contradiction (#3 copy)
-- [ ] BIG-1 Telegram phone-only connect via shared credential (#1) — biggest unlock
-- [ ] BIG-2 FB connect button + auto-fire button (#2)
-- [ ] category-aware labels (#6) + language consistency (#7)
+- [x] Q1 hide scary Демо card from customers (#8) — done in 5c46909
+- [x] Q2 FB page: one honest story (#3 copy) — done in 5c46909 + ban-safety panel 408f57e
+- [x] BIG-1 Telegram phone-only connect via shared credential (#1) — d59bfef
+- [x] BIG-2 FB connect button (#2) — 813a1ad (gated, no auto-fire of real posts)
+- [x] category-aware labels (#6) — already mostly present (listing_type, niche-neutral nav,
+      category-aware hot-lead in bot/run_bot.py); finished pricing FAQ + headings 21cfa5b
+- [x] language consistency (#7) — Accept-Language detect + register/dashboard i18n f83283b
+- [x] #5 path-to-value (auto-campaign + inline posting) — 9d37aa9
+- [x] #9 ban-safety panel + honest landing — 408f57e
+- [x] #10 hot-lead test button + owner_telegram_id fix — c2aba95
+- [x] #11 WhatsApp click-to-chat — already in bot; sample made consistent e402b1c
+- [x] #14 ROI receipt — 0296dbc
+- [x] #15 untrack cookies + SECURITY_NOTES — 1c135f2
+- [x] landing verticals strip — 5822e73
+
+## OWNER ACTION ITEMS / DEFERRED — see NIGHT_REPORT_2026-06-01.md
+Still needs owner: push, RECRUITBOT_TG_API_ID/HASH, deploy+Stripe, FB_ALLOW_LOCAL_CAPTURE,
+ALLOW_INLINE_POSTING. Deferred (risk/size): at-rest encryption, git-history rewrite,
+data/refund statements, FB Marketplace posting (#12), FB-side reply capture (#13).
