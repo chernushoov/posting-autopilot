@@ -172,9 +172,9 @@
         <form method="post" action="/connect/facebook/sync" style="display:inline"><button class="btn" type="submit">Sync Pages</button></form>
       </div>
       <div class="small muted" style="margin-top:10px">
-        {% if ui_lang == 'ru' %}Белый режим: официально синхронизируем только Facebook Pages. Groups и Marketplace остаются manual-assisted поверх подготовленного текста и destination links.
-        {% elif ui_lang == 'he' %}מצב לבן: מסנכרנים רשמית רק Facebook Pages. Groups ו-Marketplace נשארים ב-manual-assisted עם טקסט מוכן וקישורי יעד.
-        {% else %}White-hat mode: only Facebook Pages are synced officially. Groups and Marketplace remain manual-assisted with prepared text and destination links.{% endif %}
+        {% if ui_lang == 'ru' %}Группы подключены через твою браузерную сессию и постятся автоматически от твоего имени. Pages ниже — опционально (официальный путь Meta).
+        {% elif ui_lang == 'he' %}הקבוצות מחוברות דרך סשן הדפדפן שלך ומתפרסמות אוטומטית מטעמך. Pages למטה — אופציונלי (נתיב Meta הרשמי).
+        {% else %}Groups are connected via your browser session and post automatically on your behalf. Pages below are optional (official Meta path).{% endif %}
       </div>
     </div>
 
@@ -236,9 +236,9 @@
       <!-- ─── Groups tab ─── -->
       <div class="tab-content" id="tab-pages">
         <p class="small muted" style="margin-bottom:14px">
-          {% if ui_lang == 'ru' %}Официальной безопасной синхронизации групп из профиля здесь нет. Для групп оставляем только manual-assisted режим: добавить URL, открыть правильный контекст, вставить подготовленный пост, записать результат.
-          {% elif ui_lang == 'he' %}אין כאן סנכרון רשמי ובטוח של קבוצות מהפרופיל. לקבוצות נשאר רק manual-assisted: להוסיף URL, לפתוח את ההקשר הנכון, להדביק את הפוסט המוכן ולרשום תוצאה.
-          {% else %}There is no official safe profile-based group sync here. Groups stay manual-assisted only: save the URL, open the right context, paste the prepared post, and record the result.{% endif %}
+          {% if ui_lang == 'ru' %}Твои группы синхронизированы из аккаунта через браузерную сессию (см. список синхронизированных групп выше). Постинг в них идёт автоматически от твоего имени с человекоподобными паузами.
+          {% elif ui_lang == 'he' %}הקבוצות שלך סונכרנו מהחשבון דרך סשן הדפדפן (ראה את רשימת הקבוצות המסונכרנות למעלה). הפרסום אליהן אוטומטי מטעמך עם השהיות אנושיות.
+          {% else %}Your groups are synced from your account via the browser session (see the synced-groups list above). Posting to them runs automatically on your behalf with human-like pacing.{% endif %}
         </p>
         <div style="border-top:1px solid var(--border-light);padding-top:16px">
           <span class="small" style="font-weight:600;display:block;margin-bottom:10px">{% if ui_lang == 'ru' %}Добавить вручную{% elif ui_lang == 'he' %}הוסף ידנית{% else %}Add manually{% endif %}</span>

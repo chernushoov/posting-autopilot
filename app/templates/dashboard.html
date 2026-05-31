@@ -135,13 +135,13 @@
 </div>
 {% endif %}
 
-<div class="card" style="margin-top:24px;border-left:3px solid #ff6b6b">
+<div class="card" style="margin-top:24px">
   <div class="row">
     <div>
-      <h2 style="margin:0">▶ Демо-симулятор</h2>
-      <div class="small muted">Открой в отдельной вкладке во время демо. 1 клик → бот создаёт реалистичного кандидата + AI-скоринг + 🔥 HOT LEAD уведомление в твой Telegram.</div>
+      <h2 style="margin:0">{% if ui_lang=='he' %}לראות איך זה עובד{% elif ui_lang=='en' %}See how it works{% else %}Посмотреть, как это работает{% endif %}</h2>
+      <div class="small muted">{% if ui_lang=='he' %}לחיצה אחת → דוגמה: מועמד מציאותי + ניקוד AI + התראת ליד חם 🔥 — לראות את הזרימה לפני שמתחילים.{% elif ui_lang=='en' %}One click → a sample: realistic lead + AI score + a 🔥 hot-lead alert, so you can see the flow before going live.{% else %}Один клик → пример: реалистичный лид + AI-скоринг + 🔥 горячий лид. Увидишь поток до запуска.{% endif %}</div>
     </div>
-    <a href="/demo/" target="_blank" class="btn" style="background:#ff6b6b;color:#fff">Открыть /demo</a>
+    <a href="/demo/" target="_blank" class="btn">{% if ui_lang=='he' %}קבל ליד חם לדוגמה{% elif ui_lang=='en' %}Get a sample hot lead{% else %}Получить тестовый лид{% endif %}</a>
   </div>
 </div>
 {% endblock %}
