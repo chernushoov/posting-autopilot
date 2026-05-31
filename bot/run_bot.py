@@ -4,8 +4,9 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from app.db import db_session
 from app.models import Candidate, CandidateStatus, Company, Vacancy
-from common.ai import build_system_prompt, score_candidate
+from common.ai import build_system_prompt, score_candidate, answer_candidate_question
 from common.i18n import detect_language, t, get_questions
+from common.notify_targets import resolve_recruit_notify_targets
 from common.runtime_env import get_recruitbot_token
 from common.email_notify import send_hot_lead_email
 
@@ -77,6 +78,23 @@ def is_screening_expired(candidate) -> bool:
 
 def count_answered(log: list) -> int:
     return sum(1 for m in log if m.get("role") == "assistant" and m.get("type") == "question")
+
+
+# Cheap multilingual gate (RU/HE/EN) for "is the candidate asking a question?".
+# It only decides whether to spend an LLM call; answer_candidate_question() makes
+# the final call and returns None for anything that isn't really a question.
+_QUESTION_HINTS = (
+    "?", "сколько", "какой", "какая", "какие", "когда", "где", "почему", "зарплат", "оплат", "график",
+    "מה", "כמה", "איפה", "מתי", "האם", "שכר", "משכורת",
+    "how", "what", "where", "when", "why", "salary", "pay", "hours", "location",
+)
+
+
+def looks_like_question(text: str) -> bool:
+    if not text:
+        return False
+    low = text.lower()
+    return any(hint in low for hint in _QUESTION_HINTS)
 
 
 def extract_phone(text: str) -> str | None:
@@ -195,9 +213,10 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
     """Send Telegram notification to business owner about a HOT lead.
 
     Resolves the destination chat in this priority:
-      1. company.owner_id if it's a numeric Telegram user_id (legacy path).
-      2. RECRUIT_OPERATOR_NOTIFY_CHAT env var (per-deployment fallback).
-      3. RECRUIT_OPERATOR_NOTIFY_CHAT_<company_id> env var (per-company override).
+      1. company.owner_telegram_id from the company profile.
+      2. RECRUIT_OPERATOR_NOTIFY_CHAT_<company_id> env var (per-company override).
+      3. RECRUIT_OPERATOR_NOTIFY_CHAT env var (per-deployment fallback).
+      4. company.owner_id if it's a numeric Telegram user_id (legacy path).
 
     Logs and returns silently if no usable destination exists rather than dropping
     the notification with no trace.
@@ -245,22 +264,13 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
             wa_num = '972' + wa_num[1:]
         text += f"📲 WhatsApp: https://wa.me/{wa_num}\n"
 
-    # Resolve destination chats (may be multiple if owner_id + env are both set)
-    targets: list[str] = []
-
-    if company.owner_id and company.owner_id.replace("_", "").replace("admin", "").strip().isdigit():
-        targets.append(company.owner_id)
-
-    per_company = os.environ.get(f"RECRUIT_OPERATOR_NOTIFY_CHAT_{company.id}")
-    if per_company and per_company.strip().isdigit() and per_company not in targets:
-        targets.append(per_company.strip())
-
-    fallback = os.environ.get("RECRUIT_OPERATOR_NOTIFY_CHAT")
-    if fallback and fallback.strip().isdigit() and fallback not in targets:
-        targets.append(fallback.strip())
+    targets = resolve_recruit_notify_targets(company)
 
     if not targets:
-        print(f"[bot] hot lead for company {company.id}, no notify chat configured (set RECRUIT_OPERATOR_NOTIFY_CHAT or owner_id=<tg_user_id>)")
+        print(
+            f"[bot] hot lead for company {company.id}, no notify chat configured "
+            "(set owner_telegram_id in company profile or RECRUIT_OPERATOR_NOTIFY_CHAT fallback)"
+        )
     for chat_id in targets:
         try:
             await bot.send_message(chat_id=chat_id, text=text)
@@ -661,6 +671,29 @@ async def on_message(message: Message):
             log = json.loads(c.chat_log_json or "[]")
         except Exception:
             log = []
+
+        # --- MOAT: answer the candidate's question instead of ignoring it ---
+        # If they ask something mid-screening (salary, hours, location), answer from
+        # the vacancy FAQ via the LLM and DON'T consume a screening slot
+        # (count_answered only counts assistant 'question' messages). Falls through
+        # to the normal scripted flow when there's no key or it's not a question.
+        if looks_like_question(message.text):
+            faq = getattr(vacancy, "bot_faq_knowledge", "") if vacancy else ""
+            v_title = vacancy.title if vacancy else "the position"
+            faq_answer = answer_candidate_question(comp, v_title, faq, message.text, lang)
+            if faq_answer:
+                log.append({"role": "user", "text": message.text, "type": "question",
+                            "ts": message.date.isoformat() if message.date else ""})
+                log.append({"role": "assistant", "text": faq_answer, "type": "faq_answer", "ts": ""})
+                pending = count_answered(log)
+                reply = faq_answer
+                if 0 < pending <= len(questions):
+                    reply = f"{faq_answer}\n\n{questions[pending - 1]}"
+                c.chat_log_json = json.dumps(log, ensure_ascii=False)
+                db.commit()
+                await message.answer(reply)
+                return
+        # --- end MOAT FAQ branch ---
 
         # Save user answer
         log.append({"role": "user", "text": message.text, "ts": message.date.isoformat() if message.date else ""})
