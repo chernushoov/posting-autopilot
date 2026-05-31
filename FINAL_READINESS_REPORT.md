@@ -30,7 +30,7 @@ Date: 2026-03-29
 | Issue | Fix |
 |-------|-----|
 | `FLASK_SECRET_KEY=change-me` | Replaced with random 64-char hex |
-| `ADMIN_PASSWORD=admin123` | Replaced with `HBIKEGMS5nd7GNXP` |
+| `ADMIN_PASSWORD=admin123` | Replaced with `<REDACTED — see ADMIN_PASSWORD in .env (not in repo)>` |
 | `ADMIN_LOGIN=admin` | Changed to `operator` |
 | Bot using wrong company (Default Company id=1) | Deactivated Default Company, bot now uses TopStaff Israel |
 | `requests` package missing | Added to requirements.txt, installed in containers |

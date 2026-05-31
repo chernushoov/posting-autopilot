@@ -5,7 +5,7 @@
 A **Telegram-first recruitment automation platform** for Israeli staffing agencies. Agencies post job vacancies to Telegram groups/communities and Facebook groups, screen candidates via AI-powered Telegram bot, and manage the hiring pipeline through a web dashboard.
 
 **Live URL:** https://wet-albuquerque-plastics-halloween.trycloudflare.com (Cloudflare tunnel → localhost:8080)
-**Login:** `operator` / `HBIKEGMS5nd7GNXP`
+**Login:** `operator` / `<REDACTED — see ADMIN_PASSWORD in .env (not in repo)>`
 
 ---
 
@@ -278,7 +278,7 @@ python3 scripts/runtime_check.py
 DATABASE_URL=postgresql://ra:ra@postgres:5432/ra
 REDIS_URL=redis://redis:6379/0
 ADMIN_LOGIN=operator
-ADMIN_PASSWORD=HBIKEGMS5nd7GNXP
+ADMIN_PASSWORD=<REDACTED — see ADMIN_PASSWORD in .env (not in repo)>
 FLASK_SECRET_KEY=<random>
 RECRUITBOT_TELEGRAM_BOT_TOKEN=<bot token for @AutopillotRecruit_bot>
 RECRUITBOT_AI_PROVIDER=openai

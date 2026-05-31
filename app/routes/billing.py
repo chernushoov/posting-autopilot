@@ -89,12 +89,15 @@ def stripe_webhook():
     payload = request.get_data(as_text=True)
     sig_header = request.headers.get("Stripe-Signature", "")
 
+    # Security: never trust an unsigned webhook. Without the signing secret we
+    # cannot prove Stripe sent this, so a forged checkout.session.completed could
+    # grant anyone a paid/cleared trial. Reject rather than parse raw JSON.
+    if not STRIPE_WEBHOOK_SECRET:
+        logger.error("[billing] Webhook rejected: STRIPE_WEBHOOK_SECRET is not set")
+        return jsonify({"error": "webhook not configured"}), 400
+
     try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-        else:
-            import json
-            event = json.loads(payload)
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
     except Exception as e:
         logger.error(f"[billing] Webhook signature verification failed: {e}")
         return jsonify({"error": "invalid signature"}), 400

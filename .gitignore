@@ -27,3 +27,9 @@ Thumbs.db
 # Docker volumes
 postgres-data/
 data/tg_sessions/
+
+# overnight cleanup 2026-05-31
+ops/**/multilingual_pilot_*.json
+data/*.db
+data/tg_sessions/
+data/fb_sessions/
