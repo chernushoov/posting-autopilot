@@ -180,6 +180,11 @@ def dashboard():
     steps_total = 6
     progress_pct = int((steps_done / steps_total) * 100)
 
+    from common.roi import compute_roi
+    roi = compute_roi(db, company_id) if has_company else {
+        "posts_published": 0, "responses": 0, "hot_leads": 0, "hours_saved": 0,
+    }
+
     db.close()
     return render_template("dashboard.html",
         has_company=has_company, company_name=company_name, company_phone=company_phone, company_emoji=company_emoji,
@@ -193,6 +198,7 @@ def dashboard():
         recent_candidates=recent_candidates,
         active_campaign_count=active_campaign_count,
         steps_done=steps_done, steps_total=steps_total, progress_pct=progress_pct,
+        roi=roi,
     )
 
 @bp.get("/terms")

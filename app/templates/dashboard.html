@@ -75,25 +75,33 @@
   </div>
 </div>
 
-{% if has_posted %}
+{% if has_posted or roi.responses %}
 <div style="margin-top:32px">
   <div class="section-head">
-    <h2>{{ ui("recent_activity") }}</h2>
-    <a href="/campaigns/" class="pill">{{ ui("view_all") }}</a>
+    <h2>{{ ui("roi_title") }}</h2>
+    <a href="/analytics/" class="pill">{{ ui("view_all") }}</a>
   </div>
-  <div class="grid3">
-    <div class="card card-flat" style="text-align:center">
-      <div class="eyebrow">{{ ui("nav_candidates") }}</div>
-      <div style="font-size:32px;font-weight:700;color:var(--fg)">{{ candidate_count }}</div>
+  <div class="card">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <span style="font-size:40px;font-weight:800;color:var(--accent);line-height:1">~{{ roi.hours_saved }}</span>
+      <span style="font-size:18px;font-weight:600">{{ ui("roi_hours_unit") }}</span>
+      <span class="small muted">· {{ ui("roi_hours_caption") }}</span>
     </div>
-    <div class="card card-flat" style="text-align:center">
-      <div class="eyebrow">{{ ui("postings") }}</div>
-      <div style="font-size:32px;font-weight:700;color:var(--accent)">{{ posting_count }}</div>
+    <div class="grid3" style="margin-top:18px">
+      <div class="card card-flat" style="text-align:center">
+        <div class="eyebrow">{{ ui("roi_posts") }}</div>
+        <div style="font-size:28px;font-weight:700;color:var(--fg)">{{ roi.posts_published }}</div>
+      </div>
+      <div class="card card-flat" style="text-align:center">
+        <div class="eyebrow">{{ ui("roi_responses") }}</div>
+        <div style="font-size:28px;font-weight:700;color:var(--accent)">{{ roi.responses }}</div>
+      </div>
+      <div class="card card-flat" style="text-align:center">
+        <div class="eyebrow">🔥 {{ ui("roi_hot_leads") }}</div>
+        <div style="font-size:28px;font-weight:700;color:var(--success)">{{ roi.hot_leads }}</div>
+      </div>
     </div>
-    <div class="card card-flat" style="text-align:center">
-      <div class="eyebrow">{{ ui("active_campaigns") }}</div>
-      <div style="font-size:32px;font-weight:700;color:var(--success)">{{ active_campaign_count }}</div>
-    </div>
+    <div class="small muted" style="margin-top:12px">{{ ui("roi_estimate_note") }}</div>
   </div>
 </div>
 {% endif %}
