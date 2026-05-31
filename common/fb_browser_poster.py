@@ -131,18 +131,22 @@ def _find_composer_box(page: Page):
     Try multiple selectors to find the composer textarea inside a group page.
     FB UI changes often. Best-effort fallback chain.
     """
+    # Target the group "Write something..." trigger by TEXT across locales (the FB
+    # UI language follows the operator's account — RU/EN/HE all seen). The generic
+    # contenteditable selector was removed: on a group it matches the COMMENT box
+    # under existing posts, not the post composer (false positive).
     candidates = [
-        # Hebrew "What's on your mind?" / "מה תרצה לפרסם?" composer
+        'div[role="button"]:has-text("Напишите что-нибудь")',
+        'span:has-text("Напишите что-нибудь")',
+        'div[role="button"]:has-text("Write something")',
+        'span:has-text("Write something")',
+        'div[role="button"]:has-text("כתוב משהו")',
+        'span:has-text("כתוב משהו")',
+        'span:has-text("מה תרצה לפרסם")',
+        'div[role="button"][aria-label*="Напиш"]',
+        'div[role="button"][aria-label*="Write"]',
         'div[role="button"][aria-label*="כתוב"]',
         'div[role="button"][aria-label*="פרסם"]',
-        'div[role="button"][aria-label*="Write"]',
-        'div[role="button"][aria-label*="Create a public post"]',
-        'div[role="button"][aria-label*="Create post"]',
-        # The "Discussion" tab top composer (group context)
-        'div[role="textbox"][contenteditable="true"]',
-        'span:has-text("Write something")',
-        'span:has-text("מה תרצה לפרסם")',
-        'span:has-text("כתוב משהו")',
     ]
     for sel in candidates:
         try:
@@ -158,10 +162,10 @@ def _find_active_textbox(page: Page):
     """
     After clicking the composer trigger, FB opens a modal with a real textbox.
     """
+    # Scope to the modal dialog so we don't grab a comment box outside it.
     selectors = [
         'div[role="dialog"] div[role="textbox"][contenteditable="true"]',
-        'div[role="textbox"][contenteditable="true"]',
-        'textarea[name="xc_message"]',
+        'div[role="dialog"] [contenteditable="true"]',
     ]
     for sel in selectors:
         try:
@@ -175,11 +179,16 @@ def _find_active_textbox(page: Page):
 
 
 def _find_submit_button(page: Page):
+    # The group-composer publish button is "Отправить" (RU) / "Опубликовать" /
+    # "Post" / "פרסם" depending on UI language and flow. Match by aria-label and
+    # by visible text, scoped to the open dialog.
     selectors = [
-        'div[role="dialog"] div[role="button"][aria-label*="פרסם"]:not([aria-disabled="true"])',
+        'div[role="dialog"] div[role="button"][aria-label*="Отправить"]:not([aria-disabled="true"])',
+        'div[role="dialog"] div[role="button"][aria-label*="Опублик"]:not([aria-disabled="true"])',
         'div[role="dialog"] div[role="button"][aria-label*="Post"]:not([aria-disabled="true"])',
-        'div[aria-label="פרסם"]:not([aria-disabled="true"])',
-        'div[aria-label="Post"]:not([aria-disabled="true"])',
+        'div[role="dialog"] div[role="button"][aria-label*="פרסם"]:not([aria-disabled="true"])',
+        'div[role="dialog"] div[role="button"]:has-text("Отправить"):not([aria-disabled="true"])',
+        'div[role="dialog"] div[role="button"]:has-text("Опубликовать"):not([aria-disabled="true"])',
     ]
     for sel in selectors:
         try:
