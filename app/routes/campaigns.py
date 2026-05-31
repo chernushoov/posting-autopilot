@@ -14,6 +14,51 @@ MIN_INTERVAL_MINUTES = 15
 MAX_INTERVAL_MINUTES = 24 * 60
 MIN_MAX_POSTS_PER_DAY = 1
 MAX_MAX_POSTS_PER_DAY = 50
+
+
+def ensure_default_campaign(company_id: int) -> bool:
+    """Idempotently create one posting campaign so non-technical users never have to
+    meet the 'campaign' concept. Links every active destination to the newest active
+    vacancy with sane defaults. No-op if a campaign already exists or prerequisites are
+    missing. Never starts posting (is_running=False) — the operator still presses Post.
+
+    Returns True only when a campaign was created.
+    """
+    db = db_session()
+    try:
+        if db.query(Campaign).filter(Campaign.company_id == company_id).first():
+            return False
+        vacancy = (
+            db.query(Vacancy)
+            .filter(Vacancy.company_id == company_id, Vacancy.is_active == True)
+            .order_by(Vacancy.id.desc())
+            .first()
+        )
+        sources = (
+            db.query(Source)
+            .filter(Source.company_id == company_id, Source.is_active == True)
+            .all()
+        )
+        if not vacancy or not sources:
+            return False
+        campaign = Campaign(
+            company_id=company_id,
+            vacancy_id=vacancy.id,
+            name=(vacancy.title or "My posting")[:80],
+            interval_minutes=180,
+            active_hours_json=json.dumps({"start": 9, "end": 19}),
+            days_of_week_json=json.dumps([0, 1, 2, 3, 4]),
+            max_posts_per_day=10,
+            is_running=False,
+        )
+        db.add(campaign)
+        db.commit()
+        for source in sources:
+            db.add(CampaignSource(campaign_id=campaign.id, source_id=source.id))
+        db.commit()
+        return True
+    finally:
+        db.close()
 ATTEMPT_STATUSES = [
     "pending",
     "scheduled",
@@ -346,10 +391,12 @@ def run_campaign_now(campaign_id: int):
     try:
         job, _run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
     except Exception:
-        return redirect(url_for("campaigns.list_campaigns", error="Background queue is offline (Redis/worker not running). Start the stack and try again."))
+        return redirect(url_for("campaigns.list_campaigns", error="Posting needs the background worker running. Start the worker process, or enable single-machine mode (set ALLOW_INLINE_POSTING=1) and try again."))
     if job is None:
-        return redirect(url_for("campaigns.list_campaigns", message="A posting cycle is already in progress for this pilot — not starting a duplicate. Watch the log below."))
-    return redirect(url_for("campaigns.list_campaigns", message="Posting cycle queued immediately. Watch the destination log below for results."))
+        return redirect(url_for("campaigns.list_campaigns", message="A posting cycle is already in progress — not starting a duplicate. Watch the log below."))
+    if job == "inline":
+        return redirect(url_for("campaigns.list_campaigns", message="Posting started on this machine. Watch the destination log below for results."))
+    return redirect(url_for("campaigns.list_campaigns", message="Posting cycle queued. Watch the destination log below for results."))
 
 
 @bp.post("/attempt/<int:attempt_id>/retry")

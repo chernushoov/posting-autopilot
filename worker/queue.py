@@ -20,6 +20,32 @@ q_default = Queue(
 )
 
 
+def _truthy_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _run_campaign_tick_inline(campaign_id, run_key, trigger):
+    """Single-machine fallback when Redis/RQ is unavailable: run the posting cycle in
+    a daemon thread so a minimal operator install works without a separate worker.
+    campaign_tick opens its own DB session, so it is safe off the request thread.
+    Gated by ALLOW_INLINE_POSTING (default OFF) because it performs real external posts.
+    """
+    import threading
+    from .tasks import campaign_tick
+
+    thread = threading.Thread(
+        target=campaign_tick,
+        args=(campaign_id, run_key, trigger),
+        daemon=True,
+        name=f"inline-campaign-{campaign_id}",
+    )
+    thread.start()
+    return thread
+
+
 def _within_campaign_window(campaign: Campaign) -> bool:
     try:
         hours = json.loads(campaign.active_hours_json or '{"start":9,"end":19}')
@@ -105,9 +131,15 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
     try:
         job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger, job_timeout=1800)
     except Exception:
-        # R1: background queue (Redis) is offline. Don't leave phantom "scheduled"
-        # rows that nothing will ever process — mark them failed, then re-raise so
-        # the caller can surface a friendly "queue offline" message.
+        # Background queue (Redis) is offline.
+        if _truthy_env("ALLOW_INLINE_POSTING", default=False):
+            # Single-machine mode: run the cycle inline instead of failing. Keep the
+            # "scheduled" rows — the inline tick transitions them exactly like a worker.
+            _run_campaign_tick_inline(campaign_id, run_key, trigger)
+            return "inline", run_key
+        # R1: otherwise don't leave phantom "scheduled" rows that nothing will ever
+        # process — mark them failed, then re-raise so the caller can surface a
+        # friendly "worker offline" message.
         cleanup = db_session()
         try:
             cleanup.query(PostingAttempt).filter(

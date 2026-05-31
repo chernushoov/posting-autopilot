@@ -127,6 +127,16 @@ def dashboard():
     has_telegram = telegram_count > 0
     has_facebook = facebook_count > 0
 
+    # Collapse the path-to-value: as soon as the user has a vacancy + at least one
+    # destination, silently create their campaign so they never meet the "campaign"
+    # concept. Idempotent and never auto-starts posting.
+    if has_company and has_vacancy and (has_telegram or has_facebook):
+        try:
+            from .campaigns import ensure_default_campaign
+            ensure_default_campaign(company_id)
+        except Exception:
+            pass
+
     campaign_count = db.query(Campaign).filter(Campaign.company_id == company_id).count() if has_company else 0
     has_campaign = campaign_count > 0
 
