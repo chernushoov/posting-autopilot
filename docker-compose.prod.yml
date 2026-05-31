@@ -16,22 +16,31 @@ services:
 
   web:
     restart: unless-stopped
-    volumes: []
+    volumes:
+      - ra_data:/app/data
     ports: []
     expose:
       - "8000"
 
   worker:
     restart: unless-stopped
-    volumes: []
+    volumes:
+      - ra_data:/app/data
 
   scheduler:
     restart: unless-stopped
-    volumes: []
+    volumes:
+      - ra_data:/app/data
 
   bot:
     restart: unless-stopped
-    volumes: []
+    volumes:
+      - ra_data:/app/data
+
+  listener:
+    restart: unless-stopped
+    volumes:
+      - ra_data:/app/data
 
   caddy:
     image: caddy:2
@@ -51,3 +60,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  ra_data:

@@ -95,5 +95,24 @@ services:
     volumes:
       - ./:/app
 
+  listener:
+    build: .
+    command: ["bash", "-lc", "python -m worker.tg_listener"]
+    # Inbound Telegram listener — captures candidate replies in groups we posted to
+    # and DMs to the connected account, turns them into leads, notifies the operator.
+    # No-op until a company connects a Telegram account.
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file:
+      - .env
+      - .env.runtime
+    environment: *runtime-env
+    depends_on:
+      - postgres
+    volumes:
+      - ./:/app
+
 volumes:
   ra_pg:
