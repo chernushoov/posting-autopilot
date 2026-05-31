@@ -150,6 +150,20 @@ def create_app():
             session["ui_lang"] = lang
         return redirect(request.referrer or "/")
 
+    @app.before_request
+    def _detect_ui_lang():
+        # First-visit language: honour the browser's Accept-Language so RU/EN ad
+        # traffic doesn't land on the Hebrew-RTL default. Runs once — the explicit
+        # /set-lang switch and the saved session always win afterwards.
+        if session.get("ui_lang"):
+            return
+        header = request.headers.get("Accept-Language", "")
+        for part in header.split(","):
+            code = part.split(";")[0].strip().lower().split("-")[0]
+            if code in SUPPORTED_LANGS:
+                session["ui_lang"] = code
+                break
+
     @app.context_processor
     def inject_globals():
         lang = session.get("ui_lang", "he")
