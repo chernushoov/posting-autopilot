@@ -197,8 +197,15 @@ def post_to_group(
     group_url: str,
     text: str,
     queue_item_id: int = 0,
+    dry_run: bool = False,
 ) -> PostResult:
-    """Post `text` to the FB group at `group_url` using the saved session."""
+    """Post `text` to the FB group at `group_url` using the saved session.
+
+    dry_run=True does everything up to (but NOT including) clicking Post: it opens
+    the group, the composer, types the text, screenshots the filled composer, and
+    returns — nothing is published. Use it to prove the automation works without
+    spamming a real group.
+    """
     started = time.time()
     sess = session_path(session_name)
     if not session_exists(session_name):
@@ -227,6 +234,12 @@ def post_to_group(
                 notes.append("nav_timeout_dom")
                 # Continue — sometimes the page is usable even after timeout.
 
+            # FB groups are a heavy SPA — wait for it to render past the splash
+            # screen before looking for the composer (a fixed sleep is unreliable).
+            try:
+                page.wait_for_selector('div[role="feed"], div[role="main"]', timeout=25_000)
+            except PWTimeout:
+                notes.append("group_render_timeout")
             page.wait_for_timeout(random.randint(2500, 4000))
 
             if _detect_login_required(page):
@@ -297,6 +310,19 @@ def post_to_group(
                 )
 
             page.wait_for_timeout(random.randint(800, 1500))
+
+            if dry_run:
+                filled_path = screenshot_path(session_name, queue_item_id, "filled")
+                page.screenshot(path=str(filled_path), full_page=True)
+                notes.append("dry_run: composer filled, NOT published")
+                return PostResult(
+                    ok=True,
+                    final_url=page.url,
+                    screenshot_before=str(before_path),
+                    screenshot_after=str(filled_path),
+                    duration_seconds=time.time() - started,
+                    notes=notes,
+                )
 
             submit, s_sel = _find_submit_button(page)
             if not submit:
