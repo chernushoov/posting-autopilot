@@ -1,0 +1,53 @@
+# Production overlay.
+# Run: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Hardens the dev compose: real restart policies, no source bind-mount (uses the
+# baked image), Postgres not exposed to the host, env-driven DB password, and a
+# Caddy reverse proxy that terminates HTTPS with automatic Let's Encrypt certs.
+services:
+  postgres:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ra
+    ports: []
+
+  redis:
+    restart: unless-stopped
+
+  web:
+    restart: unless-stopped
+    volumes: []
+    ports: []
+    expose:
+      - "8000"
+
+  worker:
+    restart: unless-stopped
+    volumes: []
+
+  scheduler:
+    restart: unless-stopped
+    volumes: []
+
+  bot:
+    restart: unless-stopped
+    volumes: []
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN (e.g. app.example.com) in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

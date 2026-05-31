@@ -1,0 +1,7 @@
+# Caddy auto-HTTPS reverse proxy. DOMAIN is injected from the environment
+# (see docker-compose.prod.yml). Caddy fetches+renews a Let's Encrypt cert
+# automatically — just point the domain's A record at this server first.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy web:8000
+}
