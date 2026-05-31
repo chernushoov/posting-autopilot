@@ -13,9 +13,13 @@
     </div>
   </div>
 
-  {% if request.args.get('message') == 'saved' %}
-  <div class="alert success">{{ ui("saved_label") }}</div>
-  {% endif %}
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  {% set _m = request.args.get('message') %}
+  {% set _e = request.args.get('error') %}
+  {% if _m == 'saved' %}<div class="alert success">{{ ui("saved_label") }}</div>{% endif %}
+  {% if _m == 'hotlead_sent' %}<div class="alert success">{{ ui("hotlead_sent_msg") }}</div>{% endif %}
+  {% if _e == 'hotlead_no_target' %}<div class="alert error">{{ ui("hotlead_no_target_msg") }}</div>{% endif %}
+  {% if _e == 'hotlead_fail' %}<div class="alert error">{{ ui("hotlead_fail_msg") }}</div>{% endif %}
 
   <form method="post" class="card">
     <div class="grid2">
@@ -55,6 +59,7 @@
     <label>{{ ui("owner_telegram_id_label") }}</label>
     <input name="owner_telegram_id" value="{{ c.owner_telegram_id or '' }}" placeholder="123456789 or -1001234567890">
     <div class="small muted">{{ ui("owner_telegram_id_hint") }}</div>
+    <div class="small muted" style="margin-top:4px">{{ ui("tg_id_help") }} <a href="https://t.me/userinfobot" target="_blank" rel="noopener">@userinfobot</a></div>
 
     <input type="hidden" name="logo_emoji" value="">
 
@@ -63,6 +68,15 @@
       <a href="/dashboard" class="pill" style="text-decoration:none">{{ ui("back_btn") }}</a>
     </div>
   </form>
+
+  <div class="card" style="margin-top:20px">
+    <div class="eyebrow">🔥 {{ ui("hotlead_card_title") }}</div>
+    <p class="small muted" style="margin:6px 0 12px">{{ ui("hotlead_card_desc") }}</p>
+    <form method="post" action="/profile/test-hot-lead">
+      <button class="btn" type="submit"{% if not c.owner_telegram_id %} disabled{% endif %}>{{ ui("send_test_hotlead_btn") }}</button>
+      {% if not c.owner_telegram_id %}<div class="small muted" style="margin-top:8px">{{ ui("hotlead_need_id_hint") }}</div>{% endif %}
+    </form>
+  </div>
 
   {% if c.tg_api_id %}
   <div class="card" style="margin-top:20px">

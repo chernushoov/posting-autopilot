@@ -27,6 +27,40 @@ def _append_unique(targets: list[str], candidates: Iterable[str | None]) -> None
             targets.append(normalized)
 
 
+def sample_hot_lead_message(company=None, lang: str = "ru") -> str:
+    """A realistic 🔥 hot-lead alert in the live format, clearly marked as a test, so
+    the operator can confirm alerts land in the right Telegram chat before going live.
+    Mirrors worker/tg_listener._capture_lead's note layout.
+    """
+    company_name = getattr(company, "name", None) or "RecruitBot"
+    if lang == "he":
+        return (
+            "🔥 ליד חם (בדיקה)\n"
+            "👤 דני כהן\n"
+            "📋 מודעה: נהג משאית C\n"
+            "💬 הודעה: זמין להתחיל מיד, יש לי רישיון C ו-3 שנות ניסיון. אפשר לשוחח?\n"
+            "📞 050-1234567\n"
+            f"— זוהי הודעת בדיקה מ-{company_name}. אם קיבלת אותה, התראות הלידים מחוברות. ✅"
+        )
+    if lang == "en":
+        return (
+            "🔥 Hot lead (test)\n"
+            "👤 Danny Cohen\n"
+            "📋 Listing: Class-C truck driver\n"
+            "💬 Message: Available to start now, I have a class-C licence and 3 years' experience. Can we talk?\n"
+            "📞 050-1234567\n"
+            f"— this is a test alert from {company_name}. If you got it, hot-lead alerts are wired up. ✅"
+        )
+    return (
+        "🔥 Горячий лид (тест)\n"
+        "👤 Дани Коэн\n"
+        "📋 Объявление: Водитель грузовика кат. C\n"
+        "💬 Сообщение: Готов выйти сразу, есть права категории C и 3 года опыта. Можем поговорить?\n"
+        "📞 050-1234567\n"
+        f"— это тестовое уведомление от {company_name}. Если вы его получили, оповещения о лидах настроены. ✅"
+    )
+
+
 def resolve_recruit_notify_targets(company, env: dict[str, str] | None = None) -> list[str]:
     """Resolve notify targets in deterministic priority order.
 

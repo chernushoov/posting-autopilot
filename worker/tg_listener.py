@@ -66,19 +66,19 @@ def _recent_vacancy_for_source(db, company_id: int, source_id: int) -> int | Non
 
 
 def _notify_operator(company_id: int, text: str) -> None:
-    """Notify the operator about a captured lead via the Bot API (sync, best-effort)."""
-    targets: list[str] = []
-    per_company = os.getenv(f"RECRUIT_OPERATOR_NOTIFY_CHAT_{company_id}")
-    if per_company:
-        targets.append(per_company)
-    fallback = os.getenv("RECRUIT_OPERATOR_NOTIFY_CHAT")
-    if fallback and fallback not in targets:
-        targets.append(fallback)
+    """Notify the operator about a captured lead via the Bot API (sync, best-effort).
+
+    Targets resolve through the shared helper so the company profile's
+    owner_telegram_id (set in /profile) is honoured first, then env overrides, then
+    the legacy owner_id. This is the same resolution the demo + /profile test button
+    use, so what the user configures is exactly what receives live hot-lead alerts.
+    """
+    from common.notify_targets import resolve_recruit_notify_targets
+
     db = db_session()
     try:
         comp = db.query(Company).filter(Company.id == company_id).first()
-        if comp and comp.owner_id and str(comp.owner_id).isdigit() and str(comp.owner_id) not in targets:
-            targets.append(str(comp.owner_id))
+        targets = resolve_recruit_notify_targets(comp) if comp else []
     finally:
         db.close()
     if not targets:
