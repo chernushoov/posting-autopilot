@@ -112,7 +112,12 @@ def test_2_1():
         assert "email" in register_html, "Register form should have email field"
         assert "password" in register_html, "Register form should have password field"
         assert "company_name" in register_html, "Register form should have company_name"
-        assert "14-day" in register_html or "14 day" in register_html, "Should mention 14-day trial"
+        # The trial is now advertised via i18n (reg_subtitle), not a hardcoded English
+        # string, so the page reads correctly in RU/HE/EN. Verify the key is used and
+        # the translated copy still mentions the 14-day trial.
+        assert "reg_subtitle" in register_html, "Register page should show the trial subtitle"
+        from common.i18n import ui as _ui
+        assert "14" in _ui("reg_subtitle", "en") and "14" in _ui("reg_subtitle", "ru"), "reg_subtitle should mention the 14-day trial"
         ok("register.html template exists and has required fields")
 
         login_html = (ROOT / "app" / "templates" / "user_login.html").read_text()
