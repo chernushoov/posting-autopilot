@@ -43,4 +43,8 @@ commit style: focused commits per task; co-author trailer; do NOT commit secrets
 ## PROGRESS LOG
 - 2026-05-31 49a2a45 — Phase 0 DONE (S1 rotate+scrub admin pw, S2 verified pbkdf2+legacy-upgrade already OK, S3 webhook signature required, S4 gitignore junk).
 - 2026-05-31 db2e9b9 — Phase 1 DONE (R1 redis-graceful, R2 double-post lock, R3 unique-constraint, R4 TZ cap fix, R5 bot restart, R6 source-ready honesty).
-- next: Phase 4 (deploy pkg + Stripe), then Phase 3 (AI dialog moat), then Phase 2 (inbound listener).
+- 2026-05-31 3424082+b83b388 — Phase 4 DONE (C1 Stripe enablement: code already complete, added .env templates + STRIPE_RUNBOOK; C2 deploy pkg: docker-compose.prod + Caddy + deploy.sh + DEPLOY_RUNBOOK). C3 positioning copy pending until A1 fully shipped.
+- 2026-05-31 52a6e81 — Phase 3 CORE DONE (A1): bot now answers candidate questions mid-screening from vacancy FAQ via LLM (verified live RU/HE), falls back safely. Remaining P3: A2 conversation-summary, A3 use hot/cold criteria in classify, full dynamic question selection.
+- 2026-06-01 173e03b — Phase 2 I1 BUILT: worker/tg_listener.py captures group replies (reply-to-our-post, high precision) + DMs → leads + operator notify. Safe (capture+notify only, no auto-send). Wired into compose (base+prod) with shared ra_data volume for TG sessions. Activates when a company connects TG; can't live-test without owner's TG.
+- NEXT (not yet done): P3 remainder (A2 conversation summary, A3 hot/cold criteria in classify, full dynamic question selection), Phase 5 FB (F1 real LLM post-gen, F2 guard browser auto-poster), and AI-handle the inbound leads (I1+A1 wiring). Live activation needs owner accounts (VPS/domain/Stripe/TG connect).
+- note: installed openai into .venv-local for local testing (2.x; requirements pins <2.0 — docker uses 1.x, fine).
