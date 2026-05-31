@@ -1,0 +1,16 @@
+{# Reusable, honest account-safety panel. Describes the anti-spam measures that
+   actually run (see common/tg_client.py + common/fb_browser_poster.py), and is
+   honest that they minimise — not eliminate — ban risk (terms.html §6). #}
+<div class="card" style="border-color:var(--success);margin-top:20px">
+  <div class="eyebrow">🛡️ {{ ui("safety_title") }}</div>
+  <p class="small muted" style="margin:6px 0 12px">{{ ui("safety_intro") }}</p>
+  <ul style="margin:0;padding-left:18px;line-height:1.9;font-size:13px">
+    <li>{{ ui("safety_human_typing") }}</li>
+    <li>{{ ui("safety_pacing") }}</li>
+    <li>{{ ui("safety_daily_cap") }}</li>
+    <li>{{ ui("safety_night") }}</li>
+    <li>{{ ui("safety_block_detect") }}</li>
+  </ul>
+  <div class="small muted" style="margin-top:12px">💡 {{ ui("safety_recommend") }}</div>
+  <div class="small" style="margin-top:8px;color:var(--muted)"><strong>{{ ui("safety_honest") }}</strong></div>
+</div>
