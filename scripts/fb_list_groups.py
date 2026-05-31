@@ -61,24 +61,39 @@ def main() -> int:
             browser.close()
             return 2
 
-        # Lazy-scroll to load the whole list.
-        groups: dict[str, str] = {}
+        # JS extractor: per group link, pull name (aria-label/text) + member-count text.
+        extract_js = r"""() => {
+          const skip = ['joins','feed','discover','create','category','your_groups'];
+          const seen = {};
+          document.querySelectorAll('a[href*="/groups/"]').forEach(a => {
+            const m = (a.getAttribute('href')||'').match(/\/groups\/([A-Za-z0-9._-]+)/);
+            if (!m) return;
+            const slug = m[1];
+            if (skip.includes(slug) || slug.length < 2) return;
+            let name = (a.getAttribute('aria-label')||'').trim();
+            if (!name) name = (a.textContent||'').trim().split('\n')[0].trim();
+            let members = null, el = a;
+            for (let i=0;i<5 && el;i++){
+              const t = el.textContent||'';
+              const mm = t.match(/([\d.,]+)\s*(тыс\.?|K|אלף|mil)?\s*(участник|member|חבר|員)/i);
+              if (mm){ members = mm[0].trim(); break; }
+              el = el.parentElement;
+            }
+            if (!seen[slug] || (name && !(seen[slug].name))) seen[slug] = {id:slug, name, members};
+          });
+          return Object.values(seen);
+        }"""
+
+        # Lazy-scroll to load the whole list, merging extractions each pass.
+        groups: dict[str, dict] = {}
         last_count, stable = 0, 0
-        for _ in range(40):
-            anchors = page.query_selector_all('a[href*="/groups/"]')
-            for a in anchors:
-                href = a.get_attribute("href") or ""
-                m = GROUP_HREF_RE.search(href)
-                if not m:
-                    continue
-                slug = m.group(1)
-                if slug in SKIP_SLUGS or slug.isdigit() is False and len(slug) < 2:
-                    continue
-                txt = (a.inner_text() or "").strip().split("\n")[0]
-                if txt and len(txt) > 1 and slug not in groups:
-                    groups[slug] = txt
-                elif slug not in groups:
-                    groups[slug] = ""
+        for _ in range(45):
+            for g in page.evaluate(extract_js):
+                slug = g["id"]
+                if slug not in groups or (g.get("name") and not groups[slug].get("name")):
+                    groups[slug] = g
+                if g.get("members") and not groups[slug].get("members"):
+                    groups[slug]["members"] = g["members"]
             if len(groups) == last_count:
                 stable += 1
                 if stable >= 3:
@@ -86,12 +101,13 @@ def main() -> int:
             else:
                 stable = 0
             last_count = len(groups)
-            page.mouse.wheel(0, 3000)
+            page.mouse.wheel(0, 3200)
             time.sleep(1.5)
 
         rows = [
-            {"group_id": slug, "name": name_, "url": f"https://www.facebook.com/groups/{slug}/"}
-            for slug, name_ in groups.items()
+            {"group_id": slug, "name": (g.get("name") or ""), "members_raw": g.get("members"),
+             "url": f"https://www.facebook.com/groups/{slug}/"}
+            for slug, g in groups.items()
         ]
         out_path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"\n✓ found {len(rows)} groups → {out_path}")

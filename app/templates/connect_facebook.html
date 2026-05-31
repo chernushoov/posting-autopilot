@@ -57,17 +57,34 @@
   </details>
 
   {% if fb_groups_list %}
-  <div style="margin-top:16px">
-    <div style="font-weight:600;margin-bottom:8px">{% if ui_lang=='he' %}קבוצות מסונכרנות{% elif ui_lang=='en' %}Synced groups{% else %}Синхронизированные группы{% endif %} ({{ fb_groups_list|length }})</div>
-    <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-sm)">
+  {% set labels = {'all': ('Все','הכל','All'), 'jobs': ('Работа','עבודה','Jobs'), 'vehicles': ('Авто','רכב','Vehicles'), 'property': ('Недвижимость','נדל"ן','Property'), 'general': ('Общее','כללי','General')} %}
+  {% set badge = {'jobs':'#1877F2','vehicles':'#C86B3C','property':'#2e8b57','general':'#888'} %}
+  <div style="margin-top:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div style="font-weight:600">{% if ui_lang=='he' %}קבוצות מסונכרנות{% elif ui_lang=='en' %}Synced groups{% else %}Синхронизированные группы{% endif %} ({{ fb_groups_list|length }})</div>
+      <input id="fb-grp-search" oninput="fbFilterGroups()" placeholder="{% if ui_lang=='he' %}חיפוש…{% elif ui_lang=='en' %}Search…{% else %}Поиск…{% endif %}" style="padding:6px 10px;border:1px solid var(--border-light);border-radius:8px;font-size:13px;width:200px">
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      {% for key in ['all','jobs','vehicles','property','general'] %}
+      {% set cnt = fb_groups_list|length if key=='all' else fb_groups_list|selectattr('category','equalto',key)|list|length %}
+      <button type="button" class="pill fb-cat-btn{% if key=='all' %} fb-cat-active{% endif %}" data-cat="{{ key }}" onclick="fbSetCat('{{ key }}',this)" style="font-size:12px;cursor:pointer">{{ labels[key][1] if ui_lang=='he' else labels[key][2] if ui_lang=='en' else labels[key][0] }} ({{ cnt }})</button>
+      {% endfor %}
+    </div>
+    <div style="max-height:340px;overflow-y:auto;border:1px solid var(--border-light);border-radius:var(--radius-sm)">
       {% for g in fb_groups_list %}
-      <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:13px">
-        <a href="{{ g.url }}" target="_blank" rel="noopener" style="color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.name }}</a>
-        {% if g.members %}<span class="small muted" style="flex-shrink:0">{{ g.members }} 👥</span>{% endif %}
+      <div class="fb-grp-row" data-cat="{{ g.category }}" data-name="{{ g.name|lower }}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:13px">
+        <a href="{{ g.url }}" target="_blank" rel="noopener" style="color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">{{ g.name }}</a>
+        <span style="flex-shrink:0;font-size:11px;color:#fff;background:{{ badge[g.category] }};padding:2px 8px;border-radius:10px">{{ labels[g.category][1] if ui_lang=='he' else labels[g.category][2] if ui_lang=='en' else labels[g.category][0] }}</span>
       </div>
       {% endfor %}
     </div>
   </div>
+  <style>.fb-cat-active{background:#1877F2;color:#fff;border-color:#1877F2}</style>
+  <script>
+    var fbCat='all';
+    function fbSetCat(c,btn){fbCat=c;document.querySelectorAll('.fb-cat-btn').forEach(function(b){b.classList.remove('fb-cat-active')});btn.classList.add('fb-cat-active');fbFilterGroups();}
+    function fbFilterGroups(){var q=(document.getElementById('fb-grp-search').value||'').toLowerCase();document.querySelectorAll('.fb-grp-row').forEach(function(r){var okc=(fbCat==='all'||r.dataset.cat===fbCat);var okq=(!q||r.dataset.name.indexOf(q)>-1);r.style.display=(okc&&okq)?'':'none';});}
+  </script>
   {% endif %}
 </div>
 

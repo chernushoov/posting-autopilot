@@ -513,6 +513,7 @@ def connect_facebook():
             "name": g.name,
             "url": g.facebook_url_normalized or g.facebook_url or "",
             "members": g.member_count_estimate,
+            "category": (g.primary_category or "general"),
         }
         for g in (
             db.query(FacebookGroup)
