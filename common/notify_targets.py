@@ -33,6 +33,7 @@ def sample_hot_lead_message(company=None, lang: str = "ru") -> str:
     Mirrors worker/tg_listener._capture_lead's note layout.
     """
     company_name = getattr(company, "name", None) or "RecruitBot"
+    wa = "https://wa.me/972501234567"  # 050-1234567 normalised to IL international form
     if lang == "he":
         return (
             "🔥 ליד חם (בדיקה)\n"
@@ -40,6 +41,7 @@ def sample_hot_lead_message(company=None, lang: str = "ru") -> str:
             "📋 מודעה: נהג משאית C\n"
             "💬 הודעה: זמין להתחיל מיד, יש לי רישיון C ו-3 שנות ניסיון. אפשר לשוחח?\n"
             "📞 050-1234567\n"
+            f"📲 WhatsApp: {wa}\n"
             f"— זוהי הודעת בדיקה מ-{company_name}. אם קיבלת אותה, התראות הלידים מחוברות. ✅"
         )
     if lang == "en":
@@ -49,6 +51,7 @@ def sample_hot_lead_message(company=None, lang: str = "ru") -> str:
             "📋 Listing: Class-C truck driver\n"
             "💬 Message: Available to start now, I have a class-C licence and 3 years' experience. Can we talk?\n"
             "📞 050-1234567\n"
+            f"📲 WhatsApp: {wa}\n"
             f"— this is a test alert from {company_name}. If you got it, hot-lead alerts are wired up. ✅"
         )
     return (
@@ -57,6 +60,7 @@ def sample_hot_lead_message(company=None, lang: str = "ru") -> str:
         "📋 Объявление: Водитель грузовика кат. C\n"
         "💬 Сообщение: Готов выйти сразу, есть права категории C и 3 года опыта. Можем поговорить?\n"
         "📞 050-1234567\n"
+        f"📲 WhatsApp: {wa}\n"
         f"— это тестовое уведомление от {company_name}. Если вы его получили, оповещения о лидах настроены. ✅"
     )
 
