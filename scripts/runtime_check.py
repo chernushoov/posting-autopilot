@@ -139,6 +139,8 @@ def detect_bot_log_issue(text: str) -> tuple[str | None, str | None]:
         return "telegram_token_missing", "Bot log says Telegram token is missing."
     if "terminated by other getupdates request" in lowered or "409 conflict" in lowered:
         return "telegram_polling_conflict", "Bot log shows Telegram polling conflict with another consumer."
+    if "connected as @" in lowered or "polling telegram as @" in lowered:
+        return None, None
     return "bot_runtime_error", text.splitlines()[-1][:200]
 
 

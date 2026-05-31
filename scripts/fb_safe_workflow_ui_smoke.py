@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 
 from app import create_app
@@ -13,6 +14,16 @@ from common.fb_safe_workflow import (
     import_group_seed_file,
     write_sample_seed_file,
 )
+
+
+def _extract_csrf_token(body: str) -> str:
+    match = re.search(r'<meta name="csrf-token" content="([^"]+)"', body)
+    if match:
+        return match.group(1)
+    match = re.search(r'name="csrf_token" value="([^"]+)"', body)
+    if match:
+        return match.group(1)
+    raise RuntimeError("csrf token missing from workflow page")
 
 
 def main():
@@ -52,6 +63,8 @@ def main():
 
     vacancies_page = client.get("/vacancies/")
     generator_page = client.get(f"/facebook/vacancies/{vacancy_id}/post-generator")
+    csrf_token = _extract_csrf_token(generator_page.get_data(as_text=True))
+    csrf_headers = {"X-CSRFToken": csrf_token}
     initial_resume = client.get(f"/facebook/vacancies/{vacancy_id}/resume", follow_redirects=False)
 
     generated = client.post(
@@ -66,6 +79,7 @@ def main():
             "save": True,
             "save_status": "draft",
         },
+        headers=csrf_headers,
     )
     generated_json = generated.get_json()
     variant_id = generated_json["saved_variant"]["id"]
@@ -73,6 +87,7 @@ def main():
     approved = client.post(
         f"/api/fb/post-variants/{variant_id}/approve",
         json={"full_text": generated_json["saved_variant"]["full_text"], "headline": generated_json["saved_variant"]["headline"]},
+        headers=csrf_headers,
     )
     resume_after_approve = client.get(f"/facebook/vacancies/{vacancy_id}/resume", follow_redirects=False)
     group_selector_page = client.get(f"/facebook/vacancies/{vacancy_id}/groups?variant_id={variant_id}")
@@ -85,6 +100,7 @@ def main():
             "group_ids": group_ids,
             "name": "UI smoke run",
         },
+        headers=csrf_headers,
     )
     run_json = run.get_json()
     run_id = run_json["id"]
@@ -92,11 +108,16 @@ def main():
     queue_page = client.get(f"/facebook/posting-runs/{run_id}/queue")
     first_queue_item_id = run_json["queue_items"][0]["id"]
 
-    opened = client.post(f"/api/fb/queue-items/{first_queue_item_id}/action", json={"action": "opened"})
-    posted = client.post(f"/api/fb/queue-items/{first_queue_item_id}/mark-posted", json={"group_note": "posted from UI smoke"})
+    opened = client.post(f"/api/fb/queue-items/{first_queue_item_id}/action", json={"action": "opened"}, headers=csrf_headers)
+    posted = client.post(
+        f"/api/fb/queue-items/{first_queue_item_id}/mark-posted",
+        json={"group_note": "posted from UI smoke"},
+        headers=csrf_headers,
+    )
     result = client.post(
         f"/api/fb/results/{first_queue_item_id}",
         json={"result_status": "got_cvs", "cv_count": 1, "result_note": "demo result"},
+        headers=csrf_headers,
     )
     vacancy_page_after_result = client.get("/vacancies/")
     queue_api_after_result = client.get(f"/api/fb/posting-runs/{run_id}")

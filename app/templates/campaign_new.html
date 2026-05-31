@@ -37,11 +37,26 @@
     {% for s in sources %}
       <label class="checkbox">
         <input type="checkbox" name="source_ids" value="{{ s.id }}" {% if (s.id|string) in selected_source_ids %}checked{% endif %}>
-        {{ s.label or s.tg_ref }} <span class="muted">({{ s.platform or "telegram" }} · {{ s.destination_kind or s.source_type.value }} · {{ s.posting_mode or "auto" }})</span>
+        {{ s.label or s.tg_ref }}
+        <span class="muted">({{ s.platform or "telegram" }} · {{ s.destination_kind or s.source_type.value }} · {{ s.posting_mode or "auto" }})</span>
+        {% if (s.platform or "telegram") == "facebook" %}
+          {% if s.destination_url %}
+            <span class="status status-manual_action_required">manual ready</span>
+          {% else %}
+            <span class="status status-failed">missing URL</span>
+          {% endif %}
+        {% else %}
+          {% if s.last_check_ok %}
+            <span class="status status-posted">ready</span>
+          {% else %}
+            <span class="status status-failed">check needed</span>
+          {% endif %}
+        {% endif %}
       </label>
     {% endfor %}
   </div>
   <p class="muted">{{ ui("tg_auto_note") }}</p>
+  <p class="muted">Pilot rule: choose at least one READY Telegram destination or one Facebook destination with a direct URL.</p>
   <button class="btn" type="submit">{{ ui("create_campaign_btn") }}</button>
 </form>
 {% endblock %}

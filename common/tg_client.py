@@ -27,6 +27,15 @@ TELETHON_CONNECT_TIMEOUT = 20
 TELETHON_ENTITY_TIMEOUT = 30
 TELETHON_SEND_TIMEOUT = 90
 
+_BOT_API_FALLBACK_ERROR_MARKERS = (
+    "cannot find any entity",
+    "could not find the input entity",
+    "peer_id_invalid",
+    "chat_id_invalid",
+    "username not occupied",
+    "username_not_occupied",
+)
+
 
 def _session_path(company_id: int) -> str:
     return os.path.join(SESSION_DIR, f"company_{company_id}")
@@ -42,6 +51,21 @@ def _get_loop():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     return loop
+
+
+def _coerce_entity_ref(group_id: str | int) -> str | int:
+    raw = str(group_id or "").strip()
+    if raw.startswith("@"):
+        return raw
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return raw
+
+
+def should_fallback_to_bot_api(error_message: str | None) -> bool:
+    lowered = (error_message or "").lower()
+    return any(marker in lowered for marker in _BOT_API_FALLBACK_ERROR_MARKERS)
 
 
 async def _send_code_async(api_id: int, api_hash: str, phone: str, company_id: int):
@@ -140,7 +164,10 @@ async def _check_dialog_access_async(api_id: int, api_hash: str, company_id: int
         await client.disconnect()
         return {"ok": False, "error": "NOT_AUTHORIZED"}
 
-    entity_ref = group_id if group_id.startswith("@") else group_id
+    entity_ref = _coerce_entity_ref(group_id)
+    if not entity_ref:
+        await client.disconnect()
+        return {"ok": False, "error": f"Invalid group_id: {group_id}"}
     try:
         entity = await client.get_entity(entity_ref)
         title = getattr(entity, "title", None) or getattr(entity, "username", None) or group_id
@@ -339,14 +366,9 @@ async def _post_to_group_async(
         UserBannedInChannelError,
     )
 
-    # Parse group_id: could be @username or numeric ID
-    if group_id.startswith("@"):
-        entity_ref = group_id
-    else:
-        try:
-            entity_ref = int(group_id)
-        except ValueError:
-            return {"ok": False, "message_id": None, "error": f"Invalid group_id: {group_id}"}
+    entity_ref = _coerce_entity_ref(group_id)
+    if not entity_ref:
+        return {"ok": False, "message_id": None, "error": f"Invalid group_id: {group_id}"}
 
     client = TelegramClient(
         _session_path(company_id),

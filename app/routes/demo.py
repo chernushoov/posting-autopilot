@@ -22,6 +22,7 @@ from flask import Blueprint, jsonify, render_template_string, request, session
 from ..auth import login_required
 from ..db import db_session
 from ..models import Candidate, CandidateStatus, Company, Vacancy
+from common.notify_targets import resolve_recruit_notify_targets
 
 bp = Blueprint("demo", __name__, url_prefix="/demo")
 
@@ -156,12 +157,13 @@ def index():
         .all()
     )
     db.close()
+    notify_targets = resolve_recruit_notify_targets(company) if company else []
     return render_template_string(
         PAGE_HTML,
         vacancies=vacancies,
         company_name=company.name if company else "?",
         company_id=company_id,
-        notify_chat=os.environ.get("RECRUIT_OPERATOR_NOTIFY_CHAT") or os.environ.get(f"RECRUIT_OPERATOR_NOTIFY_CHAT_{company_id}", ""),
+        notify_chat=", ".join(notify_targets),
     )
 
 
@@ -322,15 +324,7 @@ def api_simulate():
         db.refresh(candidate)
 
         # Build notification destinations preview
-        notification_targets: list[str] = []
-        if company.owner_id and company.owner_id.replace("_", "").replace("admin", "").strip().isdigit():
-            notification_targets.append(company.owner_id)
-        per_company = os.environ.get(f"RECRUIT_OPERATOR_NOTIFY_CHAT_{company_id}")
-        if per_company and per_company.strip().isdigit() and per_company not in notification_targets:
-            notification_targets.append(per_company.strip())
-        fallback = os.environ.get("RECRUIT_OPERATOR_NOTIFY_CHAT")
-        if fallback and fallback.strip().isdigit() and fallback not in notification_targets:
-            notification_targets.append(fallback.strip())
+        notification_targets = resolve_recruit_notify_targets(company)
 
         # Fire the actual TG DM via aiogram in a fresh event loop
         token = os.environ.get("TELEGRAM_BOT_TOKEN") or os.environ.get("RECRUITBOT_TELEGRAM_BOT_TOKEN")

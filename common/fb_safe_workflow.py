@@ -1262,8 +1262,11 @@ def ensure_all_tables(engine, base_metadata) -> dict[str, Any]:
 def ensure_company_for_seed(db, owner_id: str = "admin_owner", name: str = "Default Company") -> Company:
     company = db.query(Company).filter(Company.owner_id == owner_id, Company.name == name).first()
     if not company:
-        company = Company(owner_id=owner_id, name=name, description="Seeded company")
+        company = Company(owner_id=owner_id, name=name, description="Seeded company", is_active=True)
         db.add(company)
+        db.flush()
+    elif not company.is_active:
+        company.is_active = True
         db.flush()
     return company
 

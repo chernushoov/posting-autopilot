@@ -1,12 +1,12 @@
 """Task 2.1: Self-Service Signup — registration, login, trial."""
 from datetime import datetime, timedelta
-from hashlib import sha256
 import re
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
 
 from ..db import db_session
 from ..models import User, UserRole, Company
+from common.passwords import hash_password, verify_password
 
 bp = Blueprint("registration", __name__)
 
@@ -14,12 +14,21 @@ TRIAL_DAYS = 14
 
 
 def _hash_password(password: str) -> str:
-    """Simple SHA-256 hash. Replace with bcrypt for production."""
-    return sha256(password.encode()).hexdigest()
+    return hash_password(password)
 
 
 def _valid_email(email: str) -> bool:
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
+
+
+def _start_authenticated_session(user: User):
+    session["user_id"] = user.id
+    session["is_admin"] = True
+    session["owner_id"] = user.email
+    if user.company_id:
+        session["current_company_id"] = user.company_id
+    else:
+        session.pop("current_company_id", None)
 
 
 @bp.get("/register")
@@ -69,10 +78,7 @@ def register_post():
     db.commit()
 
     # Auto-login
-    session["user_id"] = user.id
-    session["is_admin"] = True
-    session["owner_id"] = email
-    session["current_company_id"] = company.id
+    _start_authenticated_session(user)
     db.close()
 
     return redirect(url_for("auth.dashboard"))
@@ -82,11 +88,17 @@ def register_post():
 def user_login():
     if session.get("is_admin") or session.get("user_id"):
         return redirect(url_for("auth.dashboard"))
-    return render_template("user_login.html")
+    return redirect(url_for("auth.login"))
 
 
 @bp.post("/user-login")
 def user_login_post():
+    from .auth_routes import _check_rate_limit, _record_attempt
+
+    if not _check_rate_limit():
+        return render_template("user_login.html", error="Too many attempts. Please wait 5 minutes.")
+    _record_attempt()
+
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "").strip()
 
@@ -95,7 +107,11 @@ def user_login_post():
 
     db = db_session()
     user = db.query(User).filter(User.email == email, User.is_active == True).first()
-    if not user or user.password_hash != _hash_password(password):
+    password_ok = False
+    should_upgrade_hash = False
+    if user:
+        password_ok, should_upgrade_hash = verify_password(user.password_hash, password)
+    if not user or not password_ok:
         db.close()
         return render_template("user_login.html", error="Invalid email or password.")
 
@@ -104,11 +120,11 @@ def user_login_post():
         db.close()
         return redirect(url_for("pricing.pricing_page"))
 
-    session["user_id"] = user.id
-    session["is_admin"] = True
-    session["owner_id"] = user.email
-    if user.company_id:
-        session["current_company_id"] = user.company_id
+    if should_upgrade_hash:
+        user.password_hash = _hash_password(password)
+        db.commit()
+
+    _start_authenticated_session(user)
     db.close()
 
     return redirect(url_for("auth.dashboard"))

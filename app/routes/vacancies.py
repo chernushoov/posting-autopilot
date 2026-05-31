@@ -1,6 +1,9 @@
 import json
+from pathlib import Path
+from uuid import uuid4
 
 from flask import Blueprint, redirect, render_template, request, url_for, jsonify
+from werkzeug.utils import secure_filename
 
 from ..auth import require_company
 from ..db import db_session
@@ -10,6 +13,34 @@ from ..listing_templates import get_template, get_all_templates
 from common.recruitbot_links import build_recruitbot_apply_link
 
 bp = Blueprint("vacancies", __name__, url_prefix="/vacancies")
+
+UPLOAD_DIR = Path(__file__).resolve().parents[2] / "data" / "uploads"
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_IMAGE_MIMETYPES = {"image/jpeg", "image/png", "image/webp"}
+
+
+def _request_image_files():
+    files = request.files.getlist("images") if "images" in request.files else []
+    if "image" in request.files:
+        single = request.files.get("image")
+        if single and single.filename:
+            files.append(single)
+    return [file for file in files if file and file.filename]
+
+
+def _save_uploaded_images(files) -> list[str]:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    saved_paths: list[str] = []
+    for img in files:
+        original_name = secure_filename(img.filename or "")
+        ext = Path(original_name).suffix.lower()
+        mimetype = (img.mimetype or "").lower()
+        if not original_name or ext not in ALLOWED_IMAGE_EXTENSIONS or mimetype not in ALLOWED_IMAGE_MIMETYPES:
+            raise ValueError("Only JPG, PNG, and WebP image uploads are allowed.")
+        save_path = UPLOAD_DIR / f"{uuid4().hex}{ext}"
+        img.save(save_path)
+        saved_paths.append(str(save_path))
+    return saved_paths
 
 
 def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[str, str]:
@@ -287,23 +318,11 @@ def edit_vacancy_post(vacancy_id: int):
 
     # Multi-photo upload — supports new `images[]` field (multiple file inputs)
     # plus legacy single `image`. New uploads append to existing images_json by default.
-    import os as _os, time as _time
-    upload_dir = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'uploads')
-    _os.makedirs(upload_dir, exist_ok=True)
-
-    new_paths: list[str] = []
-    files = request.files.getlist('images') if 'images' in request.files else []
-    if 'image' in request.files:
-        single = request.files.get('image')
-        if single and single.filename:
-            files.append(single)
-    for img in files:
-        if not img or not img.filename:
-            continue
-        safe_name = f"{int(_time.time() * 1000)}_{img.filename.replace(' ', '_')}"
-        save_path = _os.path.join(upload_dir, safe_name)
-        img.save(save_path)
-        new_paths.append(save_path)
+    try:
+        new_paths = _save_uploaded_images(_request_image_files())
+    except ValueError as e:
+        db.close()
+        return redirect(url_for("vacancies.edit_vacancy", vacancy_id=vacancy_id, error=str(e)))
 
     # Replace mode for edit: if operator checks "replace_photos" we discard the
     # old set; default is append so adding 2 more photos to a 5-photo listing
@@ -377,22 +396,17 @@ def new_vacancy_post():
     # Multi-photo upload — accepts `images[]` (preferred for real estate / cars)
     # or legacy single `image`. All saved files are stored in images_json;
     # image_path becomes the first one for backward compatibility.
-    import os as _os, time as _time
-    upload_dir = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'uploads')
-    _os.makedirs(upload_dir, exist_ok=True)
-    saved_paths: list[str] = []
-    files = request.files.getlist('images') if 'images' in request.files else []
-    if 'image' in request.files:
-        single = request.files.get('image')
-        if single and single.filename:
-            files.append(single)
-    for img in files:
-        if not img or not img.filename:
-            continue
-        safe_name = f"{int(_time.time() * 1000)}_{img.filename.replace(' ', '_')}"
-        save_path = _os.path.join(upload_dir, safe_name)
-        img.save(save_path)
-        saved_paths.append(save_path)
+    try:
+        saved_paths = _save_uploaded_images(_request_image_files())
+    except ValueError as e:
+        db.close()
+        return render_template(
+            "vacancy_new.html",
+            error=str(e),
+            languages=[l.value for l in Language],
+            form_values=request.form,
+            templates=get_all_templates(),
+        )
     image_path = saved_paths[0] if saved_paths else None
     images_json_value = json.dumps(saved_paths, ensure_ascii=False) if saved_paths else None
 

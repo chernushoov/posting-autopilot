@@ -83,11 +83,15 @@ def test_2_1():
     # Password hashing
     try:
         from app.routes.registration import _hash_password
+        from common.passwords import verify_password
         h = _hash_password("test123")
-        assert len(h) == 64, "SHA-256 hash should be 64 chars"
-        assert _hash_password("test123") == h, "Same password should give same hash"
-        assert _hash_password("other") != h, "Different password should give different hash"
-        ok("Password hashing works")
+        assert len(h) > 64, "Password hash should use a salted KDF, not raw SHA-256"
+        valid, should_upgrade = verify_password(h, "test123")
+        assert valid is True, "Generated hash should verify with the original password"
+        assert should_upgrade is False, "Fresh hashes should not need upgrade"
+        invalid, _ = verify_password(h, "other")
+        assert invalid is False, "Different password should not verify"
+        ok("Password hashing uses salted Werkzeug hashes")
     except Exception as e:
         fail("Password hashing", str(e))
 
@@ -119,18 +123,15 @@ def test_2_1():
 
     # DB table
     try:
-        from app.db import db_session
-        from sqlalchemy import text
-        db = db_session()
-        result = db.execute(text(
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'users'"
-        )).fetchall()
-        cols = {r[0] for r in result}
+        from app.schema import bootstrap_schema
+        from app.db import engine
+        from sqlalchemy import inspect
+        bootstrap_schema()
+        cols = {column["name"] for column in inspect(engine).get_columns("users")}
         assert 'email' in cols, "users.email missing"
         assert 'password_hash' in cols, "users.password_hash missing"
         assert 'trial_expires_at' in cols, "users.trial_expires_at missing"
         ok("DB: users table exists with all columns")
-        db.close()
     except Exception as e:
         fail("Users DB table", str(e))
 
@@ -238,16 +239,13 @@ def test_2_3():
 
     # DB column
     try:
-        from app.db import db_session
-        from sqlalchemy import text
-        db = db_session()
-        result = db.execute(text(
-            "SELECT column_name FROM information_schema.columns "
-            "WHERE table_name = 'vacancies' AND column_name = 'whatsapp_number'"
-        )).fetchall()
-        assert len(result) == 1, "whatsapp_number column missing from DB"
+        from app.schema import bootstrap_schema
+        from app.db import engine
+        from sqlalchemy import inspect
+        bootstrap_schema()
+        cols = {column["name"] for column in inspect(engine).get_columns("vacancies")}
+        assert "whatsapp_number" in cols, "whatsapp_number column missing from DB"
         ok("DB: vacancies.whatsapp_number exists")
-        db.close()
     except Exception as e:
         fail("WhatsApp DB column", str(e))
 
@@ -365,6 +363,69 @@ def test_2_6():
         ok("Rate limit constants configured")
     except Exception as e:
         fail("Rate limit config", str(e))
+
+    # Legacy user-login POST also rate-limited
+    try:
+        registration_code = (ROOT / "app" / "routes" / "registration.py").read_text()
+        assert "_check_rate_limit" in registration_code
+        assert "_record_attempt" in registration_code
+        ok("Legacy /user-login POST uses login rate limiter")
+    except Exception as e:
+        fail("Legacy user-login rate limiting", str(e))
+
+    # Flask session secret hardening
+    try:
+        config_code = (ROOT / "app" / "config.py").read_text()
+        factory_code = (ROOT / "app" / "factory.py").read_text()
+        assert 'os.getenv("FLASK_SECRET_KEY", "").strip()' in config_code
+        assert "FORBIDDEN_FLASK_SECRET_KEYS" in config_code
+        assert "flask_secret_key()" in factory_code
+        ok("Flask session key rejects weak defaults at startup")
+    except Exception as e:
+        fail("Flask secret hardening", str(e))
+
+    # Upload hardening
+    try:
+        vacancies_code = (ROOT / "app" / "routes" / "vacancies.py").read_text()
+        factory_code = (ROOT / "app" / "factory.py").read_text()
+        assert "secure_filename" in vacancies_code
+        assert "ALLOWED_IMAGE_EXTENSIONS" in vacancies_code
+        assert "MAX_CONTENT_LENGTH" in factory_code
+        assert "X-Content-Type-Options" in factory_code
+        assert 'session.get("current_company_id")' in factory_code
+        assert "Vacancy.company_id == company_id" in factory_code
+        ok("Image uploads constrain filenames, types, and request size")
+    except Exception as e:
+        fail("Upload hardening", str(e))
+
+    # Connection secrets must not live in Flask's client-side session/templates
+    try:
+        auth_code = (ROOT / "app" / "routes" / "auth_routes.py").read_text()
+        tg_html = (ROOT / "app" / "templates" / "connect_telegram.html").read_text()
+        fb_html = (ROOT / "app" / "templates" / "connect_facebook.html").read_text()
+        assert "create_connection_flow" in auth_code
+        assert 'session["tg_api_hash"]' not in auth_code
+        assert 'session["tg_phone_code_hash"]' not in auth_code
+        assert 'session["fb_app_secret"]' not in auth_code
+        assert 'name="api_hash" value="{{ tg_api_hash' not in tg_html
+        assert 'name="phone_code_hash"' not in tg_html
+        assert "session.get('fb_app_id'" not in fb_html
+        ok("Connection credentials use server-side opaque flow storage")
+    except Exception as e:
+        fail("Connection credential flow storage", str(e))
+
+    # Facebook OAuth state validation
+    try:
+        auth_code = (ROOT / "app" / "routes" / "auth_routes.py").read_text()
+        fb_client_code = (ROOT / "common" / "fb_client.py").read_text()
+        assert "oauth_state = secrets.token_urlsafe" in auth_code
+        assert "state=oauth_state" in auth_code
+        assert 'request.args.get("state"' in auth_code
+        assert "OAuth state mismatch" in auth_code
+        assert 'params["state"] = state' in fb_client_code
+        ok("Facebook OAuth uses and validates state")
+    except Exception as e:
+        fail("Facebook OAuth state", str(e))
 
     # Terms of Service
     try:

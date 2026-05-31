@@ -28,6 +28,7 @@
   {% endif %}
 </head>
 <body>
+  {% set is_public_auth_page = request.path in ['/login', '/register', '/user-login'] %}
   <header class="topbar">
     <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
     {% if session.get('is_admin') or session.get('user_id') %}
@@ -59,7 +60,7 @@
           <a class="pill" href="/companies/" style="font-weight:500">{{ current_company_name }}</a>
         {% endif %}
         <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
-      {% else %}
+      {% elif not is_public_auth_page %}
         <a class="pill" href="/login" style="font-weight:500">{{ ui("sign_in") }}</a>
       {% endif %}
     </div>

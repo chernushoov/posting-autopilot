@@ -43,10 +43,6 @@
     <div class="eyebrow">{{ ui("tg_step2") }}</div>
     <p class="small muted" style="margin-bottom:16px">{{ ui("tg_code_sent") }}</p>
     <form method="post" action="/connect/telegram/verify" class="stack">
-      <input type="hidden" name="api_id" value="{{ tg_api_id }}">
-      <input type="hidden" name="api_hash" value="{{ tg_api_hash }}">
-      <input type="hidden" name="phone" value="{{ tg_phone }}">
-      <input type="hidden" name="phone_code_hash" value="{{ phone_code_hash }}">
       <div>
         <label>{{ ui("tg_code_label") }}</label>
         <input name="code" type="text" required autofocus
@@ -73,7 +69,7 @@
     <form method="post" action="/connect/telegram/send-code" class="stack">
       <div class="grid2">
         <div><label>API ID</label><input name="api_id" type="number" value="{{ tg_api_id or '' }}" required></div>
-        <div><label>API Hash</label><input name="api_hash" value="{{ tg_api_hash or '' }}" required></div>
+        <div><label>API Hash</label><input name="api_hash" value="" required autocomplete="off"></div>
       </div>
       <div><label>{{ ui("tg_phone") }}</label><input name="phone" type="tel" placeholder="+972..." value="{{ tg_phone or '' }}" required></div>
       <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>

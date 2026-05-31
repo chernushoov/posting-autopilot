@@ -1,8 +1,15 @@
 (function () {
+  function csrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute("content") || "" : "";
+  }
+
   async function fetchJSON(url, options) {
+    const token = csrfToken();
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { "X-CSRFToken": token } : {}),
         ...(options && options.headers ? options.headers : {}),
       },
       ...options,

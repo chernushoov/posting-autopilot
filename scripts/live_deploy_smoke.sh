@@ -27,8 +27,19 @@ body_contains() {
 WARNINGS=0
 
 LOGIN_GET_BODY="${TMPDIR}/login_get.html"
-curl -s "${BASE_URL}/login?next=/settings" -o "${LOGIN_GET_BODY}"
-[[ "$(fetch_status "${BASE_URL}/login?next=/settings")" == "200" ]] || fail "login page unavailable"
+LOGIN_GET_HEADERS="${TMPDIR}/login_get.headers"
+LOGIN_GET_STATUS="$(
+  curl -s -D "${LOGIN_GET_HEADERS}" -o "${LOGIN_GET_BODY}" -w '%{http_code}' \
+    "${BASE_URL}/login?next=/settings"
+)"
+if [[ "${LOGIN_GET_STATUS}" != "200" ]]; then
+  VERCEL_ERROR="$(grep -i '^x-vercel-error:' "${LOGIN_GET_HEADERS}" | tr -d '\r' | awk -F': ' '{print $2}' | tail -n 1 || true)"
+  BODY_SUMMARY="$(tr '\n' ' ' < "${LOGIN_GET_BODY}" | sed 's/[[:space:]]\+/ /g' | cut -c1-140)"
+  if [[ -n "${VERCEL_ERROR}" ]]; then
+    fail "login page unavailable: status ${LOGIN_GET_STATUS}, x-vercel-error ${VERCEL_ERROR}, body ${BODY_SUMMARY}"
+  fi
+  fail "login page unavailable: status ${LOGIN_GET_STATUS}, body ${BODY_SUMMARY}"
+fi
 body_contains "${LOGIN_GET_BODY}" "Seeded demo account" || fail "login page missing demo account copy"
 pass "login page available"
 

@@ -14,7 +14,7 @@
   </div>
 
   {% if request.args.get('message') == 'saved' %}
-  <div class="alert success">Saved</div>
+  <div class="alert success">{{ ui("saved_label") }}</div>
   {% endif %}
 
   <form method="post" class="card">
@@ -24,19 +24,19 @@
         <input name="name" value="{{ c.name }}" required>
       </div>
       <div>
-        <label>Type</label>
+        <label>{{ ui("business_type_label") }}</label>
         <select name="business_type">
-          <option value="company" {% if c.business_type == 'company' %}selected{% endif %}>Company</option>
-          <option value="individual" {% if c.business_type == 'individual' %}selected{% endif %}>Individual</option>
+          <option value="company" {% if c.business_type == 'company' %}selected{% endif %}>{{ ui("business_type_company") }}</option>
+          <option value="individual" {% if c.business_type == 'individual' %}selected{% endif %}>{{ ui("business_type_individual") }}</option>
         </select>
       </div>
     </div>
 
     <label>{{ ui("description_label") }}</label>
-    <textarea name="description" rows="3" placeholder="What does your business do?">{{ c.description or '' }}</textarea>
+    <textarea name="description" rows="3" placeholder="{{ ui('profile_description_placeholder') }}">{{ c.description or '' }}</textarea>
 
-    <label>Contact Person</label>
-    <input name="contact_person" value="{{ c.contact_person or '' }}" placeholder="Full name">
+    <label>{{ ui("contact_person_label") }}</label>
+    <input name="contact_person" value="{{ c.contact_person or '' }}" placeholder="{{ ui('contact_person_placeholder') }}">
 
     <div class="grid2">
       <div>
@@ -49,8 +49,12 @@
       </div>
     </div>
 
-    <label>Website</label>
+    <label>{{ ui("website_label") }}</label>
     <input name="website" value="{{ c.website or '' }}" placeholder="https://...">
+
+    <label>{{ ui("owner_telegram_id_label") }}</label>
+    <input name="owner_telegram_id" value="{{ c.owner_telegram_id or '' }}" placeholder="123456789 or -1001234567890">
+    <div class="small muted">{{ ui("owner_telegram_id_hint") }}</div>
 
     <input type="hidden" name="logo_emoji" value="">
 
@@ -63,7 +67,7 @@
   {% if c.tg_api_id %}
   <div class="card" style="margin-top:20px">
     <div class="eyebrow">Telegram</div>
-    <p class="small muted">Telegram client connected (API ID: {{ c.tg_api_id[:6] }}...)</p>
+    <p class="small muted">{{ ui("telegram_connected_hint") }} {{ c.tg_api_id[:6] }}...)</p>
   </div>
   {% endif %}
 </div>

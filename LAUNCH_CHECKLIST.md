@@ -34,6 +34,7 @@
 ## Dashboard / Operator UI
 
 - [ ] Login works with the currently configured `ADMIN_LOGIN` / `ADMIN_PASSWORD`
+- [ ] `SMOKE_BASE_URL=http://localhost:8080 python3 scripts/smoke_web.py`
 - [ ] Old/default credentials rejected after hardening
 - [ ] Company switched to TopStaff Israel
 - [ ] Vacancies visible (Warehouse Worker, Cleaning)

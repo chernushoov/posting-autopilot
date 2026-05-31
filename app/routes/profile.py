@@ -1,5 +1,6 @@
 """Company/Individual profile — view and edit current account."""
 from flask import Blueprint, render_template, request, redirect, url_for, session
+import re
 
 from ..auth import require_company
 from ..db import db_session
@@ -7,6 +8,8 @@ from ..models import Company
 from ..tenant import current_company_id
 
 bp = Blueprint("profile", __name__, url_prefix="/profile")
+
+CHAT_ID_RE = re.compile(r"^-?\d+$")
 
 
 @bp.get("/")
@@ -29,6 +32,14 @@ def update_profile():
         db.close()
         return redirect(url_for("auth.dashboard"))
 
+    raw_owner_telegram_id = request.form.get("owner_telegram_id", "").strip()
+    if raw_owner_telegram_id and not CHAT_ID_RE.fullmatch(raw_owner_telegram_id):
+        return render_template(
+            "profile.html",
+            c=company,
+            error="Telegram notification ID must be numeric, for example 123456789 or -1001234567890.",
+        )
+
     company.name = request.form.get("name", "").strip() or company.name
     company.description = request.form.get("description", "").strip() or None
     company.business_type = request.form.get("business_type", "company").strip()
@@ -37,6 +48,7 @@ def update_profile():
     company.email = request.form.get("email", "").strip() or None
     company.website = request.form.get("website", "").strip() or None
     company.logo_emoji = request.form.get("logo_emoji", "").strip() or None
+    company.owner_telegram_id = raw_owner_telegram_id or None
 
     db.commit()
     db.close()

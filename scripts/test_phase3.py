@@ -94,6 +94,16 @@ def test_3_1():
     except Exception as e:
         fail("Webhook CSRF exempt", str(e))
 
+    # Webhook signature verification
+    try:
+        billing_code = (ROOT / "app" / "routes" / "billing.py").read_text()
+        assert "STRIPE_WEBHOOK_SECRET" in billing_code
+        assert "stripe.Webhook.construct_event" in billing_code
+        assert "json.loads(payload)" not in billing_code, "Must not accept unsigned webhook JSON"
+        ok("Webhook requires Stripe signature verification")
+    except Exception as e:
+        fail("Webhook signature verification", str(e))
+
     # Trial expiration middleware
     try:
         factory_code = (ROOT / "app" / "factory.py").read_text()

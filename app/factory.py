@@ -16,12 +16,16 @@ LOGIN_RATE_WINDOW = 300  # 5 minutes
 def create_app():
     bootstrap_schema()
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = Config.FLASK_SECRET_KEY
+    app.config["SECRET_KEY"] = Config.flask_secret_key()
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    # Only set Secure flag when not running locally (HTTPS required for Secure cookies)
-    import os
-    app.config["SESSION_COOKIE_SECURE"] = os.getenv("FORCE_HTTPS", "") == "1"
+    app.config["SESSION_COOKIE_SECURE"] = Config.session_cookie_secure()
+    app.config["MAX_CONTENT_LENGTH"] = Config.MAX_CONTENT_LENGTH
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        return response
 
     # CSRF protection via flask-wtf
     csrf = None
@@ -72,17 +76,49 @@ def create_app():
         static_dir = _os.path.join(app.root_path, "static")
         return send_from_directory(static_dir, "favicon.ico", mimetype="image/x-icon")
 
-    # Serve uploaded photos (vacancy carousel for real estate / cars). Files
-    # live in <repo>/data/uploads/<basename>; the route only resolves the
-    # basename so path-traversal attempts ("../etc/passwd") are blocked by
-    # send_from_directory.
+    # Serve uploaded photos only to the owning tenant. Files live in
+    # <repo>/data/uploads/<basename>; the route only resolves the basename so
+    # path-traversal attempts ("../etc/passwd") are blocked.
     @app.route("/uploads/<path:filename>")
     def uploaded_file(filename: str):
-        from flask import send_from_directory
+        from flask import abort, send_from_directory
+        import json as _json
         import os as _os
+        if not (session.get("is_admin") or session.get("user_id")):
+            abort(404)
+        company_id = session.get("current_company_id")
+        if not company_id:
+            abort(404)
+
+        basename = _os.path.basename(filename)
+        from .db import db_session as _db_session
+        from .models import Vacancy
+        db = _db_session()
+        try:
+            vacancies = db.query(Vacancy).filter(Vacancy.company_id == company_id).all()
+            allowed = False
+            for vacancy in vacancies:
+                paths = []
+                if vacancy.image_path:
+                    paths.append(vacancy.image_path)
+                if vacancy.images_json:
+                    try:
+                        parsed = _json.loads(vacancy.images_json)
+                        if isinstance(parsed, list):
+                            paths.extend(str(item) for item in parsed if item)
+                    except Exception:
+                        pass
+                if any(_os.path.basename(path) == basename for path in paths):
+                    allowed = True
+                    break
+        finally:
+            db.close()
+        if not allowed:
+            abort(404)
+
         upload_dir = _os.path.join(app.root_path, "..", "data", "uploads")
         upload_dir = _os.path.abspath(upload_dir)
-        return send_from_directory(upload_dir, filename)
+        return send_from_directory(upload_dir, basename)
 
     # Trial expiration check middleware
     @app.before_request

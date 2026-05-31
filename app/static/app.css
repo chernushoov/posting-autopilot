@@ -142,6 +142,19 @@ textarea{resize:vertical}
 .progress-bar{height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;margin-bottom:8px}
 .progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s ease}
 
+/* ── Operator Copilot ───────────────────────────────────────────────────── */
+.copilot-panel{display:flex;flex-direction:column;gap:14px;padding:20px 22px;margin-bottom:18px;border:1px solid var(--border-light);border-radius:var(--radius);background:linear-gradient(180deg,#ffffff 0%, #f9fbff 100%);box-shadow:var(--shadow)}
+.copilot-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.copilot-title{font-size:20px;margin:0 0 4px}
+.copilot-actions{display:flex;gap:8px;flex-wrap:wrap}
+.copilot-action-form{margin:0}
+.copilot-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.copilot-block{padding:14px 16px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border-light)}
+.copilot-list{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--fg)}
+.copilot-list-warn{color:var(--warning)}
+.focus-row{background:var(--accent-light)}
+.focus-row td{box-shadow:inset 0 1px 0 rgba(0,113,227,.16), inset 0 -1px 0 rgba(0,113,227,.16)}
+
 /* ── Connect pages ────────────────────────────────────────────────────────── */
 .connect-shell{max-width:640px;margin:40px auto;padding:0 20px}
 .connect-card{background:var(--card);border-radius:var(--radius);padding:40px;box-shadow:var(--shadow-lg)}
@@ -177,6 +190,8 @@ textarea{resize:vertical}
 @media(max-width:960px){.panel-grid,.queue-layout{grid-template-columns:1fr}.page-hero{flex-direction:column}}
 @media(max-width:720px){
   .grid2,.grid3,.setup-grid{grid-template-columns:1fr}
+  .copilot-grid{grid-template-columns:1fr}
+  .copilot-header{flex-direction:column}
   .landing-features{grid-template-columns:1fr}
   .landing-hero{padding:60px 20px 40px}
   .hamburger{display:block}

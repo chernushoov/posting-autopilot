@@ -23,6 +23,10 @@ def run_gate(base_url: str | None) -> tuple[int, dict]:
 
 
 def build_markdown(data: dict) -> str:
+    vercel_production = data.get("vercel_production", {})
+    vercel_details = vercel_production.get("details", {})
+    recovered_lineage = data.get("recovered_hotfix_lineage", {})
+    live_settings = vercel_details.get("latest_settings_500") or {}
     lines = [
         "# Launch Gate Snapshot",
         "",
@@ -33,6 +37,9 @@ def build_markdown(data: dict) -> str:
         f"- runtime: `{data.get('runtime', {}).get('status')}`",
         f"- local_guardrails: `{data.get('local_guardrails', {}).get('status')}`",
         f"- live_smoke: `{data.get('live_smoke', {}).get('status')}`",
+        f"- vercel_production: `{vercel_production.get('status')}`",
+        f"- production_source: `{vercel_details.get('deployment_source') or 'unknown'}`",
+        f"- recovered_hotfix_lineage: `{recovered_lineage.get('status')}`",
         f"- source_alignment: `{data.get('source_alignment', {}).get('status')}`",
         "",
         "## Blockers",
@@ -43,6 +50,14 @@ def build_markdown(data: dict) -> str:
         lines.extend([f"- {item}" for item in blockers])
     else:
         lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Live Root Cause",
+            "",
+            f"- `{live_settings.get('summary') or 'not captured'}`",
+        ]
+    )
     lines.extend(
         [
             "",

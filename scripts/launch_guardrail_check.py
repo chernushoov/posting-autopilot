@@ -2,7 +2,9 @@
 
 import json
 import os
+import re
 import sys
+from urllib.parse import parse_qs, urlparse
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT_DIR not in sys.path:
@@ -11,6 +13,32 @@ if ROOT_DIR not in sys.path:
 from app.factory import create_app
 from app.db import db_session
 from app.models import Company, Vacancy, Source
+
+
+CSRF_TOKEN_RE = re.compile(r'name="csrf_token" value="([^"]+)"')
+CSRF_META_RE = re.compile(r'<meta name="csrf-token" content="([^"]+)"')
+
+
+def extract_csrf_token(body: str) -> str:
+    for pattern in (CSRF_TOKEN_RE, CSRF_META_RE):
+        match = pattern.search(body)
+        if match:
+            return match.group(1)
+    raise RuntimeError("No csrf_token found in HTML response")
+
+
+def fetch_csrf_token(client, path: str) -> str:
+    response = client.get(path)
+    if response.status_code != 200:
+        raise RuntimeError(f"Failed to load {path} for csrf_token: {response.status_code}")
+    return extract_csrf_token(response.get_data(as_text=True))
+
+
+def redirect_error(location: str | None) -> str | None:
+    if not location:
+        return None
+    parsed = urlparse(location)
+    return parse_qs(parsed.query).get("error", [None])[0]
 
 
 def build_client():
@@ -39,10 +67,13 @@ def build_client():
 def main():
     client, vacancy_id, source_id = build_client()
     results = []
+    campaigns_csrf = fetch_csrf_token(client, "/campaigns/new")
+    sources_csrf = fetch_csrf_token(client, "/sources/")
 
     no_sources = client.post(
         "/campaigns/new",
         data={
+            "csrf_token": campaigns_csrf,
             "name": "QA no sources",
             "vacancy_id": str(vacancy_id),
             "interval_minutes": "180",
@@ -56,7 +87,7 @@ def main():
     results.append(
         {
             "name": "campaign_requires_sources",
-            "passed": no_sources.status_code == 200 and "Choose at least one active source before creating a campaign." in no_sources_body,
+            "passed": no_sources.status_code == 200 and "Choose at least one active destination before creating a pilot run." in no_sources_body,
             "status_code": no_sources.status_code,
         }
     )
@@ -64,6 +95,7 @@ def main():
     bad_interval = client.post(
         "/campaigns/new",
         data={
+            "csrf_token": campaigns_csrf,
             "name": "QA bad interval",
             "vacancy_id": str(vacancy_id),
             "interval_minutes": "0",
@@ -85,29 +117,43 @@ def main():
 
     invalid_source = client.post(
         "/sources/new",
-        data={"tg_ref": "not-a-real-ref", "label": "broken", "source_type": "group"},
+        data={
+            "csrf_token": sources_csrf,
+            "tg_ref": "not-a-real-ref",
+            "label": "broken",
+            "source_type": "group",
+        },
         follow_redirects=False,
     )
+    invalid_source_error = redirect_error(invalid_source.headers.get("Location"))
     results.append(
         {
             "name": "source_rejects_invalid_ref",
-            "passed": invalid_source.status_code == 302 and "error=Telegram+ref+must+look+like" in (invalid_source.headers.get("Location") or ""),
+            "passed": invalid_source.status_code == 302
+            and invalid_source_error
+            in {
+                "Telegram ref must look like @username or -1001234567890.",
+                "Telegram ref must look like @username, -1001234567890, or a numeric chat id (chat-kind only).",
+            },
             "status_code": invalid_source.status_code,
             "location": invalid_source.headers.get("Location"),
+            "error": invalid_source_error,
         }
     )
 
     unconfirmed_test = client.post(
         f"/sources/test/{source_id}",
-        data={},
+        data={"csrf_token": sources_csrf},
         follow_redirects=False,
     )
+    unconfirmed_test_error = redirect_error(unconfirmed_test.headers.get("Location"))
     results.append(
         {
             "name": "source_test_requires_confirmation",
-            "passed": unconfirmed_test.status_code == 302 and "error=Confirm+live+send+before+testing+a+source." in (unconfirmed_test.headers.get("Location") or ""),
+            "passed": unconfirmed_test.status_code == 302 and unconfirmed_test_error == "Confirm live send before testing a destination.",
             "status_code": unconfirmed_test.status_code,
             "location": unconfirmed_test.headers.get("Location"),
+            "error": unconfirmed_test_error,
         }
     )
 

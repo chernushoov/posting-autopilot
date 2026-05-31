@@ -34,3 +34,12 @@ ops/**/multilingual_pilot_*.json
 data/*.db
 data/tg_sessions/
 data/fb_sessions/
+
+# secrets & runtime artifacts — never commit (2026-06-01)
+data/fb_screenshots/
+*.cookies.txt
+**/cookies.txt
+.venv-local/
+.venv-fb/
+.openclaw/
+data/fb_sessions/*.json

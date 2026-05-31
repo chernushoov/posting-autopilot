@@ -479,6 +479,33 @@ UI = {
     "phone_label_full": {"ru": "Телефон", "he": "טלפון", "en": "Phone"},
     "most_popular": {"ru": "Популярный", "he": "הפופולרי", "en": "Most Popular"},
     "faq_title": {"ru": "FAQ", "he": "שאלות נפוצות", "en": "FAQ"},
+    "saved_label": {"ru": "Сохранено", "he": "נשמר", "en": "Saved"},
+    "business_type_label": {"ru": "Тип бизнеса", "he": "סוג עסק", "en": "Business type"},
+    "business_type_company": {"ru": "Компания", "he": "חברה", "en": "Company"},
+    "business_type_individual": {"ru": "Частный специалист", "he": "עצמאי", "en": "Individual"},
+    "profile_description_placeholder": {
+        "ru": "Чем занимается ваш бизнес?",
+        "he": "במה העסק שלך עוסק?",
+        "en": "What does your business do?",
+    },
+    "contact_person_label": {"ru": "Контактное лицо", "he": "איש קשר", "en": "Contact person"},
+    "contact_person_placeholder": {"ru": "Полное имя", "he": "שם מלא", "en": "Full name"},
+    "website_label": {"ru": "Сайт", "he": "אתר", "en": "Website"},
+    "owner_telegram_id_label": {
+        "ru": "Telegram ID для HOT lead уведомлений",
+        "he": "Telegram ID להתראות לידים חמים",
+        "en": "Telegram ID for HOT lead alerts",
+    },
+    "owner_telegram_id_hint": {
+        "ru": "Куда слать мгновенные HOT lead уведомления. Укажите numeric user/chat ID; если пусто, останется env/legacy fallback.",
+        "he": "לאן לשלוח התראות מיידיות על לידים חמים. הזן מזהה מספרי של משתמש/צ'אט; אם ריק, יישאר fallback של env/legacy.",
+        "en": "Where instant HOT lead alerts should be sent. Enter a numeric Telegram user/chat ID; leave blank to keep env/legacy fallback.",
+    },
+    "telegram_connected_hint": {
+        "ru": "Telegram client подключён (API ID:",
+        "he": "לקוח Telegram מחובר (API ID:",
+        "en": "Telegram client connected (API ID:",
+    },
     # Vacancy form placeholders (Tamar reported English placeholders inside RU UI as "выглядит как незаконченный продукт")
     "ph_body": {
         "ru": "Опишите вакансию: что делать, где, требования, условия...",
