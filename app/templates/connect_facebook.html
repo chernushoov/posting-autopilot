@@ -40,6 +40,10 @@
       <span style="font-size:20px">⚠️</span>
       <strong>{% if ui_lang=='he' %}פייסבוק לא מחובר עדיין{% elif ui_lang=='en' %}Facebook not connected yet{% else %}Facebook ещё не подключён{% endif %}</strong>
     </div>
+    <form method="post" action="/connect/facebook/browser-connect" style="margin-top:14px">
+      <button class="fb-login-btn" type="submit">{% if ui_lang=='he' %}חבר את הפייסבוק שלי{% elif ui_lang=='en' %}Connect my Facebook{% else %}Подключить мой Facebook{% endif %}</button>
+    </form>
+    <p class="small muted" style="margin-top:8px">{% if ui_lang=='he' %}נפתח חלון דפדפן ואתה מתחבר לחשבון הרגיל שלך. הקבוצות שלך ייטענו אוטומטית.{% elif ui_lang=='en' %}A browser window opens and you sign into your normal account. Your groups load automatically.{% else %}Откроется окно браузера, и ты войдёшь в свой обычный аккаунт. Группы загрузятся автоматически.{% endif %}</p>
   {% endif %}
 
   <details style="margin-top:14px">

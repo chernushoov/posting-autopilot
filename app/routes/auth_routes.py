@@ -590,6 +590,54 @@ def connect_facebook():
     )
 
 
+@bp.post("/connect/facebook/browser-connect")
+def fb_browser_connect():
+    """Launch the one-time browser login that captures the operator's Facebook session
+    (the EZPost-style path that powers groups + Marketplace).
+
+    This opens a *visible* browser on the machine running the app, so it only makes
+    sense on a local/desktop install. It is gated behind FB_ALLOW_LOCAL_CAPTURE so a
+    server deployment never tries to spawn a browser, and so nothing launches without
+    an explicit opt-in. When the gate is off we just explain how to enable it.
+    """
+    if not session.get("is_admin"):
+        return redirect(url_for("auth.login"))
+
+    import os as _os
+    import sys as _sys
+    import subprocess
+
+    repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
+    session_file = _os.path.join(repo_root, "data", "fb_sessions", "floordsgn.json")
+    if _os.path.exists(session_file):
+        return redirect(url_for("auth.connect_facebook", message="Facebook is already connected. Press Sync to refresh your groups."))
+
+    gate = _os.getenv("FB_ALLOW_LOCAL_CAPTURE", "").strip().lower()
+    if gate not in {"1", "true", "yes", "on"}:
+        return redirect(url_for(
+            "auth.connect_facebook",
+            error="Facebook login opens a browser on the machine running this app. On your own computer, set FB_ALLOW_LOCAL_CAPTURE=1 and click again — a window will open for you to sign in.",
+        ))
+
+    try:
+        script = _os.path.join(repo_root, "scripts", "fb_capture_session_auto.py")
+        py = _os.path.join(repo_root, ".venv-fb", "bin", "python")
+        if not _os.path.exists(py):
+            py = _sys.executable
+        subprocess.Popen(
+            [py, script],
+            cwd=repo_root,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return redirect(url_for(
+            "auth.connect_facebook",
+            message="A browser window is opening — sign into Facebook there. When you're done, come back and press Sync.",
+        ))
+    except Exception as exc:  # pragma: no cover - best effort launch
+        return redirect(url_for("auth.connect_facebook", error="Couldn't launch the Facebook login: " + str(exc)[:160]))
+
+
 @bp.post("/connect/facebook/setup")
 def fb_setup():
     """Save FB App credentials and redirect to Facebook OAuth (official Pages flow)."""
