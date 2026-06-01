@@ -20,6 +20,7 @@
   {% if _m == 'hotlead_sent' %}<div class="alert success">{{ ui("hotlead_sent_msg") }}</div>{% endif %}
   {% if _e == 'hotlead_no_target' %}<div class="alert error">{{ ui("hotlead_no_target_msg") }}</div>{% endif %}
   {% if _e == 'hotlead_fail' %}<div class="alert error">{{ ui("hotlead_fail_msg") }}</div>{% endif %}
+  {% if _e == 'hotlead_need_start' %}<div class="alert error">{{ ui("hotlead_need_start") }} <a href="https://t.me/{{ bot_username }}" target="_blank" rel="noopener">{{ ui("hotlead_open_bot") }} →</a></div>{% endif %}
 
   <form method="post" class="card">
     <div class="grid2">
@@ -74,7 +75,8 @@
     <p class="small muted" style="margin:6px 0 12px">{{ ui("hotlead_card_desc") }}</p>
     <form method="post" action="/profile/test-hot-lead">
       <button class="btn" type="submit"{% if not c.owner_telegram_id %} disabled{% endif %}>{{ ui("send_test_hotlead_btn") }}</button>
-      {% if not c.owner_telegram_id %}<div class="small muted" style="margin-top:8px">{{ ui("hotlead_need_id_hint") }}</div>{% endif %}
+      {% if not c.owner_telegram_id %}<div class="small muted" style="margin-top:8px">{{ ui("hotlead_need_id_hint") }}</div>
+      {% else %}<div class="small muted" style="margin-top:8px">{{ ui("hotlead_need_start") }} <a href="https://t.me/{{ bot_username }}" target="_blank" rel="noopener">{{ ui("hotlead_open_bot") }} →</a></div>{% endif %}
     </form>
   </div>
 

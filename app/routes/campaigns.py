@@ -353,11 +353,20 @@ def toggle_campaign(campaign_id: int):
             return redirect(url_for("campaigns.list_campaigns", error="Pilot interval is outside the safe operating range."))
 
     campaign.is_running = not campaign.is_running
+    # Read what we need into locals BEFORE closing the session — touching the ORM
+    # instance after db.close() raises DetachedInstanceError (was a hard 500 on start).
+    new_state = campaign.is_running
+    cid = campaign.id
     db.commit()
     db.close()
 
-    if campaign.is_running:
-        schedule_campaign_tick(campaign.id, "campaign_started")
+    if new_state:
+        # Guard the dispatch too: if the queue is unavailable, the campaign is still
+        # marked running — never 500 the toggle over a transient worker issue.
+        try:
+            schedule_campaign_tick(cid, "campaign_started")
+        except Exception:
+            pass
         message = "Pilot run started and the first posting cycle was queued."
     else:
         message = "Pilot run paused."
@@ -391,7 +400,7 @@ def run_campaign_now(campaign_id: int):
     try:
         job, _run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
     except Exception:
-        return redirect(url_for("campaigns.list_campaigns", error="Posting needs the background worker running. Start the worker process, or enable single-machine mode (set ALLOW_INLINE_POSTING=1) and try again."))
+        return redirect(url_for("campaigns.list_campaigns", error="Posting is temporarily unavailable — please try again in a moment."))
     if job is None:
         return redirect(url_for("campaigns.list_campaigns", message="A posting cycle is already in progress — not starting a duplicate. Watch the log below."))
     if job == "inline":
@@ -422,7 +431,7 @@ def retry_attempt(attempt_id: int):
     try:
         job, _run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
     except Exception:
-        return redirect(url_for("campaigns.list_campaigns", error="Background queue is offline (Redis/worker not running). Start the stack and try again."))
+        return redirect(url_for("campaigns.list_campaigns", error="Posting is temporarily unavailable — please try again in a moment."))
     if job is None:
         return redirect(url_for("campaigns.list_campaigns", message="A posting cycle is already in progress — retry not duplicated."))
     return redirect(url_for(

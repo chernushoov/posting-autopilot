@@ -15,12 +15,14 @@ CHAT_ID_RE = re.compile(r"^-?\d+$")
 @bp.get("/")
 @require_company
 def view_profile():
+    import os
     db = db_session()
     company = db.query(Company).filter(Company.id == current_company_id()).first()
     db.close()
     if not company:
         return redirect(url_for("auth.dashboard"))
-    return render_template("profile.html", c=company)
+    bot_username = os.getenv("RECRUITBOT_BOT_USERNAME", "AutopillotRecruit_bot").lstrip("@")
+    return render_template("profile.html", c=company, bot_username=bot_username)
 
 
 @bp.post("/")
@@ -68,28 +70,27 @@ def test_hot_lead():
     if not company:
         return redirect(url_for("auth.dashboard"))
 
-    from common.notify_targets import resolve_recruit_notify_targets, sample_hot_lead_message
+    from common.notify_targets import normalize_chat_id, sample_hot_lead_message
 
-    targets = resolve_recruit_notify_targets(company)
-    if not targets:
+    # Send to the operator's OWN configured Telegram only — NOT the deployment-wide
+    # RECRUIT_OPERATOR_NOTIFY_CHAT fallback. Otherwise a successful send to the shared
+    # fallback would report a false "Sent!" while the user's own chat got nothing.
+    target = normalize_chat_id(getattr(company, "owner_telegram_id", None))
+    if not target:
         return redirect(url_for("profile.view_profile") + "?error=hotlead_no_target")
 
     lang = session.get("ui_lang", "ru")
     text = sample_hot_lead_message(company, lang)
-    sent = 0
-    last_err = ""
     try:
         from bot.tg import tg_send_message_safe
-
-        for chat_id in targets:
-            ok, msg = tg_send_message_safe(chat_id, text)
-            if ok:
-                sent += 1
-            else:
-                last_err = msg or ""
+        ok, msg = tg_send_message_safe(target, text)
     except Exception as exc:  # pragma: no cover - best-effort send
-        last_err = str(exc)
+        ok, msg = False, str(exc)
 
-    if sent:
+    if ok:
         return redirect(url_for("profile.view_profile") + "?message=hotlead_sent")
+    # Telegram bots cannot DM a user who never pressed Start → "chat not found".
+    low = (msg or "").lower()
+    if "not found" in low or "chat not found" in low or "blocked" in low or "can't initiate" in low or "bad request" in low:
+        return redirect(url_for("profile.view_profile") + "?error=hotlead_need_start")
     return redirect(url_for("profile.view_profile") + "?error=hotlead_fail")

@@ -190,6 +190,9 @@ textarea{resize:vertical}
 @media(max-width:960px){.panel-grid,.queue-layout{grid-template-columns:1fr}.page-hero{flex-direction:column}}
 @media(max-width:720px){
   .grid2,.grid3,.setup-grid{grid-template-columns:1fr}
+  /* Wide data tables: scroll horizontally on phones instead of clipping the
+     right-most Actions buttons off-screen (covers tables not wrapped in .table-wrap). */
+  .table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
   .copilot-grid{grid-template-columns:1fr}
   .copilot-header{flex-direction:column}
   .landing-features{grid-template-columns:1fr}

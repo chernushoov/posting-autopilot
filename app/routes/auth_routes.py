@@ -616,7 +616,7 @@ def fb_browser_connect():
     if gate not in {"1", "true", "yes", "on"}:
         return redirect(url_for(
             "auth.connect_facebook",
-            error="Facebook login opens a browser on the machine running this app. On your own computer, set FB_ALLOW_LOCAL_CAPTURE=1 and click again — a window will open for you to sign in.",
+            error="Facebook auto-connect runs on a desktop only. For now, add your Facebook groups and Marketplace by pasting their links in the form above.",
         ))
 
     try:

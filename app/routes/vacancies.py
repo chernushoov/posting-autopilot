@@ -43,12 +43,31 @@ def _save_uploaded_images(files) -> list[str]:
     return saved_paths
 
 
+def _post_labels(listing_type: str, lang: str) -> dict:
+    """Public-post field labels, niche- and language-aware. A car or apartment ad must
+    not say "Pay:"/"Apply:" (recruiting words) in English on a Hebrew/Russian post."""
+    L = (lang or "ru").lower()
+    recruiting = (listing_type or "recruitment") == "recruitment"
+
+    def pick(ru, he, en):
+        return {"ru": ru, "he": he, "en": en}.get(L, en)
+
+    return {
+        "city": pick("Город", "עיר", "City"),
+        "salary": pick("Зарплата", "שכר", "Pay") if recruiting else pick("Цена", "מחיר", "Price"),
+        "schedule": pick("График", "לוח זמנים", "Schedule"),
+        "contact": pick("Контакт", "יצירת קשר", "Contact"),
+        "apply": pick("Откликнуться", "להגיש מועמדות", "Apply") if recruiting else pick("Подробнее", "לפרטים", "Details"),
+    }
+
+
 def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[str, str]:
     title = form.get("final_post_title", "").strip() or form.get("title", "").strip()
     custom_body = form.get("final_post_body", "").strip()
     if custom_body:
         return title, custom_body
 
+    lbl = _post_labels(form.get("listing_type", "").strip(), form.get("language", "").strip())
     parts = [form.get("body", "").strip()]
     city = form.get("city", "").strip()
     salary_text = form.get("salary_text", "").strip()
@@ -56,15 +75,15 @@ def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[
     contact_text = form.get("contact_text", "").strip()
     apply_url = apply_url if apply_url is not None else form.get("apply_url", "").strip()
     if city:
-        parts.append(f"City: {city}")
+        parts.append(f"{lbl['city']}: {city}")
     if salary_text:
-        parts.append(f"Pay: {salary_text}")
+        parts.append(f"{lbl['salary']}: {salary_text}")
     if schedule_text:
-        parts.append(f"Schedule: {schedule_text}")
+        parts.append(f"{lbl['schedule']}: {schedule_text}")
     if contact_text:
-        parts.append(f"Contact: {contact_text}")
+        parts.append(f"{lbl['contact']}: {contact_text}")
     if apply_url:
-        parts.append(f"Apply: {apply_url}")
+        parts.append(f"{lbl['apply']}: {apply_url}")
     return title, "\n".join([part for part in parts if part])
 
 

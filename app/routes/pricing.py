@@ -170,8 +170,11 @@ PLAN_KEYS = ["starter", "pro", "agency"]
 def pricing_page():
     lang = session.get("ui_lang", "he")
     plans = PLANS.get(lang, PLANS["en"])
-    # Add checkout URLs
+    # A signed-out visitor clicking a "Try free" plan must reach SIGNUP, not the Stripe
+    # checkout (which @require_company bounces to the sign-in page — a dead end for a
+    # brand-new user). Only authenticated trial users get the real upgrade checkout.
+    signed_in = bool(session.get("is_admin") or session.get("user_id"))
     for i, plan in enumerate(plans):
         if i < len(PLAN_KEYS):
-            plan["checkout_url"] = f"/billing/checkout/{PLAN_KEYS[i]}"
+            plan["checkout_url"] = f"/billing/checkout/{PLAN_KEYS[i]}" if signed_in else "/register"
     return render_template("pricing.html", title="Pricing", plans=plans)

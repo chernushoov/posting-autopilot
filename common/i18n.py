@@ -551,6 +551,8 @@ UI = {
     "hotlead_sent_msg": {"ru": "Отправили! Проверьте Telegram — пример горячего лида уже там.", "he": "נשלח! בדוק את הטלגרם — דוגמת הליד החם כבר שם.", "en": "Sent! Check your Telegram — the sample hot lead is there."},
     "hotlead_no_target_msg": {"ru": "Сначала укажите Telegram ID в профиле и сохраните.", "he": "תחילה הזן Telegram ID בפרופיל ושמור.", "en": "First add your Telegram ID in the profile and save."},
     "hotlead_fail_msg": {"ru": "Не удалось отправить. Проверьте Telegram ID и что бот-токен настроен (RECRUITBOT_TELEGRAM_BOT_TOKEN).", "he": "השליחה נכשלה. בדוק את ה-Telegram ID ושטוקן הבוט מוגדר (RECRUITBOT_TELEGRAM_BOT_TOKEN).", "en": "Couldn't send. Check your Telegram ID and that the bot token is set (RECRUITBOT_TELEGRAM_BOT_TOKEN)."},
+    "hotlead_need_start": {"ru": "Telegram не доставит, пока вы не напишете боту. Откройте бота, нажмите «Старт» — и снова нажмите кнопку.", "he": "טלגרם לא ישלח עד שתכתוב לבוט. פתח את הבוט, לחץ «Start» ואז נסה שוב.", "en": "Telegram won't deliver until you message the bot first. Open the bot, press Start, then click again."},
+    "hotlead_open_bot": {"ru": "Открыть бота", "he": "פתח את הבוט", "en": "Open the bot"},
     "telegram_connected_hint": {
         "ru": "Telegram client подключён (API ID:",
         "he": "לקוח Telegram מחובר (API ID:",

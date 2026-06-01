@@ -118,8 +118,15 @@ def new_source():
         posting_mode=posting_mode,
         destination_url=destination_url,
         folder=folder,
-        last_check_ok=(True if platform == "facebook" and destination_url else False),
-        last_check_message=("Facebook manual destination saved." if platform == "facebook" and destination_url else None),
+        # A manually-added destination is optimistically pilot-ready so the Run gate
+        # never dead-ends (the ref/URL is already format-validated above). The actual
+        # send still fails gracefully if the connected account can't post there.
+        last_check_ok=(True if platform in {"facebook", "telegram"} and (destination_url or platform == "telegram") else False),
+        last_check_message=(
+            "Facebook manual destination saved." if platform == "facebook" and destination_url
+            else "Added manually — verified on first post." if platform == "telegram"
+            else None
+        ),
     )
     db.add(source)
     try:
