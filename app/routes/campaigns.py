@@ -319,6 +319,32 @@ def toggle_campaign(campaign_id: int):
     return redirect(url_for("campaigns.list_campaigns", message=message))
 
 
+def _recent_inflight_run(campaign_id, within_seconds=90):
+    """Guard against an accidental double-click on Run now (or a manual run that
+    races a scheduler tick). Each run gets its own run_key, so the per-run_key
+    dedup in campaign_tick does NOT catch two separate runs — without this guard
+    a second click posts to every destination a second time. Returns True if a
+    posting cycle for this campaign started within the last `within_seconds` is
+    still scheduled/pending (i.e. in flight)."""
+    from datetime import datetime, timedelta
+
+    db = db_session()
+    try:
+        cutoff = datetime.utcnow() - timedelta(seconds=within_seconds)
+        inflight = (
+            db.query(PostingAttempt.id)
+            .filter(
+                PostingAttempt.campaign_id == campaign_id,
+                PostingAttempt.result_status.in_(("scheduled", "pending")),
+                PostingAttempt.created_at >= cutoff,
+            )
+            .first()
+        )
+        return inflight is not None
+    finally:
+        db.close()
+
+
 @bp.post("/run/<int:campaign_id>")
 @require_company
 def run_campaign_now(campaign_id: int):
@@ -342,6 +368,9 @@ def run_campaign_now(campaign_id: int):
         return redirect(url_for("campaigns.list_campaigns", error="Cannot run without at least one active destination."))
     if _count_eligible_sources(linked_sources) == 0:
         return redirect(url_for("campaigns.list_campaigns", error="Cannot run until at least one destination is pilot-ready. Telegram must be READY. Facebook must have a direct URL."))
+
+    if _recent_inflight_run(campaign_id):
+        return redirect(url_for("campaigns.list_campaigns", message="A posting cycle for this pilot is already in progress — ignored the duplicate run to avoid double-posting to every group."))
 
     schedule_campaign_tick(campaign_id, "operator_run_now")
     return redirect(url_for("campaigns.list_campaigns", message="Posting cycle queued immediately. Watch the destination log below for results."))
