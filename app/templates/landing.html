@@ -35,6 +35,7 @@
 .l-nav-links .btn{color:#fff}
 .lang-dots{display:flex;gap:4px}
 .lang-dots span,.lang-dots a{font-size:11px;padding:4px 10px;border-radius:999px;text-decoration:none}
+.l-burger{display:none;background:none;border:1px solid var(--border);border-radius:10px;font-size:20px;line-height:1;padding:5px 12px;cursor:pointer;color:var(--fg)}
 .lang-dots .active-lang{background:var(--accent);color:#fff}
 .lang-dots a{color:var(--muted);border:1px solid var(--border-light)}
 .lang-dots a:hover{border-color:var(--accent)}
@@ -231,7 +232,11 @@ body{direction:rtl;text-align:right}
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media(max-width:768px){
-  .l-nav-links a:not(.btn){display:none}
+  .l-burger{display:block}
+  .l-nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:6px;background:rgba(255,255,255,.98);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);padding:16px 20px;box-shadow:0 14px 30px rgba(0,0,0,.12);border-bottom:1px solid var(--border-light)}
+  .l-nav-links.open{display:flex}
+  .l-nav-links a{width:100%;text-align:center;box-sizing:border-box}
+  .lang-dots{justify-content:center;margin-bottom:4px}
   .pain-grid{grid-template-columns:repeat(2,1fr)}
   .steps-grid{grid-template-columns:1fr}
   .compare-grid{grid-template-columns:1fr}
@@ -257,7 +262,8 @@ body{direction:rtl;text-align:right}
 <!-- ═══ NAV ═══ -->
 <nav class="l-nav" id="nav">
   <a href="/" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
-  <div class="l-nav-links">
+  <button class="l-burger" id="l-burger" aria-label="Menu" aria-expanded="false" onclick="var l=document.getElementById('l-links');var o=l.classList.toggle('open');this.setAttribute('aria-expanded',o)">&#9776;</button>
+  <div class="l-nav-links" id="l-links">
     <div class="lang-dots">
       {% for l in (supported_langs or ['en','ru','he']) %}
         {% if l == (ui_lang or 'he') %}<span class="active-lang">{{ l.upper() }}</span>
@@ -594,6 +600,14 @@ body{direction:rtl;text-align:right}
 
 <!-- ═══ Scripts ═══ -->
 <script>
+// ── Mobile nav: close the dropdown after tapping any link ──
+(function(){
+  var links = document.getElementById('l-links');
+  if (!links) return;
+  links.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ links.classList.remove('open'); });
+  });
+})();
 // ── Scroll reveal via IntersectionObserver ──
 const observer = new IntersectionObserver(function(entries) {
   entries.forEach(function(e) {
