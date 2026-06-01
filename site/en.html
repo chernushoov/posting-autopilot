@@ -226,6 +226,7 @@ textarea{resize:vertical}
 .l-nav-links .btn{color:#fff}
 .lang-dots{display:flex;gap:4px}
 .lang-dots span,.lang-dots a{font-size:11px;padding:4px 10px;border-radius:999px;text-decoration:none}
+.l-burger{display:none;background:none;border:1px solid var(--border);border-radius:10px;font-size:20px;line-height:1;padding:5px 12px;cursor:pointer;color:var(--fg)}
 .lang-dots .active-lang{background:var(--accent);color:#fff}
 .lang-dots a{color:var(--muted);border:1px solid var(--border-light)}
 .lang-dots a:hover{border-color:var(--accent)}
@@ -416,7 +417,11 @@ textarea{resize:vertical}
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media(max-width:768px){
-  .l-nav-links a:not(.btn){display:none}
+  .l-burger{display:block}
+  .l-nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:6px;background:rgba(255,255,255,.98);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);padding:16px 20px;box-shadow:0 14px 30px rgba(0,0,0,.12);border-bottom:1px solid var(--border-light)}
+  .l-nav-links.open{display:flex}
+  .l-nav-links a{width:100%;text-align:center;box-sizing:border-box}
+  .lang-dots{justify-content:center;margin-bottom:4px}
   .pain-grid{grid-template-columns:repeat(2,1fr)}
   .steps-grid{grid-template-columns:1fr}
   .compare-grid{grid-template-columns:1fr}
@@ -442,7 +447,8 @@ textarea{resize:vertical}
 <!-- ═══ NAV ═══ -->
 <nav class="l-nav" id="nav">
   <a href="/" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
-  <div class="l-nav-links">
+  <button class="l-burger" id="l-burger" aria-label="Menu" aria-expanded="false" onclick="var l=document.getElementById('l-links');var o=l.classList.toggle('open');this.setAttribute('aria-expanded',o)">&#9776;</button>
+  <div class="l-nav-links" id="l-links">
     <div class="lang-dots">
       
         <span class="active-lang">EN</span>
@@ -454,9 +460,9 @@ textarea{resize:vertical}
       
     </div>
     <a href="#how">How it works</a>
-    <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener">Pricing</a>
-    <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener">Sign in</a>
-    <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener" class="btn" style="border-radius:999px">Start Free</a>
+    <a href="/register" target="_blank" rel="noopener">Pricing</a>
+    <a href="/login" target="_blank" rel="noopener">Sign in</a>
+    <a href="/register" target="_blank" rel="noopener" class="btn" style="border-radius:999px">Start Free</a>
   </div>
 </nav>
 
@@ -471,7 +477,7 @@ textarea{resize:vertical}
     One listing &rarr; 50+ Telegram & Facebook groups &rarr; AI bot answers, filters, collects phones &rarr; you only get hot leads.
   </p>
   <div class="hero-ctas reveal stagger-3">
-    <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener" class="btn">14 Days Free &rarr;</a>
+    <a href="/register" target="_blank" rel="noopener" class="btn">14 Days Free &rarr;</a>
     <a href="#demo" class="btn-ghost">See Demo</a>
   </div>
   <div class="hero-scroll"><div class="arrow">&darr;</div></div>
@@ -716,7 +722,7 @@ textarea{resize:vertical}
         <li>AI bot</li>
         <li>3 languages</li>
       </ul>
-      <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener" class="price-cta outline">Try Free</a>
+      <a href="/register" target="_blank" rel="noopener" class="price-cta outline">Try Free</a>
     </div>
     <div class="price-card pop reveal stagger-2">
       <div class="price-badge">Most Popular</div>
@@ -728,7 +734,7 @@ textarea{resize:vertical}
         <li>Analytics</li>
         <li>Priority support</li>
       </ul>
-      <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener" class="price-cta primary">Start Now</a>
+      <a href="/register" target="_blank" rel="noopener" class="price-cta primary">Start Now</a>
     </div>
     <div class="price-card reveal stagger-3">
       <div class="price-name">Agency</div>
@@ -739,7 +745,7 @@ textarea{resize:vertical}
         <li>Multi-company</li>
         <li>Dedicated manager</li>
       </ul>
-      <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener" class="price-cta outline">Contact Us</a>
+      <a href="/register" target="_blank" rel="noopener" class="price-cta outline">Contact Us</a>
     </div>
   </div>
 </section>
@@ -749,9 +755,9 @@ textarea{resize:vertical}
 <section class="l-final">
   <h2 class="final-h2 reveal">Ready to stop wasting time?</h2>
   <p class="final-sub reveal stagger-1">14-day free trial. No credit card. Setup in 5 minutes.</p>
-  <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener" class="btn final-btn reveal stagger-2">Sign Up Now</a>
+  <a href="/register" target="_blank" rel="noopener" class="btn final-btn reveal stagger-2">Sign Up Now</a>
   <div class="final-links reveal stagger-3">
-    <a href="https://wa.me/972509051065?text=Hi%21%20Saw%20Posting%20Autopilot%20%E2%80%94%20I%27d%20like%20early%20access%20and%20a%20demo." target="_blank" rel="noopener">Pricing</a>
+    <a href="/register" target="_blank" rel="noopener">Pricing</a>
     <a href="/terms">Terms</a>
   </div>
 </section>
@@ -907,5 +913,6 @@ botObserver.observe(chatContainer);
 <script>/* static-site failsafe: guarantee content is visible even if scroll-observer never fires */
 setTimeout(function(){document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(function(e){e.classList.add('visible')});},2200);</script>
 
+<script>(function(){var l=document.getElementById('l-links');if(!l)return;l.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){l.classList.remove('open')})});})();</script>
 </body>
 </html>
