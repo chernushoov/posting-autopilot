@@ -1,0 +1,8 @@
+name = "posting-autopilot"
+compatibility_date = "2024-11-01"
+
+# Static-assets-only Worker: serves the rendered 3-language landing in site/.
+# Regenerate site/ with: python scripts/render_static_landing.py
+# Deploy with: NODE_EXTRA_CA_CERTS=<macos-ca-bundle> wrangler deploy
+[assets]
+directory = "./site"

@@ -27,3 +27,5 @@ Thumbs.db
 # Docker volumes
 postgres-data/
 data/tg_sessions/
+
+.wrangler/

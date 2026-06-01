@@ -89,20 +89,18 @@ def fix_links(html, lang):
     html = html.replace('href="/set-lang/ru"', 'href="/ru.html"')
     html = html.replace('href="/set-lang/en"', 'href="/en.html"')
 
-    msg = WA_MSG.get(lang, WA_MSG["en"])
-    wa = "https://wa.me/%s?text=%s" % (WA_PHONE, quote(msg))
     tg = "https://t.me/%s" % TG_USER
-    # register / pricing = primary intent -> WhatsApp; sign-in -> Telegram
-    for route in ("/register", "/pricing"):
-        html = html.replace(
-            'href="%s"' % route,
-            'href="%s" target="_blank" rel="noopener"' % wa,
-        )
-    for route in ("/user-login", "/login"):
+    # Invite-only early access: NO WhatsApp redirects anywhere. Any self-serve or
+    # sign-in route points to the owner's Telegram, where pilot companies are
+    # onboarded by hand. (The polished landing no longer emits /register or
+    # /pricing at all; these replacements are a defensive belt-and-suspenders.)
+    for route in ("/register", "/pricing", "/user-login", "/login"):
         html = html.replace(
             'href="%s"' % route,
             'href="%s" target="_blank" rel="noopener"' % tg,
         )
+    # No static Terms page on the backend-less site — neutralise the link.
+    html = html.replace('href="/terms"', 'href="#"')
     return html
 
 
