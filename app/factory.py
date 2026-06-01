@@ -3,7 +3,7 @@ from .config import Config
 from .operator_copilot import build_operator_copilot
 from .routes import register_routes
 from .schema import bootstrap_schema
-from common.i18n import ui, is_rtl
+from common.i18n import ui, is_rtl, status_label
 
 SUPPORTED_LANGS = ["en", "ru", "he"]
 
@@ -198,5 +198,6 @@ def create_app():
         }
 
     app.jinja_env.globals["ui"] = lambda key, **kw: ui(key, session.get("ui_lang", "he"), **kw)
+    app.jinja_env.globals["slabel"] = lambda status: status_label(status, session.get("ui_lang", "ru"))
 
     return app

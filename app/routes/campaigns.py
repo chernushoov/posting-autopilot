@@ -189,13 +189,29 @@ def list_campaigns():
     )
     attempt_summary = _build_attempt_summary(recent_attempts)
     destination_summary = _build_destination_summary(all_active_sources)
-    pilot_checklist = [
-        "Confirm the vacancy asset text, salary, contact, and apply path.",
-        "Use only Telegram destinations marked READY for auto posting.",
-        "Use Facebook only through assisted/manual posting with a direct destination URL.",
-        "Run the pilot and then resolve every manual_action_required row before leaving the screen.",
-        "Record operator notes on every failed or blocked_or_suspected destination.",
-    ]
+    from flask import session as _session
+    _lang = _session.get("ui_lang", "ru")
+    _checklists = {
+        "ru": [
+            "Проверьте текст объявления: цена/зарплата, контакт, ссылка.",
+            "Telegram постит автоматически в каналы со статусом «готов».",
+            "Facebook — по прямой ссылке, с подтверждением при публикации.",
+            "Запустите и отметьте каналы, где нужно действие вручную.",
+        ],
+        "he": [
+            "בדוק את טקסט המודעה: מחיר/שכר, יצירת קשר, קישור.",
+            "טלגרם מפרסם אוטומטית ליעדים במצב «מוכן».",
+            "פייסבוק — לפי קישור ישיר, עם אישור בעת הפרסום.",
+            "הפעל וסמן יעדים שדורשים פעולה ידנית.",
+        ],
+        "en": [
+            "Check the listing text: price/pay, contact, link.",
+            "Telegram auto-posts to destinations marked ready.",
+            "Facebook posts via a direct link, confirmed at posting time.",
+            "Run it, then resolve any destinations that need a manual action.",
+        ],
+    }
+    pilot_checklist = _checklists.get(_lang, _checklists["ru"])
     db.close()
     return render_template(
         "campaigns.html",

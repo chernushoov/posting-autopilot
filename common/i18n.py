@@ -773,6 +773,36 @@ def ui(key: str, lang: str = "en", **kwargs) -> str:
         text = text.format(**kwargs)
     return text
 
+STATUS_LABELS = {
+    "pending": {"ru": "в очереди", "he": "בתור", "en": "pending"},
+    "scheduled": {"ru": "запланировано", "he": "מתוזמן", "en": "scheduled"},
+    "posting": {"ru": "публикуется", "he": "מתפרסם", "en": "posting"},
+    "manual_action_required": {"ru": "нужно вручную", "he": "דורש ידני", "en": "manual action"},
+    "posted": {"ru": "опубликовано", "he": "פורסם", "en": "posted"},
+    "failed": {"ru": "ошибка", "he": "נכשל", "en": "failed"},
+    "blocked_or_suspected": {"ru": "блок/подозрение", "he": "חסום/חשוד", "en": "blocked"},
+    # Candidate/lead statuses
+    "new": {"ru": "новый", "he": "חדש", "en": "new"},
+    "qualifying": {"ru": "квалификация", "he": "סינון", "en": "screening"},
+    "interviewing": {"ru": "интервью", "he": "ראיון", "en": "interview"},
+    "passed": {"ru": "прошёл", "he": "עבר", "en": "passed"},
+    "rejected": {"ru": "отклонён", "he": "נדחה", "en": "rejected"},
+    "hired": {"ru": "нанят", "he": "התקבל", "en": "hired"},
+    # Lead classification
+    "hot": {"ru": "горячий", "he": "חם", "en": "hot"},
+    "warm": {"ru": "тёплый", "he": "פושר", "en": "warm"},
+    "cold": {"ru": "холодный", "he": "קר", "en": "cold"},
+}
+
+
+def status_label(status: str, lang: str = "ru") -> str:
+    """Localized label for a posting/attempt status; falls back to the raw value."""
+    msg = STATUS_LABELS.get(str(status))
+    if not msg:
+        return str(status)
+    return msg.get(lang) or msg.get("en") or str(status)
+
+
 RTL_LANGUAGES = {"he", "ar"}
 
 def is_rtl(lang: str) -> bool:
