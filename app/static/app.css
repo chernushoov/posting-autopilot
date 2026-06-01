@@ -193,6 +193,9 @@ textarea{resize:vertical}
   /* Wide data tables: scroll horizontally on phones instead of clipping the
      right-most Actions buttons off-screen (covers tables not wrapped in .table-wrap). */
   .table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  /* The operator-console panel is desktop chrome; on a phone it's just clutter that
+     reads as "unfinished". Hide it — the page content + dashboard wizard guide mobile. */
+  .copilot-panel{display:none}
   .copilot-grid{grid-template-columns:1fr}
   .copilot-header{flex-direction:column}
   .landing-features{grid-template-columns:1fr}

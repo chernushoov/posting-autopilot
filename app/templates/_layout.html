@@ -94,14 +94,14 @@
 
       <div class="copilot-grid">
         {% if operator_copilot.facts %}
-        <div class="copilot-block">
-          <div class="small muted">{{ operator_copilot.context_label }}</div>
+        <details class="copilot-block copilot-facts">
+          <summary class="small muted" style="cursor:pointer;list-style:none">{{ operator_copilot.context_label }}</summary>
           <ul class="copilot-list">
             {% for fact in operator_copilot.facts %}
             <li>{{ fact }}</li>
             {% endfor %}
           </ul>
-        </div>
+        </details>
         {% endif %}
         {% if operator_copilot.warnings %}
         <div class="copilot-block">

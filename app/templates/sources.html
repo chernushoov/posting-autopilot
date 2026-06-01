@@ -6,25 +6,25 @@
 </div>
 
 <div class="card" style="margin-bottom:16px">
-  <h2 style="margin-top:0">Pilot Destination Rules</h2>
+  <h2 style="margin-top:0">{% if ui_lang=='he' %}לאן מפרסמים{% elif ui_lang=='en' %}Where you post{% else %}Куда публикуем{% endif %}</h2>
   <div class="grid3">
     <div class="card card-flat">
       <div class="eyebrow">Telegram</div>
       <div style="font-size:28px;font-weight:700">{{ source_summary.telegram_ready }}/{{ source_summary.telegram_total }}</div>
-      <div class="small muted">ready for auto posting · {{ source_summary.telegram_needs_check }} still need check</div>
+      <div class="small muted">{% if ui_lang=='he' %}מוכן לפרסום אוטומטי · {{ source_summary.telegram_needs_check }} ממתינים לבדיקה{% elif ui_lang=='en' %}ready to auto-post · {{ source_summary.telegram_needs_check }} still need a check{% else %}готовы к автопостингу · {{ source_summary.telegram_needs_check }} ждут проверки{% endif %}</div>
     </div>
     <div class="card card-flat">
       <div class="eyebrow">Facebook</div>
       <div style="font-size:28px;font-weight:700">{{ source_summary.facebook_ready }}/{{ source_summary.facebook_total }}</div>
-      <div class="small muted">manual destinations with direct URL · {{ source_summary.facebook_missing_url }} missing URL</div>
+      <div class="small muted">{% if ui_lang=='he' %}יעדים עם קישור ישיר · {{ source_summary.facebook_missing_url }} ללא קישור{% elif ui_lang=='en' %}destinations with a direct link · {{ source_summary.facebook_missing_url }} missing a link{% else %}адресов с прямой ссылкой · {{ source_summary.facebook_missing_url }} без ссылки{% endif %}</div>
     </div>
     <div class="card card-flat">
-      <div class="eyebrow">Operator rule</div>
-      <div class="small muted" style="margin-top:8px">Telegram may auto-post only after READY. Facebook must be prepared here and confirmed later in Pilot Runs.</div>
+      <div class="eyebrow">{% if ui_lang=='he' %}איך זה עובד{% elif ui_lang=='en' %}How it works{% else %}Как это работает{% endif %}</div>
+      <div class="small muted" style="margin-top:8px">{% if ui_lang=='he' %}טלגרם מפרסם אוטומטית לאחר שהיעד מוכן. פייסבוק — מוסיפים כאן קישור ומאשרים בעת הפרסום.{% elif ui_lang=='en' %}Telegram auto-posts once a destination is ready. Facebook — add a link here and confirm at posting time.{% else %}Telegram постит автоматически, когда канал готов. Facebook — добавь ссылку здесь и подтверди при публикации.{% endif %}</div>
       {% if source_summary.telegram_needs_check > 0 %}
       <form method="post" action="/sources/check-all" style="margin-top:10px">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="pill" type="submit" style="width:100%">▶ Check {{ source_summary.telegram_needs_check }} pending Telegram destinations</button>
+        <button class="pill" type="submit" style="width:100%">{% if ui_lang=='he' %}בדוק {{ source_summary.telegram_needs_check }} יעדי טלגרם{% elif ui_lang=='en' %}Check {{ source_summary.telegram_needs_check }} Telegram destinations{% else %}Проверить {{ source_summary.telegram_needs_check }} Telegram-каналов{% endif %}</button>
       </form>
       {% endif %}
     </div>
@@ -49,7 +49,7 @@
   <div class="grid2">
     <div>
       <label>{{ ui("dest_ref") }}</label>
-      <input name="tg_ref" placeholder="Telegram: @groupname or -100123... / Facebook: page or group name">
+      <input name="tg_ref" placeholder="{% if ui_lang=='he' %}טלגרם: @group או -100123… / פייסבוק: שם עמוד/קבוצה{% elif ui_lang=='en' %}Telegram: @group or -100123… / Facebook: page or group name{% else %}Telegram: @group или -100123… / Facebook: имя страницы/группы{% endif %}">
     </div>
     <div>
       <label>{{ ui("posting_mode") }}</label>
@@ -59,9 +59,9 @@
     </div>
   </div>
   <label>{{ ui("label") }}</label>
-  <input name="label" placeholder="Optional label">
+  <input name="label" placeholder="{% if ui_lang=='he' %}שם (אופציונלי){% elif ui_lang=='en' %}Label (optional){% else %}Метка (необязательно){% endif %}">
   <label>{{ ui("dest_url") }}</label>
-  <input name="destination_url" placeholder="Optional direct URL, especially useful for Facebook manual posting">
+  <input name="destination_url" placeholder="{% if ui_lang=='he' %}קישור ישיר (חשוב לפייסבוק){% elif ui_lang=='en' %}Direct link (useful for Facebook){% else %}Прямая ссылка (важно для Facebook){% endif %}">
   <button class="btn" type="submit">{{ ui("add_dest_btn") }}</button>
 </form>
 
