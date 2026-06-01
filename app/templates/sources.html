@@ -87,19 +87,21 @@
       {% endif %}
       {% if s.last_check_message %} · <span class="muted">{{ s.last_check_message }}</span>{% endif %}
     </td>
-    <td class="actions">
-      <form method="post" action="/sources/check/{{ s.id }}" style="display:inline"><button class="pill" type="submit">{{ ui("check_btn") }}</button></form>
-      {% if (s.platform or "telegram") == "telegram" %}
-        <form method="post" action="/sources/test/{{ s.id }}" style="display:inline">
-          <label class="checkbox muted" style="display:inline-flex;gap:6px;align-items:center">
-            <input type="checkbox" name="confirm_live_send" value="yes">
-            {{ ui("confirm_live_send") }}
-          </label>
-          <button class="pill" type="submit">{{ ui("test_msg_btn") }}</button>
-        </form>
-      {% else %}
-        <span class="small muted">Use assisted/manual flow in Pilot Runs.</span>
-      {% endif %}
+    <td>
+      <div class="actions">
+        <form method="post" action="/sources/check/{{ s.id }}"><button class="pill" type="submit">{{ ui("check_btn") }}</button></form>
+        {% if (s.platform or "telegram") == "telegram" %}
+          <form method="post" action="/sources/test/{{ s.id }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label class="checkbox muted" style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">
+              <input type="checkbox" name="confirm_live_send" value="yes">
+              {{ ui("confirm_live_send") }}
+            </label>
+            <button class="pill" type="submit">{{ ui("test_msg_btn") }}</button>
+          </form>
+        {% else %}
+          <span class="small muted">Use assisted/manual flow in Pilot Runs.</span>
+        {% endif %}
+      </div>
     </td>
   </tr>
   {% endfor %}
