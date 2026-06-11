@@ -5,7 +5,8 @@ from flask import Blueprint, redirect, render_template, request, url_for, jsonif
 
 from ..auth import require_company
 from ..db import db_session
-from ..models import Language, Vacancy
+from ..models import Company, Language, Vacancy
+from ..plans import UPGRADE_HINT, vacancy_slots_left
 from ..tenant import current_company_id, scoped
 from ..listing_templates import get_template, get_all_templates
 from common.recruitbot_links import build_recruitbot_apply_link
@@ -351,6 +352,18 @@ def new_vacancy_post():
             form_values=request.form,
             templates=get_all_templates(),
         )
+
+    company = db.query(Company).filter(Company.id == current_company_id()).first()
+    slots = vacancy_slots_left(db, company) if company else 0
+    if slots is not None and slots <= 0:
+        db.close()
+        return render_template(
+            "vacancy_new.html",
+            error=f"Your plan's active-listing limit is reached. {UPGRADE_HINT}",
+            languages=[l.value for l in Language],
+            form_values=request.form,
+            templates=get_all_templates(),
+        )
     try:
         q = [line.strip() for line in questions.split("\n") if line.strip()]
     except Exception:
@@ -508,6 +521,16 @@ def toggle_vacancy(vacancy_id: int):
     db = db_session()
     vacancy = scoped(db, Vacancy).filter(Vacancy.id == vacancy_id).first()
     if vacancy:
+        if not vacancy.is_active:
+            # Re-activation must respect the plan limit too
+            company = db.query(Company).filter(Company.id == current_company_id()).first()
+            slots = vacancy_slots_left(db, company) if company else 0
+            if slots is not None and slots <= 0:
+                db.close()
+                return redirect(url_for(
+                    "vacancies.list_vacancies",
+                    error=f"Your plan's active-listing limit is reached. {UPGRADE_HINT}",
+                ))
         vacancy.is_active = not vacancy.is_active
         db.commit()
     db.close()

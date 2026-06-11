@@ -7,7 +7,7 @@ from flask import Blueprint, redirect, request, url_for, session, jsonify
 
 from ..auth import require_company
 from ..db import db_session
-from ..models import User
+from ..models import Company, User
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +121,7 @@ def _handle_checkout_completed(session_data: dict):
     """Activate subscription after successful checkout."""
     metadata = session_data.get("metadata", {})
     user_id = metadata.get("user_id")
+    company_id = metadata.get("company_id")
     plan = metadata.get("plan", "starter")
 
     if not user_id:
@@ -133,8 +134,17 @@ def _handle_checkout_completed(session_data: dict):
         if user:
             # Remove trial expiration — user is now paying
             user.trial_expires_at = None
-            db.commit()
-            logger.info(f"[billing] User {user_id} subscribed to {plan}")
+        company = None
+        if company_id:
+            company = db.query(Company).filter(Company.id == int(company_id)).first()
+        elif user and user.company_id:
+            company = db.query(Company).filter(Company.id == user.company_id).first()
+        if company:
+            company.plan_tier = plan
+            company.stripe_customer_id = session_data.get("customer") or company.stripe_customer_id
+            company.stripe_subscription_id = session_data.get("subscription") or company.stripe_subscription_id
+        db.commit()
+        logger.info(f"[billing] User {user_id} subscribed to {plan} (company {company.id if company else '?'})")
     except Exception as e:
         logger.error(f"[billing] Error activating subscription: {e}")
         db.rollback()
@@ -143,8 +153,28 @@ def _handle_checkout_completed(session_data: dict):
 
 
 def _handle_subscription_cancelled(sub_data: dict):
-    """Handle subscription cancellation."""
-    logger.info(f"[billing] Subscription cancelled: {sub_data.get('id')}")
+    """Close access when the Stripe subscription ends: mark the company
+    cancelled and expire the trial for its users so the trial gate blocks."""
+    sub_id = sub_data.get("id")
+    logger.info(f"[billing] Subscription cancelled: {sub_id}")
+    if not sub_id:
+        return
+    db = db_session()
+    try:
+        company = db.query(Company).filter(Company.stripe_subscription_id == sub_id).first()
+        if not company:
+            logger.warning(f"[billing] cancelled subscription {sub_id} matches no company")
+            return
+        company.plan_tier = "trial"
+        for user in db.query(User).filter(User.company_id == company.id).all():
+            user.trial_expires_at = datetime.utcnow()
+        db.commit()
+        logger.info(f"[billing] Company {company.id} access closed after cancellation")
+    except Exception as e:
+        logger.error(f"[billing] Error handling cancellation: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 
 def _handle_payment_failed(invoice_data: dict):

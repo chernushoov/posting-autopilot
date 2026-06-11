@@ -3,7 +3,8 @@ from flask import Blueprint, redirect, render_template, request, url_for
 
 from ..auth import require_company
 from ..db import db_session
-from ..models import Source, SourceType
+from ..models import Company, Source, SourceType
+from ..plans import UPGRADE_HINT, source_slots_left
 from ..tenant import current_company_id, scoped
 from worker.queue import enqueue_check_source, enqueue_test_message
 
@@ -106,6 +107,14 @@ def new_source():
         return redirect(url_for("sources.list_sources", error="Choose a valid posting mode."))
 
     db = db_session()
+    company = db.query(Company).filter(Company.id == current_company_id()).first()
+    slots = source_slots_left(db, company) if company else 0
+    if slots is not None and slots <= 0:
+        db.close()
+        return redirect(url_for(
+            "sources.list_sources",
+            error=f"Your plan's destination limit is reached. {UPGRADE_HINT}",
+        ))
     folder = request.form.get("folder", "").strip() or None
     source_type = SourceType(destination_kind) if platform == "telegram" else SourceType.group
     source = Source(

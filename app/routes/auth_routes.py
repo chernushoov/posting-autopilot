@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from ..auth import admin_login_ok
 from ..db import db_session
 from ..models import Company, User
-from .registration import _login_user, _verify_password
+from .registration import _login_user, _verify_and_upgrade_password
 
 bp = Blueprint("auth", __name__)
 
@@ -48,7 +48,7 @@ def login_post():
     if "@" in login:
         db = db_session()
         user = db.query(User).filter(User.email == login.strip().lower(), User.is_active == True).first()
-        if user and _verify_password(user.password_hash, password):
+        if user and _verify_and_upgrade_password(user, password, db):
             _login_user(user, db)
             db.close()
             return redirect(next_url)
@@ -425,8 +425,12 @@ def tg_add_selected():
         pass
 
     db = db_session()
-    from ..models import Source, SourceType
+    from ..models import Company, Source, SourceType
+    from ..plans import UPGRADE_HINT, source_slots_left
+    company = db.query(Company).filter(Company.id == company_id).first()
+    slots = source_slots_left(db, company) if company else 0
     added = 0
+    skipped_by_plan = 0
     for gid in group_ids:
         gid = gid.strip()
         if not gid:
@@ -437,6 +441,9 @@ def tg_add_selected():
         tg_ref = f"@{group['username']}" if group.get("username") else str(group["id"])
         existing = db.query(Source).filter(Source.company_id == company_id, Source.tg_ref == tg_ref).first()
         if existing:
+            continue
+        if slots is not None and added >= slots:
+            skipped_by_plan += 1
             continue
         source = Source(
             company_id=company_id,
@@ -453,6 +460,11 @@ def tg_add_selected():
         added += 1
     db.commit()
     db.close()
+    if skipped_by_plan:
+        return redirect(url_for(
+            "auth.connect_telegram",
+            message=f"Added {added} destinations. {skipped_by_plan} skipped — plan destination limit reached. {UPGRADE_HINT}",
+        ))
     return redirect(url_for("auth.connect_telegram", message=f"Added {added} destinations"))
 
 @bp.get("/connect/facebook")
@@ -639,8 +651,12 @@ def fb_add_selected_pages():
         pass
 
     db = db_session()
-    from ..models import Source, SourceType
+    from ..models import Company, Source, SourceType
+    from ..plans import UPGRADE_HINT, source_slots_left
+    company = db.query(Company).filter(Company.id == company_id).first()
+    slots = source_slots_left(db, company) if company else 0
     added = 0
+    skipped_by_plan = 0
     for page_id in page_ids:
         page_id = page_id.strip()
         if not page_id:
@@ -651,6 +667,9 @@ def fb_add_selected_pages():
         fb_url = page.get("link") or f"https://facebook.com/{page['id']}"
         existing = db.query(Source).filter(Source.company_id == company_id, Source.destination_url == fb_url).first()
         if existing:
+            continue
+        if slots is not None and added >= slots:
+            skipped_by_plan += 1
             continue
         source = Source(
             company_id=company_id,
@@ -668,4 +687,9 @@ def fb_add_selected_pages():
         added += 1
     db.commit()
     db.close()
+    if skipped_by_plan:
+        return redirect(url_for(
+            "auth.connect_facebook",
+            message=f"Added {added} Pages. {skipped_by_plan} skipped — plan destination limit reached. {UPGRADE_HINT}",
+        ))
     return redirect(url_for("auth.connect_facebook", message=f"Added {added} Pages"))

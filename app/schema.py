@@ -69,6 +69,9 @@ def bootstrap_schema() -> None:
     _ensure_columns(
         "companies",
         {
+            "plan_tier": "VARCHAR(20) NOT NULL DEFAULT 'trial'",
+            "stripe_customer_id": "VARCHAR(64)",
+            "stripe_subscription_id": "VARCHAR(64)",
             "tg_api_id": "VARCHAR(20)",
             "tg_api_hash": "VARCHAR(64)",
             "fb_access_token": "TEXT",

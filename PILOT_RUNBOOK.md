@@ -9,7 +9,7 @@ docker compose logs bot --tail 5  # should show "Connected as @AutopillotRecruit
 ```
 
 Dashboard: http://localhost:8080
-Login: operator / HBIKEGMS5nd7GNXP
+Login: operator / <set-via-ADMIN_PASSWORD-env>
 
 ## Step 1: Create or Verify Vacancy
 

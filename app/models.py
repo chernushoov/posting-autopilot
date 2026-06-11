@@ -132,6 +132,11 @@ class Company(Base):
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
 
+    # Billing — plan tier drives feature limits (see app/plans.py)
+    plan_tier = Column(String(20), nullable=False, default="trial")
+    stripe_customer_id = Column(String(64), nullable=True)
+    stripe_subscription_id = Column(String(64), nullable=True)
+
     # Profile fields
     business_type = Column(String(20), nullable=False, default="company")
     contact_person = Column(String(200), nullable=True)

@@ -34,6 +34,16 @@ def _verify_password(stored_hash: str, password: str) -> bool:
         return False
 
 
+def _verify_and_upgrade_password(user, password: str, db) -> bool:
+    """Verify and transparently re-hash legacy unsalted SHA-256 to werkzeug."""
+    if not user or not _verify_password(user.password_hash, password):
+        return False
+    if user.password_hash == _hash_password(password):
+        user.password_hash = _make_password_hash(password)
+        db.commit()
+    return True
+
+
 def _valid_email(email: str) -> bool:
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
 
@@ -117,7 +127,7 @@ def user_login_post():
 
     db = db_session()
     user = db.query(User).filter(User.email == email, User.is_active == True).first()
-    if not user or not _verify_password(user.password_hash, password):
+    if not _verify_and_upgrade_password(user, password, db):
         db.close()
         return render_template("user_login.html", error="Invalid email or password.")
 
