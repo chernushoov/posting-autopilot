@@ -19,12 +19,13 @@
 2. Домен → A-запись на VPS. Caddy/Traefik для HTTPS (Caddyfile из 3 строк достаточно).
 3. `git clone` репо, заполнить `.env.runtime` (шаг 3), `bash scripts/compose_with_runtime.sh up -d --build`.
 4. Проверить `/health` и что 6 сервисов поднялись (web, bot, worker, scheduler, postgres, redis).
-5. В compose поставить у `bot` `restart: unless-stopped` (сейчас "no" — упавший бот молча останавливает скрининг).
+   Compose уже hardened: restart-политики на всех сервисах, Redis с AOF-persistence, healthchecks,
+   БД и web слушают только localhost. После ребута сервера всё поднимается само.
 
 ## Шаг 3 — Env-переменные (.env.runtime на VPS)
 
 ```
-DATABASE_URL=postgresql://ra:ra@postgres:5432/ra
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ra
 REDIS_URL=redis://redis:6379/0
 FLASK_SECRET_KEY=<openssl rand -hex 32>
 ADMIN_LOGIN=operator
@@ -39,6 +40,7 @@ STRIPE_PRICE_PRO=price_...
 STRIPE_PRICE_AGENCY=price_...
 SUPPORT_CONTACT_URL=https://wa.me/<номер Алексея>   # кнопка «Связаться» на /pricing
 FORCE_HTTPS=1
+DEMO_MODE=0   # 1 = включить /demo-симулятор (не включать у клиентов)
 ```
 
 ## Шаг 4 — Смоук на проде (15 минут)

@@ -69,6 +69,8 @@ def bootstrap_schema() -> None:
     _ensure_columns(
         "companies",
         {
+            "notify_telegram_chat_id": "VARCHAR(32)",
+            "notify_email": "VARCHAR(300)",
             "plan_tier": "VARCHAR(20) NOT NULL DEFAULT 'trial'",
             "stripe_customer_id": "VARCHAR(64)",
             "stripe_subscription_id": "VARCHAR(64)",

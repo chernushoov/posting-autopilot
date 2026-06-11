@@ -32,6 +32,45 @@ def _session_path(company_id: int) -> str:
     return os.path.join(SESSION_DIR, f"company_{company_id}")
 
 
+# --- Session serialization -------------------------------------------------
+# Telethon session files are NOT safe for concurrent use: a "check source"
+# click in web and a scheduler tick can open the same session simultaneously
+# and corrupt it mid-campaign. Every sync wrapper below must hold this lock.
+
+import threading
+from contextlib import contextmanager
+from collections import defaultdict
+from uuid import uuid4
+
+_MEM_LOCKS: dict = defaultdict(threading.Lock)
+
+
+@contextmanager
+def _session_lock(company_id: int, timeout: int = 300, ttl: int = 360):
+    r = _redis()
+    if not r:
+        with _MEM_LOCKS[company_id]:
+            yield
+        return
+    key = f"tg_session_lock:{company_id}"
+    token = uuid4().hex
+    deadline = time.time() + timeout
+    while not r.set(key, token, nx=True, ex=ttl):
+        if time.time() > deadline:
+            raise TimeoutError(
+                f"SESSION_BUSY: Telegram session for company {company_id} is in use, try again shortly"
+            )
+        time.sleep(0.5)
+    try:
+        yield
+    finally:
+        try:
+            if r.get(key) == token.encode():
+                r.delete(key)
+        except Exception:
+            pass
+
+
 def _get_loop():
     try:
         loop = asyncio.get_event_loop()
@@ -159,26 +198,30 @@ async def _check_dialog_access_async(api_id: int, api_hash: str, company_id: int
 
 def send_code(api_id: int, api_hash: str, phone: str, company_id: int) -> str:
     """Send verification code. Returns phone_code_hash."""
-    loop = _get_loop()
-    return loop.run_until_complete(_send_code_async(api_id, api_hash, phone, company_id))
+    with _session_lock(company_id, timeout=60):
+        loop = _get_loop()
+        return loop.run_until_complete(_send_code_async(api_id, api_hash, phone, company_id))
 
 
 def verify_code(api_id: int, api_hash: str, phone: str, code: str, phone_code_hash: str, company_id: int, password: str = None) -> dict:
     """Verify code and sign in. Returns user info or error."""
-    loop = _get_loop()
-    return loop.run_until_complete(_verify_code_async(api_id, api_hash, phone, code, phone_code_hash, company_id, password))
+    with _session_lock(company_id, timeout=60):
+        loop = _get_loop()
+        return loop.run_until_complete(_verify_code_async(api_id, api_hash, phone, code, phone_code_hash, company_id, password))
 
 
 def sync_dialogs(api_id: int, api_hash: str, company_id: int) -> dict:
     """Sync all groups/channels from user account. Returns list of groups."""
-    loop = _get_loop()
-    return loop.run_until_complete(_sync_dialogs_async(api_id, api_hash, company_id))
+    with _session_lock(company_id, timeout=120):
+        loop = _get_loop()
+        return loop.run_until_complete(_sync_dialogs_async(api_id, api_hash, company_id))
 
 
 def check_dialog_access(api_id: int, api_hash: str, company_id: int, group_id: str) -> dict:
     """Check whether the connected Telegram account can resolve the target group/channel."""
-    loop = _get_loop()
-    return loop.run_until_complete(_check_dialog_access_async(api_id, api_hash, company_id, group_id))
+    with _session_lock(company_id, timeout=120):
+        loop = _get_loop()
+        return loop.run_until_complete(_check_dialog_access_async(api_id, api_hash, company_id, group_id))
 
 
 def is_authorized(api_id: int, api_hash: str, company_id: int) -> bool:
@@ -446,10 +489,14 @@ def post_to_group(
     logger.info(f"[tg_client] Anti-spam delay: {delay:.0f}s before posting to {group_id}")
     time.sleep(delay)
 
-    loop = _get_loop()
-    result = loop.run_until_complete(
-        _post_to_group_async(api_id, api_hash, company_id, group_id, text, file_path)
-    )
+    try:
+        with _session_lock(company_id):
+            loop = _get_loop()
+            result = loop.run_until_complete(
+                _post_to_group_async(api_id, api_hash, company_id, group_id, text, file_path)
+            )
+    except TimeoutError as e:
+        return False, str(e)
 
     if result["ok"]:
         _record_post(company_id)

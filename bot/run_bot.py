@@ -1,3 +1,4 @@
+import asyncio
 import os, json, re
 from datetime import datetime, timedelta, timezone
 from aiogram import Bot, Dispatcher, F
@@ -245,18 +246,24 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
             wa_num = '972' + wa_num[1:]
         text += f"📲 WhatsApp: https://wa.me/{wa_num}\n"
 
-    # Resolve destination chats (may be multiple if owner_id + env are both set)
+    # Resolve destination chats. Per-company DB setting (Profile page) wins;
+    # legacy owner_id and env fallbacks keep old single-operator setups working.
     targets: list[str] = []
 
+    db_chat = (getattr(company, "notify_telegram_chat_id", None) or "").strip()
+    if db_chat.lstrip("-").isdigit():
+        targets.append(db_chat)
+
     if company.owner_id and company.owner_id.replace("_", "").replace("admin", "").strip().isdigit():
-        targets.append(company.owner_id)
+        if company.owner_id not in targets:
+            targets.append(company.owner_id)
 
     per_company = os.environ.get(f"RECRUIT_OPERATOR_NOTIFY_CHAT_{company.id}")
     if per_company and per_company.strip().isdigit() and per_company not in targets:
         targets.append(per_company.strip())
 
     fallback = os.environ.get("RECRUIT_OPERATOR_NOTIFY_CHAT")
-    if fallback and fallback.strip().isdigit() and fallback not in targets:
+    if not targets and fallback and fallback.strip().isdigit():
         targets.append(fallback.strip())
 
     if not targets:
@@ -268,16 +275,22 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
         except Exception as e:
             print(f"[bot] Failed hot lead notification to {chat_id}: {e}")
 
-    # Task 2.4: Email notification (async-safe — runs in thread)
+    # Task 2.4: Email notification. Per-company notify_email (Profile page)
+    # wins over the first active user's email. SMTP is blocking — run in a
+    # thread so it can't stall the bot's update loop.
     try:
-        # Check if owner_id looks like email for User-based accounts
-        from app.db import db_session as _db
-        from app.models import User
-        db = _db()
-        user = db.query(User).filter(User.company_id == company.id, User.is_active == True).first()
-        if user and user.email:
-            send_hot_lead_email(
-                to_email=user.email,
+        to_email = (getattr(company, "notify_email", None) or "").strip()
+        if not to_email:
+            from app.db import db_session as _db
+            from app.models import User
+            db = _db()
+            user = db.query(User).filter(User.company_id == company.id, User.is_active == True).first()
+            to_email = user.email if user and user.email else ""
+            db.close()
+        if to_email:
+            await asyncio.to_thread(
+                send_hot_lead_email,
+                to_email=to_email,
                 listing_title=vacancy.title if vacancy else "Unknown",
                 lead_name=name,
                 lead_phone=phone,
@@ -285,26 +298,63 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
                 lead_summary=summary,
                 lead_telegram=candidate.tg_username or "",
             )
-        db.close()
     except Exception as e:
         print(f"[bot] Email notification error: {e}")
 
 
 # --- /start handler ---
 
+def company_can_screen(db, company) -> bool:
+    """A company may screen candidates while it has at least one active user
+    whose trial has not expired (or no self-serve users at all — legacy
+    admin-managed companies have no trial)."""
+    from app.models import User
+    users = db.query(User).filter(User.company_id == company.id, User.is_active == True).all()
+    if not users:
+        return True
+    now = datetime.utcnow()
+    return any(u.trial_expires_at is None or u.trial_expires_at > now for u in users)
+
+
 @dp.message(F.text.startswith("/start"))
 async def cmd_start(message: Message):
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await message.answer(t("not_configured", "en"))
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
 
         args = message.text.split(maxsplit=1)
         deep_link = args[1] if len(args) > 1 else None
+
+        # The apply deep-link decides which tenant this conversation belongs
+        # to; without one we fall back to the first active company (legacy
+        # single-tenant mode).
+        vacancy = None
+        comp = None
+        if deep_link and deep_link.startswith("apply_"):
+            try:
+                vacancy_id = int(deep_link.split("_", 1)[1])
+                vacancy = db.query(Vacancy).filter(
+                    Vacancy.id == vacancy_id,
+                    Vacancy.is_active == True
+                ).first()
+            except (ValueError, IndexError):
+                vacancy = None
+            if vacancy:
+                comp = db.query(Company).filter(
+                    Company.id == vacancy.company_id,
+                    Company.is_active == True,
+                ).first()
+                if comp and not company_can_screen(db, comp):
+                    comp = None
+                if not comp:
+                    tg_lang = message.from_user.language_code if message.from_user else None
+                    await message.answer(t("vacancy_unavailable", detect_language(tg_lang)))
+                    return
+        if not comp:
+            comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
+        if not comp:
+            await message.answer(t("not_configured", "en"))
+            return
 
         c = None
         if tg_user_id:
@@ -330,22 +380,13 @@ async def cmd_start(message: Message):
 
         lang = get_candidate_lang(c)
 
-        if deep_link and deep_link.startswith("apply_"):
-            try:
-                vacancy_id = int(deep_link.split("_", 1)[1])
-                vacancy = db.query(Vacancy).filter(
-                    Vacancy.id == vacancy_id,
-                    Vacancy.is_active == True
-                ).first()
-                if vacancy:
-                    c.vacancy_id = vacancy.id
-                    c.status = CandidateStatus.qualifying
-                    c.chat_log_json = "[]"
-                    db.commit()
-                    await start_screening(message, c, vacancy, lang, db)
-                    return
-            except (ValueError, IndexError):
-                pass
+        if vacancy:
+            c.vacancy_id = vacancy.id
+            c.status = CandidateStatus.qualifying
+            c.chat_log_json = "[]"
+            db.commit()
+            await start_screening(message, c, vacancy, lang, db)
+            return
 
         if not c.language:
             await message.answer(t("welcome", lang), reply_markup=lang_keyboard())
@@ -609,7 +650,11 @@ async def on_message(message: Message):
                         f"score {duplicate_of.score or '-'}. " + (c.summary or "")
                     ).strip()
                 c.classification = classification
-                c.status = CandidateStatus.passed if classification == "hot" else CandidateStatus.passed
+                c.status = (
+                    CandidateStatus.passed
+                    if classification in ("hot", "warm")
+                    else CandidateStatus.rejected
+                )
 
                 reply = t("phone_accepted", lang)
                 log.append({"role": "assistant", "text": reply, "type": "result", "ts": "", "classification": classification, "phone": phone})
@@ -763,7 +808,11 @@ async def on_contact(message: Message):
                 f"score {duplicate_of.score or '-'}. " + (c.summary or "")
             ).strip()
         c.classification = classification
-        c.status = CandidateStatus.passed
+        c.status = (
+            CandidateStatus.passed
+            if classification in ("hot", "warm")
+            else CandidateStatus.rejected
+        )
 
         reply = t("phone_accepted", lang)
         log.append({"role": "assistant", "text": reply, "type": "result", "ts": "", "classification": classification, "phone": phone})
@@ -774,6 +823,28 @@ async def on_contact(message: Message):
 
         if classification == "hot":
             await send_hot_lead_notification(message.bot, comp, c, vacancy)
+    finally:
+        db.close()
+
+
+@dp.message()
+async def on_non_text(message: Message):
+    """Voice/photo/video/etc during screening: tell the candidate to answer
+    with text instead of silently ignoring them (looks like the bot is dead).
+    Registered last so it only catches what no other handler claimed."""
+    tg_user_id = str(message.from_user.id) if message.from_user else None
+    if not tg_user_id:
+        return
+    db = db_session()
+    try:
+        c = (
+            db.query(Candidate)
+            .filter(Candidate.tg_user_id == tg_user_id)
+            .order_by(Candidate.id.desc())
+            .first()
+        )
+        if c and c.status in (CandidateStatus.qualifying, CandidateStatus.interviewing):
+            await message.answer(t("text_only_please", get_candidate_lang(c)))
     finally:
         db.close()
 

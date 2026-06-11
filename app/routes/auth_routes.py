@@ -146,7 +146,9 @@ def dashboard():
     progress_pct = int((steps_done / steps_total) * 100)
 
     db.close()
+    import os as _os
     return render_template("dashboard.html",
+        demo_mode=_os.getenv("DEMO_MODE", "") == "1",
         has_company=has_company, company_name=company_name, company_phone=company_phone, company_emoji=company_emoji,
         has_vacancy=has_vacancy, vacancy_count=vacancy_count,
         has_telegram=has_telegram, telegram_count=telegram_count,
@@ -513,6 +515,76 @@ def connect_facebook():
         error=request.args.get("error"),
         message=request.args.get("message"),
     )
+
+
+@bp.post("/connect/facebook/bulk-add")
+def fb_bulk_add():
+    """Paste a list of Facebook group URLs (one per line) → destinations.
+    The fastest possible FB onboarding: no OAuth, no per-group modal."""
+    if not session.get("is_admin"):
+        return redirect(url_for("auth.login"))
+    company_id = session.get("current_company_id")
+    if not company_id:
+        return redirect(url_for("companies.list_companies"))
+
+    raw = request.form.get("urls", "")
+    urls = []
+    for line in raw.splitlines():
+        line = line.strip().rstrip("/")
+        if not line:
+            continue
+        if not line.startswith("http"):
+            line = "https://" + line
+        if "facebook.com" not in line:
+            continue
+        if line not in urls:
+            urls.append(line)
+    if not urls:
+        return redirect(url_for("auth.connect_facebook", error="No Facebook links found — paste one URL per line."))
+
+    db = db_session()
+    from ..models import Company, Source, SourceType
+    from ..plans import UPGRADE_HINT, source_slots_left
+    company = db.query(Company).filter(Company.id == company_id).first()
+    slots = source_slots_left(db, company) if company else 0
+    added = 0
+    skipped_dup = 0
+    skipped_by_plan = 0
+    for url in urls:
+        existing = db.query(Source).filter(
+            Source.company_id == company_id, Source.destination_url == url
+        ).first()
+        if existing:
+            skipped_dup += 1
+            continue
+        if slots is not None and added >= slots:
+            skipped_by_plan += 1
+            continue
+        # Human-ish label from the URL tail: groups/tlv-jobs-2024 → "tlv jobs 2024"
+        tail = url.split("groups/")[-1].split("?")[0].strip("/")
+        label = tail.replace("-", " ").replace(".", " ").replace("_", " ").strip() or "Facebook group"
+        db.add(Source(
+            company_id=company_id,
+            tg_ref=f"fb-bulk-{int(time.time() * 1000)}-{added}",
+            label=label[:200],
+            source_type=SourceType.group,
+            platform="facebook",
+            destination_kind="group",
+            posting_mode="assisted_manual",
+            destination_url=url,
+            last_check_ok=True,
+            last_check_message="Added via bulk paste",
+        ))
+        added += 1
+    db.commit()
+    db.close()
+
+    msg = f"Added {added} groups."
+    if skipped_dup:
+        msg += f" {skipped_dup} already existed."
+    if skipped_by_plan:
+        msg += f" {skipped_by_plan} skipped — plan destination limit reached. {UPGRADE_HINT}"
+    return redirect(url_for("auth.connect_facebook", message=msg))
 
 
 @bp.post("/connect/facebook/setup")

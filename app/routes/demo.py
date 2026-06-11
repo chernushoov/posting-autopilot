@@ -26,6 +26,14 @@ from ..models import Candidate, CandidateStatus, Company, Vacancy
 bp = Blueprint("demo", __name__, url_prefix="/demo")
 
 
+@bp.before_request
+def _demo_gate():
+    import os
+    from flask import abort
+    if os.getenv("DEMO_MODE", "") != "1":
+        abort(404)
+
+
 PAGE_HTML = """<!doctype html>
 <html lang="ru" dir="ltr">
 <head>

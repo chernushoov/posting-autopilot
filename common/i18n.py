@@ -130,6 +130,16 @@ MESSAGES = {
         "he": "השירות לא זמין כרגע. נסה שוב מאוחר יותר.",
         "en": "Service temporarily unavailable. Try again later.",
     },
+    "vacancy_unavailable": {
+        "ru": "Эта вакансия уже не активна. Попробуй /start — покажу актуальные.",
+        "he": "המשרה הזו כבר לא פעילה. נסה /start כדי לראות משרות עדכניות.",
+        "en": "This vacancy is no longer active. Try /start to see current openings.",
+    },
+    "text_only_please": {
+        "ru": "Пожалуйста, ответь текстом 🙏 Голосовые и фото я пока не понимаю.",
+        "he": "אנא ענה בטקסט 🙏 אני עדיין לא מבין הודעות קוליות ותמונות.",
+        "en": "Please reply with text 🙏 I can't process voice messages or photos yet.",
+    },
 
     # --- Timeout & Resume ---
     "screening_expired": {
@@ -285,6 +295,21 @@ UI = {
     "contact_us": {"ru": "Связаться с нами", "he": "צרו קשר", "en": "Contact us"},
     "vacancies_empty": {"ru": "Пока нет ни одного объявления. Создайте первое — это основа вашей первой кампании.", "he": "אין עדיין משרות. צרו את הראשונה — היא הבסיס לקמפיין הראשון שלכם.", "en": "No listings yet. Create your first one — it's the foundation of your first campaign."},
     "candidates_empty": {"ru": "Кандидаты появятся здесь после первого запуска кампании: они приходят по apply-ссылке из ваших постов.", "he": "מועמדים יופיעו כאן אחרי ההרצה הראשונה של הקמפיין — הם מגיעים דרך קישור ההגשה בפוסטים שלכם.", "en": "Candidates will appear here after your first campaign run — they arrive via the apply link in your posts."},
+    "notify_section_title": {"ru": "Куда слать 🔥 горячие лиды", "he": "לאן לשלוח לידים חמים 🔥", "en": "Where to send 🔥 hot leads"},
+    "notify_section_hint": {"ru": "Когда кандидат проходит скрининг с высоким баллом и телефоном — уведомление прилетит сюда.", "he": "כשמועמד עובר סינון עם ציון גבוה וטלפון — ההתראה תגיע לכאן.", "en": "When a candidate passes screening with a high score and a phone — the alert goes here."},
+    "notify_tg_label": {"ru": "Telegram chat ID", "he": "Telegram chat ID", "en": "Telegram chat ID"},
+    "notify_tg_hint": {"ru": "Напишите боту @userinfobot — он покажет ваш ID", "he": "כתבו לבוט @userinfobot — הוא יציג את ה-ID שלכם", "en": "Message @userinfobot — it shows your ID"},
+    "notify_email_label": {"ru": "Email для лидов", "he": "אימייל ללידים", "en": "Email for leads"},
+    "smtp_not_configured": {"ru": "Email-рассылка не настроена на сервере — лиды придут только в Telegram", "he": "שליחת אימייל לא מוגדרת בשרת — לידים יגיעו רק בטלגרם", "en": "Server email is not configured — leads will arrive in Telegram only"},
+    "tg_howto_title": {"ru": "Где взять API ID и API Hash (2 минуты)", "he": "איפה משיגים API ID ו-API Hash (2 דקות)", "en": "Where to get your API ID and API Hash (2 minutes)"},
+    "tg_howto_1": {"ru": "Войдите со своим номером телефона на", "he": "התחברו עם מספר הטלפון שלכם ב-", "en": "Sign in with your phone number at"},
+    "tg_howto_2": {"ru": "Нажмите «API development tools» и создайте приложение (название — любое, например «autopilot»)", "he": "לחצו על «API development tools» וצרו אפליקציה (כל שם, למשל «autopilot»)", "en": "Open “API development tools” and create an app (any name, e.g. “autopilot”)"},
+    "tg_howto_3": {"ru": "Скопируйте api_id и api_hash в поля ниже — это делается один раз", "he": "העתיקו את api_id ו-api_hash לשדות למטה — עושים זאת פעם אחת", "en": "Copy api_id and api_hash into the fields below — you only do this once"},
+    "fb_bulk_title": {"ru": "Добавить группы списком", "he": "הוספת קבוצות ברשימה", "en": "Add groups as a list"},
+    "fb_bulk_hint": {"ru": "Вставьте ссылки на ваши Facebook-группы — по одной в строке. Названия подтянутся из ссылок, потом можно переименовать.", "he": "הדביקו קישורים לקבוצות הפייסבוק שלכם — אחד בכל שורה. השמות יילקחו מהקישורים, אפשר לשנות אחר כך.", "en": "Paste links to your Facebook groups — one per line. Names are taken from the links, you can rename later."},
+    "fb_bulk_btn": {"ru": "Добавить все", "he": "הוסף הכל", "en": "Add all"},
+    "worker_responses_title": {"ru": "Отклики кандидатов", "he": "תגובות מועמדים", "en": "Candidate responses"},
+    "worker_responses_desc": {"ru": "Последние кандидаты из скрининг-бота", "he": "המועמדים האחרונים מבוט הסינון", "en": "Latest candidates from the screening bot"},
     # Prospecting
     "nav_prospecting": {"ru": "Поиск клиентов", "he": "חיפוש לקוחות", "en": "Prospecting"},
     "prospecting_title": {"ru": "Поиск клиентов", "he": "חיפוש לקוחות", "en": "Prospecting"},

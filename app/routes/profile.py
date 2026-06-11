@@ -40,12 +40,14 @@ def _render_profile(db, company, **context):
         .order_by(User.role.asc(), User.created_at.asc(), User.id.asc())
         .all()
     )
+    from common.email_notify import is_email_configured
     return render_template(
         "profile.html",
         c=company,
         current_user=user,
         team_users=team_users,
         can_manage_team=_can_manage_team(user),
+        email_configured=is_email_configured(),
         **context,
     )
 
@@ -59,6 +61,11 @@ def _save_company_profile(company) -> None:
     company.email = request.form.get("email", "").strip() or None
     company.website = request.form.get("website", "").strip() or None
     company.logo_emoji = request.form.get("logo_emoji", "").strip() or None
+
+    notify_chat = request.form.get("notify_telegram_chat_id", "").strip()
+    company.notify_telegram_chat_id = notify_chat if notify_chat.lstrip("-").isdigit() else None
+    notify_email = request.form.get("notify_email", "").strip().lower()
+    company.notify_email = notify_email if _valid_email(notify_email) else None
 
 
 @bp.get("/")

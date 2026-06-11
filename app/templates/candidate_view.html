@@ -25,6 +25,11 @@
       <div><span class="muted">{{ ui("tg_label") }}:</span> {{ c.tg_username or c.tg_user_id or "-" }}</div>
       <div><span class="muted">{{ ui("status_label") }}:</span> <span class="status status-{{ c.status.value }}">{{ c.status.value }}</span></div>
       <div><span class="muted">{{ ui("score_label") }}:</span> {{ c.score or "-" }}</div>
+      <div><span class="muted">{{ ui("phone_label_full") }}:</span> {{ c.phone or "-" }}
+        {% if c.phone %}{% set wa = c.phone.lstrip('+').replace('-','').replace(' ','') %}{% set wa = '972' + wa[1:] if wa.startswith('0') else wa %}
+        <a class="pill" style="background:#25D366;color:#fff;margin-inline-start:8px" href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">WhatsApp</a>
+        {% endif %}
+      </div>
     </div>
     <div class="info-list">
       <div><span class="muted">{{ ui("vacancy_label") }}:</span> {% if v %}#{{ v.id }} {{ v.title }}{% else %}-{% endif %}</div>

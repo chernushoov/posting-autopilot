@@ -102,8 +102,8 @@
 <div class="card" style="margin-top:24px">
   <div class="row">
     <div>
-      <h2 style="margin:0">Worker Responses</h2>
-      <div class="small muted">Latest candidates flowing through RecruitBot screening.</div>
+      <h2 style="margin:0">{{ ui("worker_responses_title") }}</h2>
+      <div class="small muted">{{ ui("worker_responses_desc") }}</div>
     </div>
     <a href="/candidates/" class="pill">{{ ui("view_all") }}</a>
   </div>
@@ -135,6 +135,7 @@
 </div>
 {% endif %}
 
+{% if demo_mode %}
 <div class="card" style="margin-top:24px;border-left:3px solid #ff6b6b">
   <div class="row">
     <div>
@@ -144,4 +145,5 @@
     <a href="/demo/" target="_blank" class="btn" style="background:#ff6b6b;color:#fff">Открыть /demo</a>
   </div>
 </div>
+{% endif %}
 {% endblock %}

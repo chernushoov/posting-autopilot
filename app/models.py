@@ -132,6 +132,10 @@ class Company(Base):
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
 
+    # Hot-lead notification targets (set on Profile page)
+    notify_telegram_chat_id = Column(String(32), nullable=True)
+    notify_email = Column(String(300), nullable=True)
+
     # Billing — plan tier drives feature limits (see app/plans.py)
     plan_tier = Column(String(20), nullable=False, default="trial")
     stripe_customer_id = Column(String(64), nullable=True)

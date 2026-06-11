@@ -55,6 +55,21 @@
     <label>Website</label>
     <input name="website" value="{{ c.website or '' }}" placeholder="https://...">
 
+    <h3 style="margin:20px 0 4px">{{ ui("notify_section_title") }}</h3>
+    <p class="small muted" style="margin:0 0 8px">{{ ui("notify_section_hint") }}</p>
+    <div class="grid2">
+      <div>
+        <label>{{ ui("notify_tg_label") }}</label>
+        <input name="notify_telegram_chat_id" value="{{ c.notify_telegram_chat_id or '' }}" placeholder="123456789">
+        <div class="small muted">{{ ui("notify_tg_hint") }}</div>
+      </div>
+      <div>
+        <label>{{ ui("notify_email_label") }}</label>
+        <input name="notify_email" type="email" value="{{ c.notify_email or '' }}" placeholder="leads@company.com">
+        {% if not email_configured %}<div class="small" style="color:#b35900">{{ ui("smtp_not_configured") }}</div>{% endif %}
+      </div>
+    </div>
+
     <input type="hidden" name="logo_emoji" value="">
 
     <div style="display:flex;gap:12px;margin-top:8px">

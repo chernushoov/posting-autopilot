@@ -30,6 +30,24 @@
   <h1>{{ ui("fb_connect_title") }}</h1>
   <p class="muted" style="margin-bottom:28px">{{ ui("fb_connect_desc") }}</p>
 
+  {% if request.args.get('message') %}<div class="alert success" style="margin-bottom:12px">{{ request.args.get('message') }}</div>{% endif %}
+  {% if request.args.get('error') %}<div class="alert error" style="margin-bottom:12px">{{ request.args.get('error') }}</div>{% endif %}
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="eyebrow">{{ ui("fb_bulk_title") }}</div>
+    <p class="small muted" style="margin-bottom:12px">{{ ui("fb_bulk_hint") }}</p>
+    <form method="post" action="/connect/facebook/bulk-add" class="stack">
+      <textarea name="urls" rows="6" placeholder="https://www.facebook.com/groups/jobs-tel-aviv&#10;https://www.facebook.com/groups/rabota-israel&#10;https://www.facebook.com/groups/..."></textarea>
+      <button class="btn" type="submit">{{ ui("fb_bulk_btn") }}</button>
+    </form>
+    {% if facebook_sources %}
+    <div class="small muted" style="margin-top:14px;font-weight:600">{{ facebook_sources|length }} ✓</div>
+    {% for s in facebook_sources[:15] %}
+    <div class="small" style="padding:4px 0;border-bottom:1px solid var(--border-light)">{{ s.label or 'Group' }} <span class="muted">{{ s.destination_url }}</span></div>
+    {% endfor %}
+    {% endif %}
+  </div>
+
   <div class="card">
     <div class="eyebrow">{{ ui("tg_credentials") }}</div>
     <p class="small muted" style="margin-bottom:16px">
