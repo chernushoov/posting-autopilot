@@ -29,11 +29,12 @@
   .sort-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
   .sort-btn{font-size:11px;padding:4px 12px;border-radius:999px;cursor:pointer;background:var(--bg);border:1px solid var(--border-light);color:var(--muted);transition:all .15s}
   .sort-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .connect-choice{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .connect-note{background:var(--accent-light);border:1px solid rgba(0,113,227,.14);border-radius:var(--radius-sm);padding:12px 14px}
+  .code-input{font-size:30px;text-align:center;letter-spacing:10px;max-width:260px;font-weight:700;padding:14px}
   @media(max-width:768px){.tg-layout{grid-template-columns:1fr}.tg-sidebar{position:static}}
+  @media(max-width:768px){.connect-choice{grid-template-columns:1fr}.code-input{max-width:100%;letter-spacing:6px}}
 </style>
-
-{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
-{% if message %}<div class="alert success">{{ message }}</div>{% endif %}
 
 {% if awaiting_code %}
 <!-- ═══ STEP 2: Verify Code ═══ -->
@@ -41,7 +42,12 @@
   <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
   <div class="card">
     <div class="eyebrow">{{ ui("tg_step2") }}</div>
-    <p class="small muted" style="margin-bottom:16px">{{ ui("tg_code_sent") }}</p>
+    <h1 style="margin-bottom:8px">{% if ui_lang == 'ru' %}Введите код из Telegram{% elif ui_lang == 'he' %}הזן קוד מטלגרם{% else %}Enter Telegram code{% endif %}</h1>
+    <p class="small muted" style="margin-bottom:16px">
+      {% if ui_lang == 'ru' %}Код отправлен на <b>{{ tg_phone }}</b>. Вводите только цифры из сообщения Telegram. Если код устарел, отправьте новый ниже.
+      {% elif ui_lang == 'he' %}הקוד נשלח אל <b>{{ tg_phone }}</b>. הזן רק ספרות מהודעת טלגרם. אם הקוד פג, שלח קוד חדש למטה.
+      {% else %}Code sent to <b>{{ tg_phone }}</b>. Enter digits only from Telegram. If it expired, send a new code below.{% endif %}
+    </p>
     <form method="post" action="/connect/telegram/verify" class="stack">
       <input type="hidden" name="api_id" value="{{ tg_api_id }}">
       <input type="hidden" name="api_hash" value="{{ tg_api_hash }}">
@@ -49,14 +55,23 @@
       <input type="hidden" name="phone_code_hash" value="{{ phone_code_hash }}">
       <div>
         <label>{{ ui("tg_code_label") }}</label>
-        <input name="code" type="text" required autofocus
-               style="font-size:32px;text-align:center;letter-spacing:12px;max-width:240px;font-weight:700;padding:14px">
+        <input name="code" type="text" required autofocus inputmode="numeric" autocomplete="one-time-code"
+               pattern="[0-9 ]{4,12}" maxlength="12" class="code-input"
+               oninput="this.value=this.value.replace(/[^0-9 ]/g,'')">
       </div>
       <div>
         <label>{{ ui("tg_2fa_label") }}</label>
         <input name="password" type="password" placeholder="{{ ui('tg_2fa_hint') }}">
       </div>
       <button class="btn" type="submit">{{ ui("tg_verify_btn") }}</button>
+    </form>
+    <form method="post" action="/connect/telegram/send-code" style="margin-top:12px">
+      <input type="hidden" name="api_id" value="{{ tg_api_id }}">
+      <input type="hidden" name="api_hash" value="{{ tg_api_hash }}">
+      <input type="hidden" name="phone" value="{{ tg_phone }}">
+      <button class="pill" type="submit" style="width:100%">
+        {% if ui_lang == 'ru' %}Отправить новый код{% elif ui_lang == 'he' %}שלח קוד חדש{% else %}Send a new code{% endif %}
+      </button>
     </form>
   </div>
 </div>
@@ -83,8 +98,36 @@
         <div><label>API ID</label><input name="api_id" type="number" value="{{ tg_api_id or '' }}" required></div>
         <div><label>API Hash</label><input name="api_hash" value="{{ tg_api_hash or '' }}" required></div>
       </div>
-      <div><label>{{ ui("tg_phone") }}</label><input name="phone" type="tel" placeholder="+972..." value="{{ tg_phone or '' }}" required></div>
+      <div>
+        <label>{{ ui("tg_phone") }}</label>
+        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+972501234567" value="{{ tg_phone or '' }}" required>
+        <div class="small muted" style="margin-top:6px">
+          {% if ui_lang == 'ru' %}Можно ввести израильский номер как 0501234567 — мы приведём его к +972501234567.
+          {% elif ui_lang == 'he' %}אפשר להזין מספר ישראלי כמו 0501234567 — נמיר אותו ל-+972501234567.
+          {% else %}Israeli numbers like 0501234567 are accepted and converted to +972501234567.{% endif %}
+        </div>
+      </div>
       <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>
+    </form>
+  </div>
+  <div class="connect-choice">
+    <div class="connect-note">
+      <div style="font-weight:600;margin-bottom:6px">
+        {% if ui_lang == 'ru' %}Быстрый ручной старт{% elif ui_lang == 'he' %}התחלה ידנית מהירה{% else %}Fast manual start{% endif %}
+      </div>
+      <div class="small muted">
+        {% if ui_lang == 'ru' %}Если Telegram login мешает демо, добавьте группу по @username. Автосинхронизацию можно подключить позже.
+        {% elif ui_lang == 'he' %}אם התחברות טלגרם מעכבת דמו, הוסף קבוצה לפי @username. אפשר לחבר סנכרון אחר כך.
+        {% else %}If Telegram login blocks the demo, add a group by @username. Full sync can be connected later.{% endif %}
+      </div>
+    </div>
+    <form method="post" action="/sources/new" class="card stack" style="margin:0">
+      <input type="hidden" name="platform" value="telegram">
+      <input type="hidden" name="posting_mode" value="auto">
+      <input type="hidden" name="destination_kind" value="group">
+      <div><label>{% if ui_lang == 'ru' %}Telegram группа / канал{% elif ui_lang == 'he' %}קבוצת / ערוץ טלגרם{% else %}Telegram group / channel{% endif %}</label><input name="tg_ref" placeholder="@group_name or -100..." required></div>
+      <div><label>{{ ui("label_optional") }}</label><input name="label" placeholder="Jobs Tel Aviv"></div>
+      <button class="pill" type="submit">{% if ui_lang == 'ru' %}Добавить вручную{% elif ui_lang == 'he' %}הוסף ידנית{% else %}Add manually{% endif %}</button>
     </form>
   </div>
 </div>
@@ -183,6 +226,17 @@
         </label>
         {% endfor %}
       </div>
+    </div>
+    {% else %}
+    <div class="card" style="margin-bottom:20px;border:1px solid rgba(0,113,227,.18)">
+      <div class="eyebrow">{% if ui_lang == 'ru' %}Синхронизация{% elif ui_lang == 'he' %}סנכרון{% else %}Sync{% endif %}</div>
+      <h2 style="margin-bottom:8px">{% if ui_lang == 'ru' %}Загрузить группы из Telegram{% elif ui_lang == 'he' %}טען קבוצות מטלגרם{% else %}Load groups from Telegram{% endif %}</h2>
+      <p class="muted">{% if ui_lang == 'ru' %}Мы покажем группы и каналы, где уже состоит этот аккаунт. Потом выберите нужные направления для публикаций.
+        {% elif ui_lang == 'he' %}נציג קבוצות וערוצים שבהם החשבון כבר נמצא. אחר כך בחר יעדי פרסום.
+        {% else %}We will show groups and channels this account already belongs to. Then select the destinations to use.{% endif %}</p>
+      <form method="post" action="/connect/telegram/sync">
+        <button class="btn" type="submit">{% if ui_lang == 'ru' %}Синхронизировать группы{% elif ui_lang == 'he' %}סנכרן קבוצות{% else %}Sync groups{% endif %}</button>
+      </form>
     </div>
     {% endif %}
 

@@ -7,6 +7,24 @@ from .registration import _login_user, _verify_and_upgrade_password
 
 bp = Blueprint("auth", __name__)
 
+
+def _normalize_phone(value: str) -> str:
+    """Accept common customer input and store an international-looking phone."""
+    raw = (value or "").strip()
+    cleaned = "".join(ch for ch in raw if ch.isdigit() or ch == "+")
+    if cleaned.startswith("00"):
+        cleaned = "+" + cleaned[2:]
+    if cleaned.startswith("0") and cleaned[1:].isdigit() and 8 <= len(cleaned) <= 10:
+        cleaned = "+972" + cleaned[1:]
+    if cleaned and not cleaned.startswith("+") and cleaned.isdigit():
+        cleaned = "+" + cleaned
+    return cleaned
+
+
+def _normalize_telegram_code(value: str) -> str:
+    return "".join(ch for ch in (value or "") if ch.isdigit())
+
+
 @bp.get("/")
 def index():
     if session.get("is_admin"):
@@ -288,10 +306,16 @@ def tg_send_code():
     company_id = session.get("current_company_id")
     api_id = request.form.get("api_id", "").strip()
     api_hash = request.form.get("api_hash", "").strip()
-    phone = request.form.get("phone", "").strip()
+    phone = _normalize_phone(request.form.get("phone", ""))
 
     if not api_id or not api_hash or not phone:
-        return redirect(url_for("auth.connect_telegram", error="All fields required"))
+        return redirect(url_for("auth.connect_telegram", error="Enter API ID, API Hash, and phone number."))
+    try:
+        api_id_int = int(api_id)
+    except ValueError:
+        return redirect(url_for("auth.connect_telegram", error="Telegram API ID must be a number."))
+    if not phone.startswith("+") or len(phone) < 8:
+        return redirect(url_for("auth.connect_telegram", error="Enter phone in international format, for example +972501234567."))
 
     session["tg_api_id"] = api_id
     session["tg_api_hash"] = api_hash
@@ -299,7 +323,7 @@ def tg_send_code():
 
     try:
         from common.tg_client import send_code
-        phone_code_hash = send_code(int(api_id), api_hash, phone, company_id)
+        phone_code_hash = send_code(api_id_int, api_hash, phone, company_id)
         session["tg_phone_code_hash"] = phone_code_hash
         session["tg_awaiting_code"] = True
         return redirect(url_for("auth.connect_telegram", message="Code sent! Check your Telegram app."))
@@ -316,17 +340,28 @@ def tg_verify():
     company_id = session.get("current_company_id")
     api_id = request.form.get("api_id", "").strip() or session.get("tg_api_id", "")
     api_hash = request.form.get("api_hash", "").strip() or session.get("tg_api_hash", "")
-    phone = request.form.get("phone", "").strip() or session.get("tg_phone", "")
-    code = request.form.get("code", "").strip()
+    phone = _normalize_phone(request.form.get("phone", "").strip() or session.get("tg_phone", ""))
+    code = _normalize_telegram_code(request.form.get("code", ""))
     phone_code_hash = request.form.get("phone_code_hash", "").strip() or session.get("tg_phone_code_hash", "")
     password = request.form.get("password", "").strip() or None
 
     if not code:
-        return redirect(url_for("auth.connect_telegram", error="Please enter the verification code"))
+        session["tg_awaiting_code"] = True
+        return redirect(url_for("auth.connect_telegram", error="Enter the numeric Telegram code from the app."))
+    if len(code) < 4:
+        session["tg_awaiting_code"] = True
+        return redirect(url_for("auth.connect_telegram", error="Telegram code looks too short. Enter the full numeric code from Telegram."))
+    if not api_id or not api_hash or not phone or not phone_code_hash:
+        session["tg_awaiting_code"] = False
+        return redirect(url_for("auth.connect_telegram", error="Telegram session expired. Send a new code and try again."))
+    try:
+        api_id_int = int(api_id)
+    except ValueError:
+        return redirect(url_for("auth.connect_telegram", error="Telegram API ID must be a number."))
 
     try:
         from common.tg_client import verify_code
-        result = verify_code(int(api_id), api_hash, phone, code, phone_code_hash, company_id, password)
+        result = verify_code(api_id_int, api_hash, phone, code, phone_code_hash, company_id, password)
         if result.get("ok"):
             session["tg_user"] = result
             session["tg_awaiting_code"] = False
@@ -345,27 +380,13 @@ def tg_verify():
             session["tg_awaiting_code"] = True
             return redirect(url_for("auth.connect_telegram", error="Two-factor password required. Enter it and try again."))
         else:
-            # Code wrong — send a NEW code automatically and stay on Step 2
-            try:
-                from common.tg_client import send_code
-                new_hash = send_code(int(api_id), api_hash, phone, company_id)
-                session["tg_phone_code_hash"] = new_hash
-                session["tg_awaiting_code"] = True
-            except Exception:
-                pass
-            return redirect(url_for("auth.connect_telegram", error="Wrong code. A new code was sent — check Telegram."))
+            session["tg_awaiting_code"] = True
+            return redirect(url_for("auth.connect_telegram", error="Wrong code. Enter the latest numeric code from Telegram, or send a new code below."))
     except Exception as e:
         err_msg = str(e)[:200]
-        # If code expired or invalid, resend automatically
+        session["tg_awaiting_code"] = True
         if "phone code" in err_msg.lower() or "expired" in err_msg.lower() or "invalid" in err_msg.lower():
-            try:
-                from common.tg_client import send_code
-                new_hash = send_code(int(api_id), api_hash, phone, company_id)
-                session["tg_phone_code_hash"] = new_hash
-                session["tg_awaiting_code"] = True
-            except Exception:
-                pass
-            return redirect(url_for("auth.connect_telegram", error="Code expired. New code sent — check Telegram."))
+            return redirect(url_for("auth.connect_telegram", error="Code expired or invalid. Send a new code below and enter the newest numeric code."))
         return redirect(url_for("auth.connect_telegram", error=err_msg))
 
 @bp.post("/connect/telegram/sync")
@@ -480,6 +501,7 @@ def connect_facebook():
     db = db_session()
     from ..models import Source
     facebook_sources = db.query(Source).filter(Source.company_id == company_id, Source.platform == "facebook", Source.is_active == True).all() if company_id else []
+    facebook_sources.sort(key=lambda s: ((s.folder or ""), s.id))
     existing_urls = {s.destination_url for s in facebook_sources if s.destination_url}
 
     # Check if Facebook is connected (token in Company)
@@ -509,6 +531,7 @@ def connect_facebook():
         fb_connected=fb_connected,
         fb_user_name=fb_user_name,
         fb_pages=fb_pages,
+        fb_groups=[],
         official_pages_sync_enabled=True,
         official_groups_sync_enabled=False,
         official_marketplace_api_enabled=False,

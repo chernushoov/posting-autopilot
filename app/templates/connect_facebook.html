@@ -17,24 +17,24 @@
   .tab-btn.active{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .tab-content{display:none}
   .tab-content.active{display:block}
+  .connect-note{background:rgba(24,119,242,.07);border:1px solid rgba(24,119,242,.14);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px}
   @media(max-width:768px){.fb-layout{grid-template-columns:1fr}.fb-sidebar{position:static}}
 </style>
-
-{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
-{% if message %}<div class="alert success">{{ message }}</div>{% endif %}
 
 {% if not fb_connected %}
 <!-- ═══ NOT CONNECTED ═══ -->
 <div style="max-width:500px;margin:40px auto">
   <a href="/dashboard" class="small muted" style="display:inline-block;margin-bottom:16px">&larr; {{ ui("back_to_dashboard") }}</a>
-  <h1>{{ ui("fb_connect_title") }}</h1>
-  <p class="muted" style="margin-bottom:28px">{{ ui("fb_connect_desc") }}</p>
-
-  {% if request.args.get('message') %}<div class="alert success" style="margin-bottom:12px">{{ request.args.get('message') }}</div>{% endif %}
-  {% if request.args.get('error') %}<div class="alert error" style="margin-bottom:12px">{{ request.args.get('error') }}</div>{% endif %}
+  <h1>{% if ui_lang == 'ru' %}Facebook направления{% elif ui_lang == 'he' %}יעדי פייסבוק{% else %}Facebook destinations{% endif %}</h1>
+  <p class="muted" style="margin-bottom:20px">
+    {% if ui_lang == 'ru' %}Для MVP Facebook работает безопасно: добавляем группы/страницы ссылками, система готовит текст, оператор публикует вручную и отмечает результат.
+    {% elif ui_lang == 'he' %}ב-MVP פייסבוק עובד בצורה בטוחה: מוסיפים קבוצות/דפים בלינקים, המערכת מכינה טקסט, המפעיל מפרסם ידנית ומסמן תוצאה.
+    {% else %}In the MVP, Facebook stays safe: add groups/pages by URL, prepare the post, publish manually, and mark the result.{% endif %}
+  </p>
 
   <div class="card" style="margin-bottom:16px">
-    <div class="eyebrow">{{ ui("fb_bulk_title") }}</div>
+    <div class="eyebrow">{% if ui_lang == 'ru' %}Самый быстрый путь{% elif ui_lang == 'he' %}הדרך המהירה{% else %}Fastest path{% endif %}</div>
+    <h2 style="margin-bottom:8px">{{ ui("fb_bulk_title") }}</h2>
     <p class="small muted" style="margin-bottom:12px">{{ ui("fb_bulk_hint") }}</p>
     <form method="post" action="/connect/facebook/bulk-add" class="stack">
       <textarea name="urls" rows="6" placeholder="https://www.facebook.com/groups/jobs-tel-aviv&#10;https://www.facebook.com/groups/rabota-israel&#10;https://www.facebook.com/groups/..."></textarea>
@@ -48,23 +48,27 @@
     {% endif %}
   </div>
 
-  <div class="card">
-    <div class="eyebrow">{{ ui("tg_credentials") }}</div>
-    <p class="small muted" style="margin-bottom:16px">
-      {% if ui_lang == 'ru' %}Перейдите на <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; скопируйте App ID и App Secret.
-      {% elif ui_lang == 'he' %}עבור ל-<a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; העתק App ID ו-App Secret.
-      {% else %}Go to <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> &rarr; My Apps &rarr; Create App &rarr; copy App ID and App Secret.{% endif %}
-    </p>
+  <details class="card">
+    <summary style="cursor:pointer;font-weight:600">
+      {% if ui_lang == 'ru' %}Advanced: официальный Facebook Pages OAuth{% elif ui_lang == 'he' %}מתקדם: Facebook Pages OAuth רשמי{% else %}Advanced: official Facebook Pages OAuth{% endif %}
+    </summary>
+    <div class="connect-note" style="margin-top:14px">
+      <div class="small muted">
+        {% if ui_lang == 'ru' %}Это нужно только для страниц Facebook. Группы через официальный API обычно не синхронизируются, поэтому для групп используйте ссылки выше.
+        {% elif ui_lang == 'he' %}זה נחוץ רק לדפי פייסבוק. קבוצות בדרך כלל לא מסתנכרנות דרך API רשמי, לכן לקבוצות השתמש בלינקים למעלה.
+        {% else %}Use this only for Facebook Pages. Groups usually cannot be synced through the official API, so add group URLs above.{% endif %}
+      </div>
+    </div>
     <form method="post" action="/connect/facebook/setup" class="stack">
       <div class="grid2">
-        <div><label>Facebook App ID</label><input name="fb_app_id" value="{{ session.get('fb_app_id', '') }}" required placeholder="123456789012345"></div>
-        <div><label>Facebook App Secret</label><input name="fb_app_secret" value="" required placeholder="abc123def456..."></div>
+        <div><label>Facebook App ID</label><input name="fb_app_id" value="{{ session.get('fb_app_id', '') }}" placeholder="123456789012345"></div>
+        <div><label>Facebook App Secret</label><input name="fb_app_secret" value="" placeholder="abc123def456..."></div>
       </div>
       <button class="fb-login-btn" type="submit">
-        {% if ui_lang == 'ru' %}Подключить Facebook{% elif ui_lang == 'he' %}חבר פייסבוק{% else %}Connect Facebook{% endif %}
+        {% if ui_lang == 'ru' %}Подключить Pages{% elif ui_lang == 'he' %}חבר דפים{% else %}Connect Pages{% endif %}
       </button>
     </form>
-  </div>
+  </details>
 
   {% if facebook_sources %}
   <div class="card" style="margin-top:20px">
@@ -92,7 +96,7 @@
     {% if facebook_sources %}
     <div class="card" style="padding:6px;max-height:calc(100vh - 220px);overflow-y:auto">
       {% set ns = namespace(cf='__none__') %}
-      {% for s in facebook_sources|sort(attribute='folder') %}
+      {% for s in facebook_sources %}
         {% set f = s.folder or 'groups' %}
         {% if f != ns.cf %}
           {% set ns.cf = f %}
@@ -145,6 +149,13 @@
         <p class="small muted" style="margin-bottom:14px">
           {% if ui_lang == 'ru' %}Добавьте Facebook-группы для публикации объявлений.{% elif ui_lang == 'he' %}הוסף קבוצות פייסבוק לפרסום מודעות.{% else %}Add Facebook groups where your listings will be posted.{% endif %}
         </p>
+        <div class="connect-note">
+          <form method="post" action="/connect/facebook/bulk-add" class="stack" style="gap:10px">
+            <label class="small" style="font-weight:600">{% if ui_lang == 'ru' %}Вставьте ссылки на группы, по одной в строке{% elif ui_lang == 'he' %}הדבק לינקים לקבוצות, אחד בכל שורה{% else %}Paste group links, one per line{% endif %}</label>
+            <textarea name="urls" rows="4" placeholder="https://www.facebook.com/groups/jobs-tel-aviv&#10;https://www.facebook.com/groups/rabota-israel"></textarea>
+            <button class="btn" type="submit" style="align-self:flex-start">{{ ui("fb_bulk_btn") }}</button>
+          </form>
+        </div>
         <!-- Synced groups -->
         {% if fb_groups %}
         <div style="margin-bottom:16px">
