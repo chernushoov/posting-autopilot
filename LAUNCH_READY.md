@@ -15,12 +15,24 @@
 
 ## Шаг 2 — VPS (≈0.5 дня)
 
+Домен решён: **app.posting-autopilot.com** = приложение, корень остаётся лендингом на Cloudflare.
+
 1. Hetzner CX22 (€4.5/мес) или DO. Docker + docker compose.
-2. Домен → A-запись на VPS. Caddy/Traefik для HTTPS (Caddyfile из 3 строк достаточно).
+2. Cloudflare DNS → A-запись `app` → IP VPS, режим «DNS only» (серая тучка),
+   чтобы Caddy получил Let's Encrypt сам. Caddyfile целиком:
+   ```
+   app.posting-autopilot.com {
+       reverse_proxy 127.0.0.1:8080
+   }
+   ```
 3. `git clone` репо, заполнить `.env.runtime` (шаг 3), `bash scripts/compose_with_runtime.sh up -d --build`.
 4. Проверить `/health` и что 6 сервисов поднялись (web, bot, worker, scheduler, postgres, redis).
    Compose уже hardened: restart-политики на всех сервисах, Redis с AOF-persistence, healthchecks,
    БД и web слушают только localhost. После ребута сервера всё поднимается само.
+5. Stripe-вебхук (шаг 1.4) = `https://app.posting-autopilot.com/billing/webhook`.
+6. После того как app отвечает — сказать Claude: перевесит «Вход» на лендинге
+   posting-autopilot.com с @TerrazzoTLV на `https://app.posting-autopilot.com/user-login`
+   (деплой лендинга wrangler'ом с MacBook уже настроен).
 
 ## Шаг 3 — Env-переменные (.env.runtime на VPS)
 
