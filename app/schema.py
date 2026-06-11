@@ -82,6 +82,18 @@ def bootstrap_schema() -> None:
             "logo_emoji": "VARCHAR(10)",
         },
     )
+    _ensure_columns(
+        "users",
+        {
+            "email": "VARCHAR(300)",
+            "password_hash": "VARCHAR(256)",
+            "company_id": "INTEGER",
+            "role": "VARCHAR(20) NOT NULL DEFAULT 'owner'",
+            "is_active": "BOOLEAN NOT NULL DEFAULT TRUE",
+            "trial_expires_at": "TIMESTAMP",
+            "created_at": "TIMESTAMP",
+        },
+    )
 
     # Ensure 'he' value exists in the language enum (Postgres)
     with engine.begin() as conn:

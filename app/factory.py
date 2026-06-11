@@ -29,10 +29,6 @@ def create_app():
         from flask_wtf.csrf import CSRFProtect, generate_csrf
         csrf = CSRFProtect(app)
         app.jinja_env.globals["csrf_token"] = generate_csrf
-        # Exempt API endpoints that don't use forms
-        csrf.exempt("fb_safe_workflow.api_groups")
-        csrf.exempt("billing.stripe_webhook")
-        csrf.exempt("auth.fb_callback")
 
         # Auto-inject CSRF token into all POST forms via after_request
         @app.after_request
@@ -55,6 +51,15 @@ def create_app():
         pass  # flask-wtf not installed — skip CSRF
 
     register_routes(app)
+
+    # Exempt non-form endpoints from CSRF (Stripe webhook, OAuth callback, JSON API).
+    # Must run AFTER register_routes: csrf.exempt() needs the actual view functions —
+    # passing endpoint strings (the old approach) is silently ignored by flask-wtf.
+    if csrf is not None:
+        for _endpoint in ("fb_safe_workflow.api_groups", "billing.stripe_webhook", "auth.fb_callback"):
+            _view = app.view_functions.get(_endpoint)
+            if _view is not None:
+                csrf.exempt(_view)
 
     # Liveness/health endpoint — must be reachable without auth or trial gating.
     # Registered directly on app (not a blueprint) so it bypasses login_required
@@ -88,12 +93,14 @@ def create_app():
     @app.before_request
     def check_trial_expiration():
         from datetime import datetime
-        # Skip for public routes
-        public_paths = {"/", "/login", "/register", "/user-login", "/pricing",
-                        "/billing/", "/terms", "/set-lang/", "/static/", "/health",
-                        "/favicon.ico"}
+        # Skip for public routes. NOTE: exact matches and prefixes are split on
+        # purpose — "/" in a startswith() list used to make EVERY path public,
+        # which silently disabled the trial gate entirely.
         path = request.path
-        if any(path.startswith(p) or path == p for p in public_paths):
+        exact_public = {"/", "/login", "/register", "/user-login", "/logout",
+                        "/pricing", "/terms", "/health", "/favicon.ico"}
+        prefix_public = ("/billing/", "/set-lang/", "/static/", "/uploads/")
+        if path in exact_public or path.startswith(prefix_public):
             return None
         user_id = session.get("user_id")
         if not user_id:

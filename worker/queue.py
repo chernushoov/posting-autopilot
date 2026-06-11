@@ -1,11 +1,14 @@
 import os
 import json
+import logging
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from redis import Redis
 from rq import Queue
 from app.db import db_session
 from app.models import Campaign, CampaignSource, PostingAttempt, Source, Vacancy
+
+logger = logging.getLogger(__name__)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_conn = Redis.from_url(REDIS_URL)
@@ -30,7 +33,11 @@ def _within_campaign_window(campaign: Campaign) -> bool:
     except Exception:
         days = [0, 1, 2, 3, 4, 5]
 
-    israel_tz = timezone(timedelta(hours=3))
+    try:
+        from zoneinfo import ZoneInfo
+        israel_tz = ZoneInfo("Asia/Jerusalem")  # handles IDT/IST transitions
+    except Exception:
+        israel_tz = timezone(timedelta(hours=3))
     now = datetime.now(israel_tz)
     if now.weekday() not in days:
         return False
@@ -79,11 +86,25 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
                 result_status="scheduled",
             )
         )
+    from .tasks import campaign_tick
+    db.commit()
+    try:
+        job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger)
+    except Exception as exc:
+        logger.error("[queue] failed to enqueue campaign_tick campaign=%s run_key=%s: %s", campaign_id, run_key, exc)
+        db.query(PostingAttempt).filter(PostingAttempt.run_key == run_key).update(
+            {
+                "result_status": "failed",
+                "error_message": f"Queue unavailable: {exc}",
+                "action_taken": f"{trigger}_queue_failed",
+            },
+            synchronize_session=False,
+        )
+        db.commit()
+        db.close()
+        return None, run_key
     db.commit()
     db.close()
-
-    from .tasks import campaign_tick
-    job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger)
     return job, run_key
 
 def enqueue_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"):

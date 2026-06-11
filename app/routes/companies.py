@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from ..auth import login_required
 from ..db import db_session
-from ..models import Company
+from ..models import Company, User, UserRole
 
 bp = Blueprint("companies", __name__, url_prefix="/companies")
 
@@ -10,8 +10,20 @@ bp = Blueprint("companies", __name__, url_prefix="/companies")
 @login_required
 def list_companies():
     db = db_session()
-    owner_id = session.get("owner_id")
-    companies = db.query(Company).filter(Company.owner_id == owner_id).order_by(Company.is_active.desc(), Company.id.asc()).all()
+    user_id = session.get("user_id")
+    if user_id:
+        user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+        companies = (
+            db.query(Company)
+            .filter(Company.id == user.company_id)
+            .order_by(Company.is_active.desc(), Company.id.asc())
+            .all()
+            if user and user.company_id
+            else []
+        )
+    else:
+        owner_id = session.get("owner_id")
+        companies = db.query(Company).filter(Company.owner_id == owner_id).order_by(Company.is_active.desc(), Company.id.asc()).all()
     db.close()
     # If no companies → redirect to create
     if not companies:
@@ -37,6 +49,12 @@ def new_company():
 @login_required
 def new_company_post():
     db = db_session()
+    user_id = session.get("user_id")
+    if user_id:
+        user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+        if user and user.company_id and user.role != UserRole.admin:
+            db.close()
+            return redirect(url_for("profile.view_profile") + "?error=company_exists")
     owner_id = session.get("owner_id")
     name = request.form.get("name", "").strip()
     desc = request.form.get("description", "").strip() or None
@@ -56,8 +74,13 @@ def new_company_post():
 @login_required
 def switch_company(company_id: int):
     db = db_session()
-    owner_id = session.get("owner_id")
-    c = db.query(Company).filter(Company.id == company_id, Company.owner_id == owner_id, Company.is_active == True).first()
+    user_id = session.get("user_id")
+    if user_id:
+        user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+        c = db.query(Company).filter(Company.id == company_id, Company.id == (user.company_id if user else None), Company.is_active == True).first()
+    else:
+        owner_id = session.get("owner_id")
+        c = db.query(Company).filter(Company.id == company_id, Company.owner_id == owner_id, Company.is_active == True).first()
     db.close()
     if c:
         session["current_company_id"] = c.id

@@ -46,9 +46,12 @@ def checkout(plan: str):
     if not stripe:
         return redirect(url_for("pricing.pricing_page") + "?error=billing_not_configured")
 
-    price_id = PRICE_IDS.get(plan)
-    if not price_id:
+    if plan not in PRICE_IDS:
         return redirect(url_for("pricing.pricing_page") + "?error=invalid_plan")
+    price_id = PRICE_IDS[plan]
+    if not price_id:
+        # Plan name is valid but no Stripe Price ID configured for it
+        return redirect(url_for("pricing.pricing_page") + "?error=billing_not_configured")
 
     user_id = session.get("user_id")
     company_id = session.get("current_company_id")
@@ -86,15 +89,17 @@ def stripe_webhook():
     if not stripe:
         return jsonify({"error": "not configured"}), 400
 
+    if not STRIPE_WEBHOOK_SECRET:
+        # Fail closed: without a signing secret any caller could forge
+        # checkout.session.completed and activate a subscription for free.
+        logger.error("[billing] Webhook rejected: STRIPE_WEBHOOK_SECRET is not set")
+        return jsonify({"error": "webhook not configured"}), 400
+
     payload = request.get_data(as_text=True)
     sig_header = request.headers.get("Stripe-Signature", "")
 
     try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-        else:
-            import json
-            event = json.loads(payload)
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
     except Exception as e:
         logger.error(f"[billing] Webhook signature verification failed: {e}")
         return jsonify({"error": "invalid signature"}), 400

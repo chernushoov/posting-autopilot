@@ -13,7 +13,7 @@
 <div class="login-shell">
   <div class="login-card">
     <div class="brand" style="font-size:24px;margin-bottom:4px">Posting<em>Autopilot</em></div>
-    <p class="muted" style="font-size:14px">{{ ui("login_title") }}</p>
+    <p class="muted" style="font-size:14px">Sign in with your work email. Admin login still works here.</p>
     <div class="lang-switcher" style="display:flex;gap:4px;justify-content:center;margin-bottom:20px">
       {% for l in (supported_langs or ['en','ru','he']) %}
         {% if l == (ui_lang or 'en') %}
@@ -24,9 +24,10 @@
       {% endfor %}
     </div>
     <form method="post" class="stack">
+      <input type="hidden" name="next" value="{{ request.args.get('next','') }}">
       <div>
-        <label>{{ ui("login_field") }}</label>
-        <input name="login" placeholder="{{ ui('login_field') }}" required autofocus>
+        <label>Email or admin login</label>
+        <input name="login" type="text" placeholder="you@company.com" required autofocus>
       </div>
       <div>
         <label>{{ ui("password_field") }}</label>
@@ -37,6 +38,10 @@
       <div class="login-error">{{ error }}</div>
       {% endif %}
     </form>
+    <p class="muted" style="font-size:13px;margin-top:14px">
+      No account yet? <a href="/register">Create one</a> · <a href="/user-login">Email login</a>
+    </p>
+    <p class="muted" style="font-size:12px;margin-top:8px">Seeded demo account is available on demo environments.</p>
   </div>
 </div>
 </body>

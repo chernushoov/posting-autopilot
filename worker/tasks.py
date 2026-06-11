@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 from app.db import db_session
@@ -9,6 +9,17 @@ from common.recruitbot_links import build_recruitbot_apply_link
 from bot.tg import tg_send_message_safe
 
 logger = logging.getLogger(__name__)
+
+try:
+    from zoneinfo import ZoneInfo
+    ISRAEL_TZ = ZoneInfo("Asia/Jerusalem")  # handles IDT/IST transitions
+except Exception:
+    ISRAEL_TZ = timezone(timedelta(hours=3))
+
+
+def _israel_date(dt_utc_naive: datetime):
+    """DB timestamps are naive UTC; convert to Israel local date for daily-cap math."""
+    return dt_utc_naive.replace(tzinfo=timezone.utc).astimezone(ISRAEL_TZ).date()
 
 def _load_campaign_window(campaign: Campaign):
     try:
@@ -145,9 +156,7 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
         db.close(); return
 
     hours, days = _load_campaign_window(c)
-    # Use Israel time (UTC+3) for active hours check
-    from datetime import timezone, timedelta
-    ISRAEL_TZ = timezone(timedelta(hours=3))
+    # Active-hours / daily-cap math runs in Israel local time
     now = datetime.now(ISRAEL_TZ)
     if trigger == "scheduler_interval":
         if now.weekday() not in days:
@@ -166,7 +175,7 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
     posted_today = 0
     for link in links:
         s = db.query(Source).filter(Source.id == link.source_id, Source.company_id == c.company_id).first()
-        if s and s.last_post_at and s.last_post_at.date() == now.date():
+        if s and s.last_post_at and _israel_date(s.last_post_at) == now.date():
             posted_today += 1
     remaining_posts = max(c.max_posts_per_day - posted_today, 0)
 

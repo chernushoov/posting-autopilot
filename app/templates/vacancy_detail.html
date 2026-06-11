@@ -191,6 +191,8 @@
     <h2>Operator actions</h2>
     <div class="actions">
       <a href="/vacancies/{{ vacancy.id }}/edit" class="apply-link">{{ ui('edit_vacancy_action') }}</a>
+      <a href="/sources/">Add destinations</a>
+      <a href="/campaigns/new">Create pilot run</a>
       <form method="post" action="{{ url_for('vacancies.toggle_vacancy', vacancy_id=vacancy.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit">{{ 'Pause' if vacancy.is_active else 'Resume' }}</button>

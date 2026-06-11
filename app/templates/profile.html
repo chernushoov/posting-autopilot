@@ -13,8 +13,11 @@
     </div>
   </div>
 
-  {% if request.args.get('message') == 'saved' %}
+  {% if saved or request.args.get('message') == 'saved' %}
   <div class="alert success">Saved</div>
+  {% endif %}
+  {% if request.args.get('error') == 'company_exists' %}
+  <div class="alert error">This login already belongs to a workspace.</div>
   {% endif %}
 
   <form method="post" class="card">
@@ -66,5 +69,69 @@
     <p class="small muted">Telegram client connected (API ID: {{ c.tg_api_id[:6] }}...)</p>
   </div>
   {% endif %}
+
+  <div class="card" style="margin-top:20px">
+    <div class="row">
+      <div>
+        <div class="eyebrow">Team access</div>
+        <h2 style="margin:4px 0 0">Users</h2>
+      </div>
+      {% if current_user %}
+      <span class="badge">{{ current_user.role.value }}</span>
+      {% endif %}
+    </div>
+
+    {% if team_error %}<div class="alert error">{{ team_error }}</div>{% endif %}
+    {% if team_message %}<div class="alert success">{{ team_message }}</div>{% endif %}
+    {% if invite_password %}
+    <div class="alert success">
+      <strong>{{ invite_email }}</strong><br>
+      Temporary password: <code>{{ invite_password }}</code>
+    </div>
+    {% endif %}
+
+    {% if team_users %}
+    <table class="table" style="margin-top:12px">
+      <tr><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+      {% for user in team_users %}
+      <tr>
+        <td>{{ user.email }}</td>
+        <td>{{ user.role.value }}</td>
+        <td><span class="status status-{{ 'running' if user.is_active else 'paused' }}">{{ 'active' if user.is_active else 'inactive' }}</span></td>
+        <td>
+          {% if can_manage_team and user.is_active and (not current_user or user.id != current_user.id) %}
+          <form method="post" action="/profile/team/{{ user.id }}/deactivate" onsubmit="return confirm('Deactivate this user?')">
+            <button class="pill" type="submit">Deactivate</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if can_manage_team %}
+    <form method="post" action="/profile/team/invite" class="card card-flat" style="margin-top:16px">
+      <div class="grid2">
+        <div>
+          <label>Work email</label>
+          <input name="email" type="email" placeholder="teammate@company.com" required>
+        </div>
+        <div>
+          <label>Role</label>
+          <select name="role">
+            <option value="member">Member</option>
+            <option value="owner">Owner</option>
+          </select>
+        </div>
+      </div>
+      <label>Temporary password</label>
+      <input name="password" type="text" minlength="8" placeholder="Leave empty to generate">
+      <button class="btn" type="submit" style="margin-top:10px">Add user</button>
+    </form>
+    {% else %}
+    <p class="small muted" style="margin-top:12px">Ask the workspace owner to add or deactivate users.</p>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

@@ -84,6 +84,9 @@ def _campaign_form_context(db, *, error=None, message=None, form=None):
     sources = scoped(db, Source).filter(Source.is_active == True).order_by(Source.id.desc()).all()
     form = form or request.form
     selected_source_ids = {sid for sid in form.getlist("source_ids")} if hasattr(form, "getlist") else set(form.get("source_ids", []))
+    source_readiness = {source.id: _is_source_pilot_ready(source) for source in sources}
+    if not selected_source_ids and not error:
+        selected_source_ids = {str(source.id) for source in sources if source_readiness.get(source.id)}
     selected_days = {day for day in form.getlist("days_of_week")} if hasattr(form, "getlist") else set(form.get("days_of_week", []))
     defaults = {
         "name": form.get("name", ""),
@@ -98,6 +101,8 @@ def _campaign_form_context(db, *, error=None, message=None, form=None):
     return {
         "vacancies": vacancies,
         "sources": sources,
+        "source_readiness": source_readiness,
+        "eligible_source_count": sum(1 for ready in source_readiness.values() if ready),
         "error": error,
         "message": message,
         "form_values": defaults,
@@ -312,7 +317,15 @@ def toggle_campaign(campaign_id: int):
     db.close()
 
     if campaign.is_running:
-        schedule_campaign_tick(campaign.id, "campaign_started")
+        job, run_key = schedule_campaign_tick(campaign.id, "campaign_started")
+        if not job:
+            db = db_session()
+            stale_campaign = scoped(db, Campaign).filter(Campaign.id == campaign_id).first()
+            if stale_campaign:
+                stale_campaign.is_running = False
+                db.commit()
+            db.close()
+            return redirect(url_for("campaigns.list_campaigns", error="Pilot run could not start because the posting queue is unavailable. Check Redis/worker and try again."))
         message = "Pilot run started and the first posting cycle was queued."
     else:
         message = "Pilot run paused."
@@ -372,7 +385,9 @@ def run_campaign_now(campaign_id: int):
     if _recent_inflight_run(campaign_id):
         return redirect(url_for("campaigns.list_campaigns", message="A posting cycle for this pilot is already in progress — ignored the duplicate run to avoid double-posting to every group."))
 
-    schedule_campaign_tick(campaign_id, "operator_run_now")
+    job, run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
+    if not job:
+        return redirect(url_for("campaigns.list_campaigns", error="Posting cycle could not be queued. Check Redis/worker before running the pilot."))
     return redirect(url_for("campaigns.list_campaigns", message="Posting cycle queued immediately. Watch the destination log below for results."))
 
 
@@ -396,7 +411,13 @@ def retry_attempt(attempt_id: int):
         return redirect(url_for("campaigns.list_campaigns", error="Only failed entries can be retried."))
     campaign_id = attempt.campaign_id
     db.close()
-    schedule_campaign_tick(campaign_id, "operator_run_now")
+    job, _run_key = schedule_campaign_tick(campaign_id, "operator_run_now")
+    if job is None:
+        return redirect(url_for(
+            "campaigns.list_campaigns",
+            error="Retry could not be queued. Check that Redis and the worker are running, then try again.",
+            focus_attempt=attempt_id,
+        ))
     return redirect(url_for(
         "campaigns.list_campaigns",
         message="Retry queued. The next posting cycle will reuse the existing campaign + destinations.",

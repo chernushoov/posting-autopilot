@@ -87,7 +87,7 @@ def export_csv():
     vacancy_ids = {c.vacancy_id for c in candidates if c.vacancy_id}
     vacancies = {}
     if vacancy_ids:
-        for v in db.query(Vacancy).filter(Vacancy.id.in_(vacancy_ids)).all():
+        for v in scoped(db, Vacancy).filter(Vacancy.id.in_(vacancy_ids)).all():
             vacancies[v.id] = v.title
 
     output = io.StringIO()

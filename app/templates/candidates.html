@@ -38,6 +38,12 @@
   </a>
 </div>
 
+{% if not candidates and not current and not current_classification %}
+<div style="text-align:center;padding:48px 20px;border:1px dashed var(--border);border-radius:var(--radius)">
+  <p class="muted" style="margin-bottom:16px">{{ ui("candidates_empty") }}</p>
+  <a class="btn" href="/campaigns/">{{ ui("go_to_campaigns") }}</a>
+</div>
+{% else %}
 <table class="table">
   <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("phone_label_full") }}</th><th>{{ ui("status") }}</th><th>{{ ui('class_label') }}</th><th>{{ ui("score") }}</th><th></th></tr>
   {% for c in candidates %}
@@ -61,4 +67,5 @@
   </tr>
   {% endfor %}
 </table>
+{% endif %}
 {% endblock %}

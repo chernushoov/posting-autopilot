@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, session
+import os
+
+from flask import Blueprint, render_template, request, session
 from common.i18n import ui
 
 bp = Blueprint("pricing", __name__)
@@ -166,6 +168,13 @@ PLANS = {
 PLAN_KEYS = ["starter", "pro", "agency"]
 
 
+BILLING_ERROR_KEYS = {
+    "billing_not_configured": "billing_not_configured_msg",
+    "invalid_plan": "billing_invalid_plan_msg",
+    "checkout_failed": "billing_checkout_failed_msg",
+}
+
+
 @bp.route("/pricing")
 def pricing_page():
     lang = session.get("ui_lang", "he")
@@ -174,4 +183,11 @@ def pricing_page():
     for i, plan in enumerate(plans):
         if i < len(PLAN_KEYS):
             plan["checkout_url"] = f"/billing/checkout/{PLAN_KEYS[i]}"
-    return render_template("pricing.html", title="Pricing", plans=plans)
+    return render_template(
+        "pricing.html",
+        title="Pricing",
+        plans=plans,
+        trial_expired=request.args.get("trial_expired") == "1",
+        billing_error_key=BILLING_ERROR_KEYS.get(request.args.get("error", "")),
+        support_contact_url=os.getenv("SUPPORT_CONTACT_URL", ""),
+    )

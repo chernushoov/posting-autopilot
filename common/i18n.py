@@ -278,6 +278,13 @@ UI = {
     # Pricing
     "pricing_title": {"ru": "Тарифы", "he": "מחירים", "en": "Pricing"},
     "pricing_subtitle": {"ru": "Автоматизация публикации вакансий в Telegram и Facebook. AI-скрининг кандидатов.", "he": "אוטומציה של פרסום משרות בטלגרם ופייסבוק. סינון מועמדים עם AI.", "en": "Automated job posting to Telegram and Facebook. AI candidate screening."},
+    "trial_expired_banner": {"ru": "Пробный период завершён. Чтобы продолжить работу, выберите тариф.", "he": "תקופת הניסיון הסתיימה. כדי להמשיך, בחרו מסלול.", "en": "Your free trial has ended. Pick a plan below to continue."},
+    "billing_not_configured_msg": {"ru": "Онлайн-оплата ещё не подключена. Напишите нам — активируем тариф вручную.", "he": "תשלום אונליין עדיין לא זמין. כתבו לנו ונפעיל את המסלול ידנית.", "en": "Online payments aren't enabled yet. Contact us and we'll activate your plan manually."},
+    "billing_invalid_plan_msg": {"ru": "Неизвестный тариф. Выберите один из тарифов ниже.", "he": "מסלול לא מוכר. בחרו אחד מהמסלולים למטה.", "en": "Unknown plan. Please pick one of the plans below."},
+    "billing_checkout_failed_msg": {"ru": "Не удалось начать оплату. Попробуйте ещё раз или свяжитесь с нами.", "he": "התשלום לא התחיל. נסו שוב או צרו קשר.", "en": "Payment couldn't start. Try again or contact us."},
+    "contact_us": {"ru": "Связаться с нами", "he": "צרו קשר", "en": "Contact us"},
+    "vacancies_empty": {"ru": "Пока нет ни одного объявления. Создайте первое — это основа вашей первой кампании.", "he": "אין עדיין משרות. צרו את הראשונה — היא הבסיס לקמפיין הראשון שלכם.", "en": "No listings yet. Create your first one — it's the foundation of your first campaign."},
+    "candidates_empty": {"ru": "Кандидаты появятся здесь после первого запуска кампании: они приходят по apply-ссылке из ваших постов.", "he": "מועמדים יופיעו כאן אחרי ההרצה הראשונה של הקמפיין — הם מגיעים דרך קישור ההגשה בפוסטים שלכם.", "en": "Candidates will appear here after your first campaign run — they arrive via the apply link in your posts."},
     # Prospecting
     "nav_prospecting": {"ru": "Поиск клиентов", "he": "חיפוש לקוחות", "en": "Prospecting"},
     "prospecting_title": {"ru": "Поиск клиентов", "he": "חיפוש לקוחות", "en": "Prospecting"},

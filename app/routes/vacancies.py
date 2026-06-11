@@ -1,4 +1,5 @@
 import json
+import logging
 
 from flask import Blueprint, redirect, render_template, request, url_for, jsonify
 
@@ -10,6 +11,7 @@ from ..listing_templates import get_template, get_all_templates
 from common.recruitbot_links import build_recruitbot_apply_link
 
 bp = Blueprint("vacancies", __name__, url_prefix="/vacancies")
+logger = logging.getLogger(__name__)
 
 
 def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[str, str]:
@@ -135,6 +137,7 @@ def view_vacancy(vacancy_id: int):
         funnel=funnel,
         recent_candidates=recent_candidates,
         photo_urls=photo_urls,
+        message=request.args.get("message"),
     )
 
 
@@ -477,18 +480,26 @@ def new_vacancy_post():
         db.commit()
 
         # Trigger first post immediately
+        queue_ok = True
         try:
             from worker.queue import enqueue_campaign_tick
-            enqueue_campaign_tick(campaign.id)
-        except Exception:
-            pass
+            enqueue_campaign_tick(campaign.id, "operator_run_now")
+        except Exception as exc:
+            queue_ok = False
+            logger.error("[vacancies] auto-campaign %s created but first tick not queued: %s", campaign.id, exc)
 
         db.close()
+        if not queue_ok:
+            return redirect(url_for(
+                "campaigns.list_campaigns",
+                error="Listing and campaign created, but the first posting run could not be queued. Check Redis/worker, then press Run now.",
+            ))
         return redirect(url_for("auth.connect_telegram", message=f"Listing created + campaign started with {len(tg_sources)} destinations"))
 
+    vacancy_id = vacancy.id
     db.commit()
     db.close()
-    return redirect(url_for("vacancies.list_vacancies", message="Listing created."))
+    return redirect(url_for("vacancies.view_vacancy", vacancy_id=vacancy_id, message="Listing created. Review it, then add destinations or create the first pilot run."))
 
 
 @bp.post("/toggle/<int:vacancy_id>")

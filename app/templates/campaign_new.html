@@ -1,6 +1,30 @@
 {% extends "_layout.html" %}
 {% block content %}
 <h1>{{ ui("new_campaign_title") }}</h1>
+
+{% if not vacancies %}
+<div class="card">
+  <h2 style="margin-top:0">Create a vacancy first</h2>
+  <p class="muted">A pilot run needs one active listing before destinations and schedule can be attached.</p>
+  <a class="btn" href="/vacancies/new">Create vacancy</a>
+</div>
+{% elif not sources %}
+<div class="card">
+  <h2 style="margin-top:0">Add one destination first</h2>
+  <p class="muted">Add a Telegram destination or a Facebook manual destination with a direct URL, then return here to create the pilot run.</p>
+  <div class="row" style="justify-content:flex-start">
+    <a class="btn" href="/sources/">Add destination</a>
+    <a class="pill" href="/connect/facebook">Facebook groups</a>
+    <a class="pill" href="/connect/telegram">Telegram connect</a>
+  </div>
+</div>
+{% elif eligible_source_count == 0 %}
+<div class="card">
+  <h2 style="margin-top:0">Make a destination ready</h2>
+  <p class="muted">Telegram destinations must be checked before auto-posting. Facebook destinations need a direct URL and stay assisted/manual in pilot mode.</p>
+  <a class="btn" href="/sources/">Review destinations</a>
+</div>
+{% else %}
 <form method="post" class="card">
   <label>{{ ui("name") }}</label>
   <input name="name" value="{{ form_values.name }}" placeholder="e.g. Construction pilot week 1">
@@ -38,10 +62,16 @@
       <label class="checkbox">
         <input type="checkbox" name="source_ids" value="{{ s.id }}" {% if (s.id|string) in selected_source_ids %}checked{% endif %}>
         {{ s.label or s.tg_ref }} <span class="muted">({{ s.platform or "telegram" }} · {{ s.destination_kind or s.source_type.value }} · {{ s.posting_mode or "auto" }})</span>
+        {% if source_readiness.get(s.id) %}
+          <span class="status status-posted">ready</span>
+        {% else %}
+          <span class="status status-failed">needs check</span>
+        {% endif %}
       </label>
     {% endfor %}
   </div>
   <p class="muted">{{ ui("tg_auto_note") }}</p>
   <button class="btn" type="submit">{{ ui("create_campaign_btn") }}</button>
 </form>
+{% endif %}
 {% endblock %}

@@ -4,6 +4,7 @@ from hashlib import sha256
 import re
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import db_session
 from ..models import User, UserRole, Company
@@ -14,12 +15,36 @@ TRIAL_DAYS = 14
 
 
 def _hash_password(password: str) -> str:
-    """Simple SHA-256 hash. Replace with bcrypt for production."""
+    """Legacy SHA-256 hash kept for existing seeded/demo users."""
     return sha256(password.encode()).hexdigest()
+
+
+def _make_password_hash(password: str) -> str:
+    return generate_password_hash(password)
+
+
+def _verify_password(stored_hash: str, password: str) -> bool:
+    if not stored_hash:
+        return False
+    if stored_hash == _hash_password(password):
+        return True
+    try:
+        return check_password_hash(stored_hash, password)
+    except Exception:
+        return False
 
 
 def _valid_email(email: str) -> bool:
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
+
+
+def _login_user(user: User, db) -> None:
+    company = db.query(Company).filter(Company.id == user.company_id).first() if user.company_id else None
+    session["user_id"] = user.id
+    session["is_admin"] = True
+    session["owner_id"] = company.owner_id if company else user.email
+    if company:
+        session["current_company_id"] = company.id
 
 
 @bp.get("/register")
@@ -60,7 +85,7 @@ def register_post():
     # Create user with trial
     user = User(
         email=email,
-        password_hash=_hash_password(password),
+        password_hash=_make_password_hash(password),
         company_id=company.id,
         role=UserRole.owner,
         trial_expires_at=datetime.utcnow() + timedelta(days=TRIAL_DAYS),
@@ -69,10 +94,7 @@ def register_post():
     db.commit()
 
     # Auto-login
-    session["user_id"] = user.id
-    session["is_admin"] = True
-    session["owner_id"] = email
-    session["current_company_id"] = company.id
+    _login_user(user, db)
     db.close()
 
     return redirect(url_for("auth.dashboard"))
@@ -95,7 +117,7 @@ def user_login_post():
 
     db = db_session()
     user = db.query(User).filter(User.email == email, User.is_active == True).first()
-    if not user or user.password_hash != _hash_password(password):
+    if not user or not _verify_password(user.password_hash, password):
         db.close()
         return render_template("user_login.html", error="Invalid email or password.")
 
@@ -104,11 +126,8 @@ def user_login_post():
         db.close()
         return redirect(url_for("pricing.pricing_page"))
 
-    session["user_id"] = user.id
-    session["is_admin"] = True
-    session["owner_id"] = user.email
-    if user.company_id:
-        session["current_company_id"] = user.company_id
+    _login_user(user, db)
+    next_url = request.args.get("next") or request.form.get("next") or url_for("auth.dashboard")
     db.close()
 
-    return redirect(url_for("auth.dashboard"))
+    return redirect(next_url)

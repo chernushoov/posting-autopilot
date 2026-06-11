@@ -80,27 +80,35 @@
 </div>
 {% endif %}
 
-<table class="table">
-  <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("interval") }}</th><th>{{ ui("running") }}</th><th>Pilot focus</th><th>{{ ui("actions") }}</th></tr>
-  {% for c in campaigns %}
-  <tr>
-    <td>{{ c.id }}</td>
-    <td>{{ c.name }}</td>
-    <td>#{{ c.vacancy_id }}</td>
-    <td>{{ c.interval_minutes }} min</td>
-    <td>{{ ui("yes") if c.is_running else ui("no") }}</td>
-    <td class="small muted">{{ ui('campaign_pilot_focus') }}</td>
-    <td class="actions">
-      <form method="post" action="/campaigns/run/{{ c.id }}">
-        <button class="pill" type="submit">{{ ui("run_now") }}</button>
-      </form>
-      <form method="post" action="/campaigns/toggle/{{ c.id }}">
-        <button class="pill" type="submit">{{ ui("pause") if c.is_running else ui("start") }}</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+{% if campaigns %}
+  <table class="table">
+    <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("interval") }}</th><th>{{ ui("running") }}</th><th>Pilot focus</th><th>{{ ui("actions") }}</th></tr>
+    {% for c in campaigns %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td>{{ c.name }}</td>
+      <td>#{{ c.vacancy_id }}</td>
+      <td>{{ c.interval_minutes }} min</td>
+      <td>{{ ui("yes") if c.is_running else ui("no") }}</td>
+      <td class="small muted">{{ ui('campaign_pilot_focus') }}</td>
+      <td class="actions">
+        <form method="post" action="/campaigns/run/{{ c.id }}">
+          <button class="pill" type="submit">{{ ui("run_now") }}</button>
+        </form>
+        <form method="post" action="/campaigns/toggle/{{ c.id }}">
+          <button class="pill" type="submit">{{ ui("pause") if c.is_running else ui("start") }}</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <div class="card">
+    <h2 style="margin-top:0">No pilot runs yet</h2>
+    <p class="muted">Create the first pilot run after one vacancy and one ready destination exist.</p>
+    <a class="btn" href="/campaigns/new">{{ ui("new_campaign") }}</a>
+  </div>
+{% endif %}
 
 <div style="height:16px"></div>
 

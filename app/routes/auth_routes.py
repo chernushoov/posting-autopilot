@@ -2,7 +2,8 @@ import time
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from ..auth import admin_login_ok
 from ..db import db_session
-from ..models import Company
+from ..models import Company, User
+from .registration import _login_user, _verify_password
 
 bp = Blueprint("auth", __name__)
 
@@ -14,7 +15,7 @@ def index():
 
 @bp.get("/login")
 def login():
-    if session.get("is_admin"):
+    if session.get("is_admin") or session.get("user_id"):
         return redirect(url_for("auth.dashboard"))
     return render_template("login.html")
 
@@ -42,6 +43,18 @@ def login_post():
     _record_attempt()
     login = request.form.get("login","")
     password = request.form.get("password","")
+    next_url = request.args.get("next") or request.form.get("next") or url_for("auth.dashboard")
+
+    if "@" in login:
+        db = db_session()
+        user = db.query(User).filter(User.email == login.strip().lower(), User.is_active == True).first()
+        if user and _verify_password(user.password_hash, password):
+            _login_user(user, db)
+            db.close()
+            return redirect(next_url)
+        db.close()
+        return render_template("login.html", error="Invalid email or password.")
+
     if not admin_login_ok(login, password):
         return render_template("login.html", error="Invalid credentials")
     session["is_admin"] = True
@@ -51,7 +64,7 @@ def login_post():
     if len(companies) == 1:
         session["current_company_id"] = companies[0].id
     db.close()
-    return redirect(url_for("auth.dashboard"))
+    return redirect(next_url)
 
 @bp.get("/logout")
 def logout():
@@ -110,7 +123,9 @@ def dashboard():
         vacancy_titles = {}
         vacancy_ids = {candidate.vacancy_id for candidate in recent_candidate_rows if candidate.vacancy_id}
         if vacancy_ids:
-            for vacancy in db.query(Vacancy).filter(Vacancy.id.in_(vacancy_ids)).all():
+            for vacancy in db.query(Vacancy).filter(
+                Vacancy.id.in_(vacancy_ids), Vacancy.company_id == company_id
+            ).all():
                 vacancy_titles[vacancy.id] = vacancy.title
         recent_candidates = [
             {
@@ -178,7 +193,9 @@ def connect_telegram():
     for cand in recent_candidates:
         vacancy_title = ""
         if cand.vacancy_id:
-            v = db.query(Vacancy).filter(Vacancy.id == cand.vacancy_id).first()
+            v = db.query(Vacancy).filter(
+                Vacancy.id == cand.vacancy_id, Vacancy.company_id == company_id
+            ).first()
             vacancy_title = v.title if v else ""
         last_message = ""
         try:

@@ -55,7 +55,10 @@ def _queue_action_response(queue_item_id: int, forced_action: str | None = None)
             payload=payload,
         )
         db.commit()
-        run = db.query(FacebookPostingRun).filter(FacebookPostingRun.id == queue_item.run_id).first()
+        run = db.query(FacebookPostingRun).filter(
+            FacebookPostingRun.id == queue_item.run_id,
+            FacebookPostingRun.company_id == company_id,
+        ).first()
         data = serialize_posting_run(run)
     except Exception as exc:
         db.rollback()
@@ -258,7 +261,10 @@ def create_run():
         db.commit()
         db.refresh(run)
         data = serialize_posting_run(
-            db.query(FacebookPostingRun).filter(FacebookPostingRun.id == run.id).first()
+            db.query(FacebookPostingRun).filter(
+                FacebookPostingRun.id == run.id,
+                FacebookPostingRun.company_id == company_id,
+            ).first()
         )
     except Exception as exc:
         db.rollback()

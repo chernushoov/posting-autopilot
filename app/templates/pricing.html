@@ -55,6 +55,24 @@
     <p>{{ ui("pricing_subtitle") }}</p>
   </div>
 
+  {% if trial_expired or billing_error_key %}
+  <div style="max-width:740px;margin:0 auto 8px;padding:0 20px;display:flex;flex-direction:column;gap:12px">
+    {% if trial_expired %}
+    <div style="background:#fff7e6;border:1px solid #f0d9a8;border-radius:var(--radius);padding:16px 20px;text-align:center">
+      <strong>{{ ui("trial_expired_banner") }}</strong>
+    </div>
+    {% endif %}
+    {% if billing_error_key %}
+    <div style="background:#fdeeee;border:1px solid #ecc8c8;border-radius:var(--radius);padding:16px 20px;text-align:center">
+      {{ ui(billing_error_key) }}
+      {% if support_contact_url %}
+      <div style="margin-top:10px"><a class="btn" href="{{ support_contact_url }}" target="_blank" rel="noopener">{{ ui("contact_us") }}</a></div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="plans">
     {% for plan in plans %}
     <div class="plan {{ 'highlight' if plan.highlight }}">
