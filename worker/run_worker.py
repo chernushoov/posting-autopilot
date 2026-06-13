@@ -2,9 +2,11 @@ import os
 from redis import Redis
 from rq import Worker, Queue, Connection
 from app.schema import bootstrap_schema
+from common.env_guard import validate_runtime_environment
 
 
 def main():
+    validate_runtime_environment("worker")
     bootstrap_schema()
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     conn = Redis.from_url(redis_url)

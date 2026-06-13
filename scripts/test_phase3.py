@@ -174,21 +174,21 @@ def test_3_2():
     assert found >= 4, f"Expected >= 4 vertical icons, found {found}"
     ok(f"Verticals section with {found} categories")
 
-    # CTA buttons
-    assert "/register" in landing, "Should link to registration"
-    ok("Registration CTA present")
+    # CTA buttons — invite-only early access: demo-first, no public register/pricing CTA
+    assert "#demo" in landing, "Should have a demo CTA"
+    ok("Demo CTA present")
 
-    # Pricing + Terms links
-    assert "/pricing" in landing, "Should link to pricing"
+    # Terms link stays in footer; pricing/register removed for invite-only launch
     assert "/terms" in landing, "Should link to terms"
-    ok("Pricing + Terms links in footer")
+    assert "/register" not in landing, "Landing should NOT push public self-serve registration (invite-only)"
+    ok("Terms link present; no public register/pricing CTA")
 
     # Responsive
     assert "@media" in landing, "Should have responsive CSS"
     ok("Responsive CSS breakpoints")
 
-    # Sticky nav
-    assert "sticky" in landing, "Should have sticky nav"
+    # Sticky/fixed nav (implemented via position:fixed + a .scrolled state)
+    assert "position:fixed" in landing, "Should have a fixed/sticky nav"
     ok("Sticky navigation bar")
 
     # Anti-spam mention

@@ -6,6 +6,7 @@ from rq import Queue
 from app.db import db_session
 from app.models import Campaign, Company
 from app.schema import bootstrap_schema
+from common.env_guard import validate_runtime_environment
 from worker.queue import schedule_campaign_tick, enqueue_daily_digest
 
 # Simple scheduler: every 60s checks running campaigns and enqueues if interval elapsed.
@@ -35,6 +36,7 @@ def _campaign_window_check(c, now: datetime):
 
 
 def main():
+    validate_runtime_environment("scheduler")
     bootstrap_schema()
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     Redis.from_url(redis_url)  # connectivity check

@@ -18,6 +18,29 @@ Bring `web`, `worker`, `scheduler`, and `bot` to a clean running state without c
 5. `bash scripts/runtime_check_with_env.sh`
 6. Only after token is valid: `bash scripts/compose_with_runtime.sh up -d bot`
 
+## Local web-only fallback (no Docker)
+
+Use this only when Docker/Colima is blocked and you still need operator access to
+the web panel. This is not full production/runtime truth: it runs `web` only,
+without `postgres`, `redis`, `worker`, `scheduler`, or `bot`.
+
+```bash
+cd ~/Desktop/recruit-autopilot-core
+bash scripts/run_local_web_sqlite.sh
+```
+
+Default local URL:
+
+```bash
+http://127.0.0.1:8080
+```
+
+Notes:
+- Sources `.env` and `.env.runtime`
+- Overrides `DATABASE_URL` to `sqlite:///ra.db` unless `LOCAL_DATABASE_URL` is set
+- Reuses real `ADMIN_LOGIN` / `ADMIN_PASSWORD` from env files
+- Good for web/auth/vacancy/source/campaign UI validation, not for Telegram posting truth
+
 ## Required secret rules
 - Use `RECRUITBOT_TELEGRAM_BOT_TOKEN` for this project.
 - Do not reuse the main MoltBot/OpenClaw Telegram token.

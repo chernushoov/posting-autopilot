@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+READINESS_GATE="${ROOT_DIR}/scripts/launch_readiness_gate.py"
 
 echo "[1/17] Build vacancy pack"
 python3 "${ROOT_DIR}/scripts/build_live_vacancy_pack.py"
@@ -71,4 +72,11 @@ echo "[17/17] Generate day-close packet"
 python3 "${ROOT_DIR}/scripts/generate_day_close_packet.py"
 
 echo
-echo "Sunday launch control complete."
+READINESS_EXIT=0
+python3 "${READINESS_GATE}" || READINESS_EXIT=$?
+if [[ "${READINESS_EXIT}" -eq 2 ]]; then
+  echo "Sunday launch control completed with blockers."
+else
+  echo "Sunday launch control complete."
+fi
+exit "${READINESS_EXIT}"

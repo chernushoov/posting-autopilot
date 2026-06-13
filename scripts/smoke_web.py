@@ -117,7 +117,13 @@ def main() -> None:
         "/dashboard": ["Posting<em>Autopilot</em>", "Telegram", "Facebook"],
         "/vacancies/": ["Concrete worker", "Listings", "מודעות", "Объявления"],
         "/sources/": ["Pilot Destination Rules", "Telegram", "Facebook"],
-        "/campaigns/": ["Pilot Mode", "Telegram auto", "TopStaff Worker Pilot", "Concrete Floors"],
+        "/campaigns/": [
+            "Warehouse — RU channels",
+            "Cleaning — HE channels",
+            "Telegram",
+            "Facebook",
+            "קמפיינים",
+        ],
         "/connect/telegram": ["Telegram", "API", "Phone"],
         "/connect/facebook": ["Facebook", "Meta", "Step 1"],
     }

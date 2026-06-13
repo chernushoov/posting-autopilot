@@ -271,9 +271,9 @@ body{direction:rtl;text-align:right}
       {% endfor %}
     </div>
     <a href="#how">{% if ui_lang == 'he' %}איך זה עובד{% elif ui_lang == 'ru' %}Как это работает{% else %}How it works{% endif %}</a>
-    <a href="/pricing">{% if ui_lang == 'he' %}מחירים{% elif ui_lang == 'ru' %}Цены{% else %}Pricing{% endif %}</a>
-    <a href="/user-login">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
-    <a href="/register" class="btn" style="border-radius:999px">{% if ui_lang == 'he' %}התחל בחינם{% elif ui_lang == 'ru' %}Начать{% else %}Start Free{% endif %}</a>
+    <a href="#demo">{% if ui_lang == 'he' %}דמו{% elif ui_lang == 'ru' %}Демо{% else %}Demo{% endif %}</a>
+    <a href="{{ public_login_url }}">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
+    <a href="{{ public_register_url }}" class="btn" style="border-radius:999px">{% if ui_lang == 'he' %}הרשמה{% elif ui_lang == 'ru' %}Регистрация{% else %}Register{% endif %}</a>
   </div>
 </nav>
 
@@ -292,8 +292,8 @@ body{direction:rtl;text-align:right}
     {% else %}One listing &rarr; 50+ Telegram & Facebook groups &rarr; AI bot answers, filters, collects phones &rarr; you only get hot leads.{% endif %}
   </p>
   <div class="hero-ctas reveal stagger-3">
-    <a href="/register" class="btn">{% if ui_lang == 'he' %}14 ימים חינם &rarr;{% elif ui_lang == 'ru' %}14 дней бесплатно &rarr;{% else %}14 Days Free &rarr;{% endif %}</a>
-    <a href="#demo" class="btn-ghost">{% if ui_lang == 'he' %}ראה דמו{% elif ui_lang == 'ru' %}Смотреть демо{% else %}See Demo{% endif %}</a>
+    <a href="{{ public_register_url }}" class="btn">{% if ui_lang == 'he' %}הרשמה &rarr;{% elif ui_lang == 'ru' %}Регистрация &rarr;{% else %}Register &rarr;{% endif %}</a>
+    <a href="{{ public_login_url }}" class="btn-ghost">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
   </div>
   <div class="hero-scroll"><div class="arrow">&darr;</div></div>
 </section>
@@ -338,7 +338,7 @@ body{direction:rtl;text-align:right}
     <div class="step-card reveal stagger-1"><div class="step-num">01</div><div class="step-icon">&#9999;&#65039;</div><h3>{% if ui_lang == 'he' %}צור מודעה{% elif ui_lang == 'ru' %}Создай объявление{% else %}Create listing{% endif %}</h3><p>{% if ui_lang == 'he' %}בחר תבנית (משרה, רכב, דירה, שירות) או מאפס. הגדר FAQ ושאלות סינון לבוט.{% elif ui_lang == 'ru' %}Выбери шаблон (вакансия, авто, квартира, услуга) или с нуля. Настрой FAQ и вопросы для бота.{% else %}Pick a template (job, car, apartment, service) or start blank. Set FAQ and bot screening questions.{% endif %}</p></div>
     <div class="step-card reveal stagger-2"><div class="step-num">02</div><div class="step-icon">&#128640;</div><h3>{% if ui_lang == 'he' %}פרסם ב-50+ קבוצות{% elif ui_lang == 'ru' %}Размести в 50+ группах{% else %}Post to 50+ groups{% endif %}</h3><p>{% if ui_lang == 'he' %}אוטומטי בטלגרם. בפייסבוק — מעתיקים טקסט מוכן. עיכובים אקראיים, כדי להפחית את סיכון החסימה.{% elif ui_lang == 'ru' %}Автоматически в Telegram. Facebook — копируешь готовый текст. Рандомные задержки, чтобы снизить риск блокировки.{% else %}Auto in Telegram. Facebook — copy prepared text. Random delays and human-like pacing to reduce the risk of a block.{% endif %}</p></div>
     <div class="step-card reveal stagger-3"><div class="step-num">03</div><div class="step-icon">&#129302;</div><h3>{% if ui_lang == 'he' %}בוט AI מטפל{% elif ui_lang == 'ru' %}AI-бот обрабатывает{% else %}AI bot handles{% endif %}</h3><p>{% if ui_lang == 'he' %}עונה לשאלות, שואל שאלות סינון, אוסף טלפון. ספאם ולידים קרים — אוטומטית.{% elif ui_lang == 'ru' %}Отвечает на вопросы, задаёт скрининг, собирает телефон. Спам и холод — автоматически.{% else %}Answers questions, runs screening, collects phone. Spam and cold leads — automatic.{% endif %}</p></div>
-    <div class="step-card reveal stagger-4"><div class="step-num">04</div><div class="step-icon">&#128293;</div><h3>{% if ui_lang == 'he' %}קבל לידים חמים{% elif ui_lang == 'ru' %}Получай горячих{% else %}Get hot leads{% endif %}</h3><p>{% if ui_lang == 'he' %}התראה מיידית: שם, טלפון, סיכום, לינק לוואטסאפ. במקום 30 שיחות — 3-5 מוכנים.{% elif ui_lang == 'ru' %}Мгновенное уведомление: имя, телефон, саммари, WhatsApp. Вместо 30 чатов — 3-5 готовых.{% else %}Instant alert: name, phone, summary, WhatsApp. Instead of 30 chats — 3-5 ready.{% endif %}</p></div>
+    <div class="step-card reveal stagger-4"><div class="step-num">04</div><div class="step-icon">&#128293;</div><h3>{% if ui_lang == 'he' %}קבל לידים חמים{% elif ui_lang == 'ru' %}Получай горячих{% else %}Get hot leads{% endif %}</h3><p>{% if ui_lang == 'he' %}התראה מיידית: שם, טלפון וסיכום. במקום 30 שיחות — 3-5 מוכנים.{% elif ui_lang == 'ru' %}Мгновенное уведомление: имя, телефон, саммари. Вместо 30 чатов — 3-5 готовых.{% else %}Instant alert: name, phone, summary. Instead of 30 chats — 3-5 ready.{% endif %}</p></div>
   </div>
 </section>
 
@@ -422,14 +422,10 @@ body{direction:rtl;text-align:right}
       <label>{% if ui_lang == 'he' %}קבוצות לפרסום{% elif ui_lang == 'ru' %}Групп для публикации{% else %}Groups to post{% endif %} <span id="calc-groups-val">30</span></label>
       <input type="range" id="calc-groups" min="5" max="100" value="30" step="5">
     </div>
-    <div class="calc-results">
+    <div class="calc-results" style="grid-template-columns:1fr;max-width:300px;margin-left:auto;margin-right:auto">
       <div class="calc-result">
         <div class="calc-result-num" id="calc-monthly">&#8362;5,280</div>
-        <div class="calc-result-label">{% if ui_lang == 'he' %}עלות חודשית שלכם{% elif ui_lang == 'ru' %}Ваши расходы в месяц{% else %}Your monthly cost{% endif %}</div>
-      </div>
-      <div class="calc-payback">
-        <div class="calc-payback-num" id="calc-payback">1.7 {% if ui_lang == 'he' %}ימים{% elif ui_lang == 'ru' %}дней{% else %}days{% endif %}</div>
-        <div class="calc-payback-label">{% if ui_lang == 'he' %}החזר השקעה על 299&#8362;{% elif ui_lang == 'ru' %}Окупаемость тарифа 299&#8362;{% else %}Payback on 299&#8362; plan{% endif %}</div>
+        <div class="calc-result-label">{% if ui_lang == 'he' %}עלות חודשית על פרסום ידני{% elif ui_lang == 'ru' %}Ваши расходы в месяц на ручной постинг{% else %}Your monthly cost of manual posting{% endif %}</div>
       </div>
     </div>
   </div>
@@ -461,7 +457,7 @@ body{direction:rtl;text-align:right}
         <div class="compare-step"><span class="cs-icon">&#128640;</span><span class="cs-time">{% if ui_lang == 'he' %}אוטו{% elif ui_lang == 'ru' %}авто{% else %}auto{% endif %}</span><span>{% if ui_lang == 'he' %}אוטופילוט מפרסם ב-50+ קבוצות{% elif ui_lang == 'ru' %}Автопилот постит в 50+ групп{% else %}Autopilot posts to 50+ groups{% endif %}</span></div>
         <div class="compare-step"><span class="cs-icon">&#129302;</span><span class="cs-time">{% if ui_lang == 'he' %}אוטו{% elif ui_lang == 'ru' %}авто{% else %}auto{% endif %}</span><span>{% if ui_lang == 'he' %}בוט עונה, מסנן, מסווג{% elif ui_lang == 'ru' %}Бот отвечает, фильтрует, квалифицирует{% else %}Bot answers, filters, qualifies{% endif %}</span></div>
         <div class="compare-step"><span class="cs-icon">&#128222;</span><span class="cs-time">{% if ui_lang == 'he' %}אוטו{% elif ui_lang == 'ru' %}авто{% else %}auto{% endif %}</span><span>{% if ui_lang == 'he' %}אוסף טלפון אוטומטית{% elif ui_lang == 'ru' %}Собирает телефон автоматически{% else %}Collects phone automatically{% endif %}</span></div>
-        <div class="compare-step"><span class="cs-icon">&#128276;</span><span class="cs-time">{% if ui_lang == 'he' %}מיד{% elif ui_lang == 'ru' %}мгновенно{% else %}instant{% endif %}</span><span>{% if ui_lang == 'he' %}מקבלים: שם + טלפון + וואטסאפ{% elif ui_lang == 'ru' %}Получаете: имя + телефон + WhatsApp{% else %}You get: name + phone + WhatsApp{% endif %}</span></div>
+        <div class="compare-step"><span class="cs-icon">&#128276;</span><span class="cs-time">{% if ui_lang == 'he' %}מיד{% elif ui_lang == 'ru' %}мгновенно{% else %}instant{% endif %}</span><span>{% if ui_lang == 'he' %}מקבלים: שם + טלפון + סיכום{% elif ui_lang == 'ru' %}Получаете: имя + телефон + саммари{% else %}You get: name + phone + summary{% endif %}</span></div>
         <div class="compare-step"><span class="cs-icon">&#128526;</span><span class="cs-time">5 {% if ui_lang == 'he' %}ד{% elif ui_lang == 'ru' %}мин{% else %}min{% endif %}</span><span>{% if ui_lang == 'he' %}מתקשרים רק למוכנים{% elif ui_lang == 'ru' %}Звоните только готовым{% else %}Call only ready ones{% endif %}</span></div>
       </div>
     </div>
@@ -539,58 +535,13 @@ body{direction:rtl;text-align:right}
 </section>
 
 
-<!-- ═══ PRICING ═══ -->
-<section class="l-pricing">
-  <div class="section-label">
-    <div class="eyebrow reveal">{% if ui_lang == 'he' %}תוכניות{% elif ui_lang == 'ru' %}Тарифы{% else %}Plans{% endif %}</div>
-    <h2 class="reveal stagger-1">{% if ui_lang == 'he' %}פשוט. שקוף. בלי הפתעות.{% elif ui_lang == 'ru' %}Просто. Прозрачно. Без сюрпризов.{% else %}Simple. Transparent. No surprises.{% endif %}</h2>
-  </div>
-  <div class="price-cards">
-    <div class="price-card reveal stagger-1">
-      <div class="price-name">{% if ui_lang == 'he' %}סטארטר{% elif ui_lang == 'ru' %}Стартер{% else %}Starter{% endif %}</div>
-      <div class="price-amount">299&#8362; <span>/{% if ui_lang == 'he' %}חודש{% elif ui_lang == 'ru' %}мес{% else %}mo{% endif %}</span></div>
-      <ul class="price-list">
-        <li>{% if ui_lang == 'he' %}1 מודעה{% elif ui_lang == 'ru' %}1 объявление{% else %}1 listing{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}10 קבוצות{% elif ui_lang == 'ru' %}10 групп{% else %}10 groups{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}בוט AI{% elif ui_lang == 'ru' %}AI-бот{% else %}AI bot{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}3 שפות{% elif ui_lang == 'ru' %}3 языка{% else %}3 languages{% endif %}</li>
-      </ul>
-      <a href="/register" class="price-cta outline">{% if ui_lang == 'he' %}נסה בחינם{% elif ui_lang == 'ru' %}Попробовать{% else %}Try Free{% endif %}</a>
-    </div>
-    <div class="price-card pop reveal stagger-2">
-      <div class="price-badge">{% if ui_lang == 'he' %}הפופולרי{% elif ui_lang == 'ru' %}Популярный{% else %}Most Popular{% endif %}</div>
-      <div class="price-name">{% if ui_lang == 'he' %}פרו{% elif ui_lang == 'ru' %}Про{% else %}Pro{% endif %}</div>
-      <div class="price-amount">899&#8362; <span>/{% if ui_lang == 'he' %}חודש{% elif ui_lang == 'ru' %}мес{% else %}mo{% endif %}</span></div>
-      <ul class="price-list">
-        <li>{% if ui_lang == 'he' %}5 מודעות{% elif ui_lang == 'ru' %}5 объявлений{% else %}5 listings{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}50 קבוצות{% elif ui_lang == 'ru' %}50 групп{% else %}50 groups{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}אנליטיקה{% elif ui_lang == 'ru' %}Аналитика{% else %}Analytics{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}תמיכה בעדיפות{% elif ui_lang == 'ru' %}Приоритетная поддержка{% else %}Priority support{% endif %}</li>
-      </ul>
-      <a href="/register" class="price-cta primary">{% if ui_lang == 'he' %}התחל עכשיו{% elif ui_lang == 'ru' %}Начать сейчас{% else %}Start Now{% endif %}</a>
-    </div>
-    <div class="price-card reveal stagger-3">
-      <div class="price-name">{% if ui_lang == 'he' %}סוכנות{% elif ui_lang == 'ru' %}Агентство{% else %}Agency{% endif %}</div>
-      <div class="price-amount">1999&#8362; <span>/{% if ui_lang == 'he' %}חודש{% elif ui_lang == 'ru' %}мес{% else %}mo{% endif %}</span></div>
-      <ul class="price-list">
-        <li>{% if ui_lang == 'he' %}ללא הגבלה{% elif ui_lang == 'ru' %}Безлимит{% else %}Unlimited{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}API{% elif ui_lang == 'ru' %}API{% else %}API{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}ריבוי חברות{% elif ui_lang == 'ru' %}Мульти-компания{% else %}Multi-company{% endif %}</li>
-        <li>{% if ui_lang == 'he' %}מנהל אישי{% elif ui_lang == 'ru' %}Личный менеджер{% else %}Dedicated manager{% endif %}</li>
-      </ul>
-      <a href="/register" class="price-cta outline">{% if ui_lang == 'he' %}צור קשר{% elif ui_lang == 'ru' %}Связаться{% else %}Contact Us{% endif %}</a>
-    </div>
-  </div>
-</section>
-
-
 <!-- ═══ FINAL CTA ═══ -->
 <section class="l-final">
-  <h2 class="final-h2 reveal">{% if ui_lang == 'he' %}מוכן להפסיק לבזבז זמן?{% elif ui_lang == 'ru' %}Готов перестать тратить время?{% else %}Ready to stop wasting time?{% endif %}</h2>
-  <p class="final-sub reveal stagger-1">{% if ui_lang == 'he' %}14 ימי ניסיון חינם. ללא כרטיס אשראי. הגדרה ב-5 דקות.{% elif ui_lang == 'ru' %}14 дней бесплатно. Без кредитной карты. Настройка за 5 минут.{% else %}14-day free trial. No credit card. Setup in 5 minutes.{% endif %}</p>
-  <a href="/register" class="btn final-btn reveal stagger-2">{% if ui_lang == 'he' %}הרשם עכשיו{% elif ui_lang == 'ru' %}Зарегистрироваться{% else %}Sign Up Now{% endif %}</a>
+  <h2 class="final-h2 reveal">{% if ui_lang == 'he' %}מוכנים להיכנס למערכת?{% elif ui_lang == 'ru' %}Готовы войти в систему?{% else %}Ready to enter the app?{% endif %}</h2>
+  <p class="final-sub reveal stagger-1">{% if ui_lang == 'he' %}פותחים חשבון, מתחברים ללוח הבקרה ומתחילים לפרסם דרך האתר.{% elif ui_lang == 'ru' %}Создайте аккаунт, войдите в кабинет и начните работать через веб-приложение.{% else %}Create an account, sign in to the dashboard, and start working from the web app.{% endif %}</p>
+  <a href="{{ public_register_url }}" class="btn final-btn reveal stagger-2">{% if ui_lang == 'he' %}הרשמה{% elif ui_lang == 'ru' %}Регистрация{% else %}Register{% endif %}</a>
   <div class="final-links reveal stagger-3">
-    <a href="/pricing">{% if ui_lang == 'he' %}מחירים{% elif ui_lang == 'ru' %}Цены{% else %}Pricing{% endif %}</a>
+    <a href="{{ public_login_url }}">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
     <a href="/terms">{% if ui_lang == 'he' %}תנאי שימוש{% elif ui_lang == 'ru' %}Условия{% else %}Terms{% endif %}</a>
   </div>
 </section>
@@ -659,9 +610,6 @@ var calcHoursVal = document.getElementById('calc-hours-val');
 var calcRateVal = document.getElementById('calc-rate-val');
 var calcGroupsVal = document.getElementById('calc-groups-val');
 var calcMonthly = document.getElementById('calc-monthly');
-var calcPayback = document.getElementById('calc-payback');
-var lang = '{{ ui_lang or "en" }}';
-var daysWord = lang === 'he' ? '\u05D9\u05DE\u05D9\u05DD' : lang === 'ru' ? '\u0434\u043D\u0435\u0439' : 'days';
 
 function updateCalc() {
   var h = parseFloat(calcHours.value);
@@ -671,10 +619,7 @@ function updateCalc() {
   calcRateVal.textContent = r;
   calcGroupsVal.textContent = g;
   var monthly = Math.round(h * r * 22);
-  var daily = monthly / 30;
-  var payback = daily > 0 ? (299 / daily).toFixed(1) : '---';
   calcMonthly.textContent = '\u20AA' + monthly.toLocaleString();
-  calcPayback.textContent = payback + ' ' + daysWord;
 }
 calcHours.addEventListener('input', updateCalc);
 calcRate.addEventListener('input', updateCalc);
@@ -690,7 +635,7 @@ var botMsgs = [
   {who:'bot',text:'\u05D9\u05E9 \u05DC\u05E0\u05D5 3 \u05D3\u05D9\u05E8\u05D5\u05EA \u05DE\u05EA\u05D0\u05D9\u05DE\u05D5\u05EA! \u05EA\u05D5\u05DB\u05DC\u05D5 \u05DC\u05E9\u05DC\u05D5\u05D7 \u05DE\u05E1\u05E4\u05E8 \u05D8\u05DC\u05E4\u05D5\u05DF?'},
   {who:'user',text:'054-555-1234'},
   {who:'bot',text:'\u05EA\u05D5\u05D3\u05D4 \u05E8\u05D1\u05D4! \u05D4\u05E2\u05D1\u05E8\u05EA\u05D9 \u05D0\u05EA \u05D4\u05E4\u05E8\u05D8\u05D9\u05DD \u05E9\u05DC\u05DB\u05DD \u05DC\u05E1\u05D5\u05DB\u05DF.'},
-  {who:'alert',text:'HOT LEAD\n\uD83D\uDC64 User TG\n\uD83C\uDFE0 3 rooms, Florentin, 6000\u20AA\n\uD83D\uDCDE 054-555-1234\n\uD83D\uDCAC wa.me/972545551234'}
+  {who:'alert',text:'HOT LEAD\n\uD83D\uDC64 User TG\n\uD83C\uDFE0 3 rooms, Florentin, 6000\u20AA\n\uD83D\uDCDE 054-555-1234\n\u2705 \u05D4\u05D5\u05E2\u05D1\u05E8 \u05D0\u05DC\u05D9\u05DA'}
 ];
 
 var chatContainer = document.getElementById('bot-chat-demo');

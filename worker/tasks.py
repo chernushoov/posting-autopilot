@@ -39,10 +39,6 @@ def _build_post_asset(vacancy: Vacancy):
         effective_apply_url = vacancy.apply_url or build_recruitbot_apply_link(vacancy.id)
         if effective_apply_url:
             parts.append(f"Apply: {effective_apply_url}")
-        # Task 2.3: WhatsApp click-to-chat
-        if getattr(vacancy, 'whatsapp_number', None):
-            wa_num = vacancy.whatsapp_number.lstrip('+')
-            parts.append(f"WhatsApp: https://wa.me/{wa_num}")
         body = "\n".join([part for part in parts if part])
     return title, body
 

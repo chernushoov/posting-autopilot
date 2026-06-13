@@ -1,11 +1,11 @@
 """Task 3.1: Stripe Billing — checkout, webhook, trial expiration."""
 import os
 import logging
-from datetime import datetime
 
 from flask import Blueprint, redirect, request, url_for, session, jsonify
 
 from ..auth import require_company
+from ..config import Config
 from ..db import db_session
 from ..models import User
 
@@ -13,25 +13,35 @@ logger = logging.getLogger(__name__)
 
 bp = Blueprint("billing", __name__, url_prefix="/billing")
 
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+def _stripe_secret_key() -> str:
+    return os.getenv("STRIPE_SECRET_KEY", "").strip()
 
-# Price IDs from Stripe Dashboard — set via env vars
-PRICE_IDS = {
-    "starter": os.getenv("STRIPE_PRICE_STARTER", ""),
-    "pro": os.getenv("STRIPE_PRICE_PRO", ""),
-    "agency": os.getenv("STRIPE_PRICE_AGENCY", ""),
-}
+
+def _stripe_webhook_secret() -> str:
+    return os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
+
+
+def _price_ids() -> dict[str, str]:
+    return {
+        "starter": os.getenv("STRIPE_PRICE_STARTER", "").strip(),
+        "pro": os.getenv("STRIPE_PRICE_PRO", "").strip(),
+        "agency": os.getenv("STRIPE_PRICE_AGENCY", "").strip(),
+    }
+
+
+PRICE_IDS = _price_ids()
 
 
 def _get_stripe():
     """Lazy-load stripe module. Returns None if not configured."""
-    if not STRIPE_SECRET_KEY:
+    if not Config.billing_enabled():
+        return None
+    secret_key = _stripe_secret_key()
+    if not secret_key:
         return None
     try:
         import stripe
-        stripe.api_key = STRIPE_SECRET_KEY
+        stripe.api_key = secret_key
         return stripe
     except ImportError:
         logger.warning("[billing] stripe package not installed")
@@ -44,9 +54,9 @@ def checkout(plan: str):
     """Create Stripe Checkout session and redirect."""
     stripe = _get_stripe()
     if not stripe:
-        return redirect(url_for("pricing.pricing_page") + "?error=billing_not_configured")
+        return redirect(url_for("pricing.pricing_page") + "?error=billing_disabled")
 
-    price_id = PRICE_IDS.get(plan)
+    price_id = _price_ids().get(plan)
     if not price_id:
         return redirect(url_for("pricing.pricing_page") + "?error=invalid_plan")
 
@@ -92,12 +102,12 @@ def stripe_webhook():
     # Security: never trust an unsigned webhook. Without the signing secret we
     # cannot prove Stripe sent this, so a forged checkout.session.completed could
     # grant anyone a paid/cleared trial. Reject rather than parse raw JSON.
-    if not STRIPE_WEBHOOK_SECRET:
+    if not _stripe_webhook_secret():
         logger.error("[billing] Webhook rejected: STRIPE_WEBHOOK_SECRET is not set")
         return jsonify({"error": "webhook not configured"}), 400
 
     try:
-        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        event = stripe.Webhook.construct_event(payload, sig_header, _stripe_webhook_secret())
     except Exception as e:
         logger.error(f"[billing] Webhook signature verification failed: {e}")
         return jsonify({"error": "invalid signature"}), 400

@@ -1,59 +1,132 @@
-# DEPLOY RUNBOOK — Posting Autopilot on a $6–12/mo VPS
+# DEPLOY RUNBOOK — Posting Autopilot on Hetzner VPS
 
-This app is a 6-service Docker stack (web + worker + scheduler + bot + postgres + redis)
-and **cannot run on Vercel/Netlify**. A small VPS is the right home. ~30–60 min end to end.
+This repo is now prepared for a native Linux deploy:
 
-## 0. What you need first
-- A VPS: Hetzner CX22 (~€4.5/mo) or DigitalOcean/Vultr ($6–12/mo), Ubuntu 22.04+.
-- A domain (or subdomain) you control, e.g. `app.postingautopilot.com`.
-- A dedicated Telegram bot token from @BotFather.
-- An OpenAI API key.
-- (For payments) a Stripe account — see `STRIPE_RUNBOOK.md`.
+- core stack: `postgres`, `redis`, `web`, `worker`, `scheduler`, `bot`, `listener`
+- edge: `caddy`
+- canonical app host: `app.posting-autopilot.com`
+- canonical marketing host: `posting-autopilot.com`
 
-## 1. Point the domain at the server
-Create a DNS **A record**: `app.postingautopilot.com → <server IP>`. Wait for it to resolve
-(`dig +short app.postingautopilot.com`). Caddy needs this to issue the HTTPS cert.
+## Routing decision
 
-## 2. Install Docker on the VPS
+- `posting-autopilot.com` stays the marketing entry.
+- `app.posting-autopilot.com` is the canonical operator/customer app.
+- root-domain app routes like `/login`, `/register`, `/dashboard`, `/pricing` are redirected to `app.` by Caddy.
+- `https://app.posting-autopilot.com/` redirects to `/login`.
+
+## Files that matter
+
+- prod env template: `.env.prod.example`
+- compose base: `docker-compose.yml`
+- prod overlay: `docker-compose.prod.yml`
+- edge proxy: `Caddyfile`
+- deploy script: `deploy-hetzner.sh`
+- env preflight: `scripts/validate_prod_env.py`
+- deploy day checklist: `DEPLOY_CHECKLIST.md`
+
+## What the operator must provide
+
+Required before `web/bot` can be called production-ready:
+
+- `ADMIN_PASSWORD`
+- `FLASK_SECRET_KEY`
+- `POSTGRES_PASSWORD`
+- `PUBLIC_MARKETING_URL`
+- `PUBLIC_APP_URL`
+- `MARKETING_DOMAIN`
+- `APP_DOMAIN`
+- `RECRUITBOT_TELEGRAM_BOT_TOKEN`
+- `RECRUITBOT_AI_API_KEY` and provider choice
+
+Optional / explicitly gated:
+
+- `SIGNUP_INVITE_CODE`
+- `TRIAL_DAYS`
+- `RECRUIT_OPERATOR_NOTIFY_CHAT`
+- `RECRUITBOT_TG_API_ID` / `RECRUITBOT_TG_API_HASH`
+- `FB_APP_ID` / `FB_APP_SECRET`
+- `STRIPE_*` only when `BILLING_ENABLED=1`
+- `SMTP_*` for email digests / hot-lead email
+
+## DNS records
+
+Add these on deploy day:
+
+- `A  posting-autopilot.com        -> <VPS_IP>`
+- `A  app.posting-autopilot.com    -> <VPS_IP>`
+
+Optional:
+
+- `CNAME www.posting-autopilot.com -> posting-autopilot.com`
+
+## Recommended first boot
+
+Inside the repo on the VPS:
+
 ```bash
-ssh root@<server-ip>
-curl -fsSL https://get.docker.com | sh
+cp .env.prod.example .env.prod
+nano .env.prod
+touch .env.runtime
+./deploy-hetzner.sh --smoke
 ```
 
-## 3. Get the code + secrets
-```bash
-git clone https://github.com/chernushoov/posting-autopilot.git
-cd posting-autopilot
-cp .env.production.example .env
-nano .env            # fill EVERY value (DOMAIN, POSTGRES_PASSWORD + matching DATABASE_URL,
-                     # FLASK_SECRET_KEY=$(openssl rand -hex 32), ADMIN_PASSWORD, bot token,
-                     # AI_API_KEY, and the Stripe block when ready)
-touch .env.runtime   # optional secrets overlay; can stay empty
-```
+What the script does:
 
-## 4. Launch (production overlay)
-```bash
-./deploy.sh
-# == docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-docker compose exec web python -m scripts.seed   # first run only: init DB
-```
+1. installs Docker + compose plugin if missing
+2. validates `.env.prod` with `scripts/validate_prod_env.py`
+3. validates compose with the supplied env file
+4. builds the images
+5. starts `postgres` + `redis` first
+6. runs `python -m scripts.migrate`
+7. starts `web + worker + scheduler + bot + listener + caddy`
+8. waits for all 8 services to become healthy
+9. runs internal smoke on `/health`, `/login`, `/register`
+10. runs public smoke too if `PUBLIC_APP_URL` already resolves
 
-## 5. Verify
-```bash
-curl -s https://$DOMAIN/health        # expect ok
-docker compose ps                      # all services Up; caddy has 80/443
-```
-Open `https://<domain>/login` → log in with ADMIN_LOGIN / ADMIN_PASSWORD.
+## Health truth
 
-## 6. Updating later
-```bash
-git pull && ./deploy.sh               # rebuild + restart changed services
-```
+- `web` healthcheck calls `/ready`, not just `/health`
+- `/ready` verifies both Postgres and Redis
+- `worker`, `scheduler`, `bot`, `listener` all have explicit healthchecks
+- `bot` healthcheck fails if the bot token is malformed
+- prod env validation fails closed when critical values are missing
 
-## Notes / gotchas
-- HTTPS is automatic via Caddy + Let's Encrypt once DNS resolves. First request may take ~10s.
-- `FORCE_HTTPS=1` must be set (it is in the template) so session cookies are Secure behind the proxy.
-- Postgres is **not** exposed publicly in prod (overlay drops the port). Back up `ra_pg` volume.
-- The DM bot has `restart: unless-stopped` — it self-heals; check `docker compose logs bot` if screening stops.
-- Do NOT enable the Facebook browser auto-poster (it risks the account). Manual FB path is safe.
-- Real public posting to live Telegram groups starts only when YOU connect a Telegram account and run a campaign — nothing posts on its own.
+## Billing gate
+
+- default production template sets `BILLING_ENABLED=0`
+- this keeps the app honest while Stripe keys are still operator-blocked
+- turning billing on requires:
+  - `BILLING_ENABLED=1`
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_PUBLISHABLE_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - `STRIPE_PRICE_STARTER`
+  - `STRIPE_PRICE_PRO`
+  - `STRIPE_PRICE_AGENCY`
+
+## Data layer / first account
+
+- migrations/bootstrap: `docker compose exec -T web python -m scripts.migrate`
+- no demo seed on production by default
+- operator/admin login uses `ADMIN_LOGIN` + `ADMIN_PASSWORD`
+- first real customer account is created via `/register`
+- invite-only remains controlled by `SIGNUP_INVITE_CODE`
+
+## Local proof completed before VPS
+
+- `python3 -m compileall app bot common worker scripts`
+- `docker compose --env-file .env.prod.example -f docker-compose.yml -f docker-compose.prod.yml config`
+- temp SQLite smoke:
+  - `scripts/smoke_web.py`
+  - `scripts/smoke_signup_flow.py`
+- phase regressions:
+  - `scripts/test_phase2.py`
+  - `scripts/test_phase3.py`
+
+## Bottom line
+
+Once the VPS exists and `.env.prod` is filled, the actual go-live command is:
+
+```bash
+./deploy-hetzner.sh --smoke
+```

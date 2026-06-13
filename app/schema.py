@@ -80,6 +80,7 @@ def bootstrap_schema() -> None:
             "email": "VARCHAR(300)",
             "website": "VARCHAR(500)",
             "logo_emoji": "VARCHAR(10)",
+            "logo_path": "VARCHAR(500)",
             "owner_telegram_id": "VARCHAR(64)",
         },
     )

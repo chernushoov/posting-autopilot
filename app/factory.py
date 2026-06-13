@@ -1,9 +1,14 @@
 from flask import Flask, session, request, redirect
+from redis import Redis
+from sqlalchemy import text
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from .config import Config
 from .operator_copilot import build_operator_copilot
 from .routes import register_routes
 from .schema import bootstrap_schema
 from common.i18n import ui, is_rtl, status_label
+from common.env_guard import validate_runtime_environment
 
 SUPPORTED_LANGS = ["en", "ru", "he"]
 
@@ -14,17 +19,23 @@ LOGIN_RATE_WINDOW = 300  # 5 minutes
 
 
 def create_app():
+    validate_runtime_environment("web")
     bootstrap_schema()
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config["SECRET_KEY"] = Config.flask_secret_key()
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = Config.session_cookie_secure()
     app.config["MAX_CONTENT_LENGTH"] = Config.MAX_CONTENT_LENGTH
+    app.config["PREFERRED_URL_SCHEME"] = "https" if Config.session_cookie_secure() else "http"
 
     @app.after_request
     def set_security_headers(response):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         return response
 
     # CSRF protection via flask-wtf
@@ -67,6 +78,26 @@ def create_app():
     def health():
         return {"ok": True, "service": "recruit-autopilot"}, 200
 
+    @app.route("/ready")
+    def ready():
+        errors: list[str] = []
+
+        try:
+            from .db import engine as _engine
+            with _engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+        except Exception as exc:
+            errors.append(f"database: {exc}")
+
+        try:
+            Redis.from_url(Config.REDIS_URL).ping()
+        except Exception as exc:
+            errors.append(f"redis: {exc}")
+
+        if errors:
+            return {"ok": False, "service": "recruit-autopilot", "errors": errors}, 503
+        return {"ok": True, "service": "recruit-autopilot"}, 200
+
     # Browser favicon — Flask serves /static/favicon.ico, but most browsers fetch
     # /favicon.ico directly and we want a 200, not a 404 in web logs.
     @app.route("/favicon.ico")
@@ -92,11 +123,20 @@ def create_app():
 
         basename = _os.path.basename(filename)
         from .db import db_session as _db_session
-        from .models import Vacancy
+        from .models import Vacancy, Company, Creative
         db = _db_session()
         try:
-            vacancies = db.query(Vacancy).filter(Vacancy.company_id == company_id).all()
             allowed = False
+            # The company's own logo is served to its tenant.
+            company = db.query(Company).filter(Company.id == company_id).first()
+            if company and company.logo_path and _os.path.basename(company.logo_path) == basename:
+                allowed = True
+            # Creative-library assets (banners/posters/logos) belong to the tenant.
+            if not allowed:
+                creatives = db.query(Creative).filter(Creative.company_id == company_id).all()
+                if any(_os.path.basename(cr.file_path) == basename for cr in creatives):
+                    allowed = True
+            vacancies = db.query(Vacancy).filter(Vacancy.company_id == company_id).all()
             for vacancy in vacancies:
                 paths = []
                 if vacancy.image_path:
@@ -170,6 +210,10 @@ def create_app():
         company_id = session.get("current_company_id")
         company_name = None
         operator_copilot = None
+        public_app_url = Config.PUBLIC_APP_URL
+        public_marketing_url = Config.PUBLIC_MARKETING_URL
+        public_login_url = f"{public_app_url}/login" if public_app_url else "/login"
+        public_register_url = f"{public_app_url}/register" if public_app_url else "/register"
         if company_id:
             from .db import db_session
             from .models import Company
@@ -195,6 +239,12 @@ def create_app():
             "supported_langs": SUPPORTED_LANGS,
             "night_mode_active": night_mode_active,
             "night_mode_window": "23:00–07:00 Asia/Jerusalem",
+            "trial_days": Config.trial_days(),
+            "billing_enabled": Config.billing_enabled(),
+            "public_app_url": public_app_url,
+            "public_marketing_url": public_marketing_url,
+            "public_login_url": public_login_url,
+            "public_register_url": public_register_url,
         }
 
     app.jinja_env.globals["ui"] = lambda key, **kw: ui(key, session.get("ui_lang", "he"), **kw)

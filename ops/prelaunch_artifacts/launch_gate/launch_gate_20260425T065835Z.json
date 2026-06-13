@@ -1,0 +1,358 @@
+{
+  "checked_at": "2026-04-25T06:58:35Z",
+  "base_url": "https://posting-autopilot-next.vercel.app",
+  "overall_status": "red",
+  "launch_ready": false,
+  "runtime": {
+    "status": "yellow",
+    "ok": true,
+    "command": "bash scripts/runtime_check_with_env.sh --json",
+    "summary": "6/6 containers running: postgres, redis, web, worker, scheduler, bot | web :8080",
+    "details": {
+      "baseline_status": "healthy",
+      "running_services": 6,
+      "total_services": 6,
+      "issues": [
+        {
+          "severity": "warning",
+          "code": "bot_runtime_error",
+          "message": "bot-1  | [bot] Connected as @AutopillotRecruit_bot (attempt 1)"
+        }
+      ]
+    },
+    "stderr": "",
+    "environment_blocked": false
+  },
+  "local_guardrails": {
+    "status": "green",
+    "ok": true,
+    "command": "bash scripts/compose_with_runtime.sh exec -T web python scripts/launch_guardrail_check.py",
+    "stderr": "",
+    "environment_blocked": false,
+    "details": [
+      {
+        "name": "campaign_requires_sources",
+        "passed": true,
+        "status_code": 200
+      },
+      {
+        "name": "campaign_rejects_bad_interval",
+        "passed": true,
+        "status_code": 200
+      },
+      {
+        "name": "source_rejects_invalid_ref",
+        "passed": true,
+        "status_code": 302,
+        "location": "/sources/?error=Telegram+ref+must+look+like+@username+or+-1001234567890.",
+        "error": "Telegram ref must look like @username or -1001234567890."
+      },
+      {
+        "name": "source_test_requires_confirmation",
+        "passed": true,
+        "status_code": 302,
+        "location": "/sources/?error=Confirm+live+send+before+testing+a+destination.",
+        "error": "Confirm live send before testing a destination."
+      }
+    ]
+  },
+  "multilingual_pilot": {
+    "status": "green",
+    "ok": true,
+    "command": "python3 scripts/multilingual_pilot_check.py",
+    "stderr": "",
+    "details": {
+      "checked_at": "20260425T065706Z",
+      "overall_ok": true,
+      "translation_issues": [],
+      "language_map_checks": [
+        {
+          "incoming": "ru",
+          "expected": "ru",
+          "actual": "ru",
+          "passed": true
+        },
+        {
+          "incoming": "uk",
+          "expected": "ru",
+          "actual": "ru",
+          "passed": true
+        },
+        {
+          "incoming": "be",
+          "expected": "ru",
+          "actual": "ru",
+          "passed": true
+        },
+        {
+          "incoming": "he",
+          "expected": "he",
+          "actual": "he",
+          "passed": true
+        },
+        {
+          "incoming": "iw",
+          "expected": "he",
+          "actual": "he",
+          "passed": true
+        },
+        {
+          "incoming": "en",
+          "expected": "en",
+          "actual": "en",
+          "passed": true
+        },
+        {
+          "incoming": "en-US",
+          "expected": "en",
+          "actual": "en",
+          "passed": true
+        },
+        {
+          "incoming": "fr",
+          "expected": "ru",
+          "actual": "ru",
+          "passed": true
+        },
+        {
+          "incoming": null,
+          "expected": "ru",
+          "actual": "ru",
+          "passed": true
+        }
+      ],
+      "cases": [
+        {
+          "lang": "ru",
+          "welcome": "Привет! Я помогаю найти работу в строительстве 🏗\n\nВыбери язык / בחר שפה / Choose language:",
+          "language_set": "✅ Язык: Русский\n\nЧто хочешь сделать?",
+          "default_questions": [
+            "Какой у тебя опыт работы? (кратко)",
+            "В каком ты городе сейчас?",
+            "Есть ли документы/разрешение на работу?"
+          ],
+          "custom_questions": [
+            "Custom Q1 ru",
+            "Custom Q2 ru"
+          ],
+          "prompt_contains_language": true,
+          "positive_score": 100,
+          "negative_score": 44,
+          "positive_provider": "rule-based",
+          "negative_provider": "rule-based",
+          "positive_beats_negative": true
+        },
+        {
+          "lang": "he",
+          "welcome": "שלום! אני עוזר למצוא עבודה בבנייה 🏗\n\nבחר שפה / Выбери язык / Choose language:",
+          "language_set": "✅ שפה: עברית\n\nמה תרצה לעשות?",
+          "default_questions": [
+            "מה הניסיון שלך בעבודה? (בקצרה)",
+            "באיזו עיר את/ה נמצא/ת כרגע?",
+            "יש לך אישור עבודה/מסמכים?"
+          ],
+          "custom_questions": [
+            "Custom Q1 he",
+            "Custom Q2 he"
+          ],
+          "prompt_contains_language": true,
+          "positive_score": 58,
+          "negative_score": 40,
+          "positive_provider": "rule-based",
+          "negative_provider": "rule-based",
+          "positive_beats_negative": true
+        },
+        {
+          "lang": "en",
+          "welcome": "Hi! I help find construction jobs 🏗\n\nChoose language / Выбери язык / בחר שפה:",
+          "language_set": "✅ Language: English\n\nWhat would you like to do?",
+          "default_questions": [
+            "What is your work experience? (briefly)",
+            "What city are you in right now?",
+            "Do you have work permit/documents?"
+          ],
+          "custom_questions": [
+            "Custom Q1 en",
+            "Custom Q2 en"
+          ],
+          "prompt_contains_language": true,
+          "positive_score": 82,
+          "negative_score": 36,
+          "positive_provider": "rule-based",
+          "negative_provider": "rule-based",
+          "positive_beats_negative": true
+        }
+      ]
+    }
+  },
+  "local_route_probe": {
+    "status": "green",
+    "ok": true,
+    "stderr": "",
+    "command": "route probe via compose web python",
+    "environment_blocked": false,
+    "details": {
+      "settings_route_present": false,
+      "ai_settings_route_present": true,
+      "routes": [
+        {
+          "rule": "/ai/settings",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/ai/settings",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/campaigns/",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/campaigns/attempt/<int:attempt_id>/result",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/campaigns/new",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/campaigns/new",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/campaigns/run/<int:campaign_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/campaigns/toggle/<int:campaign_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/",
+          "methods": [
+            "GET"
+          ]
+        },
+        {
+          "rule": "/sources/check/<int:source_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/delete/<int:source_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/folder/<int:source_id>",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/new",
+          "methods": [
+            "POST"
+          ]
+        },
+        {
+          "rule": "/sources/test/<int:source_id>",
+          "methods": [
+            "POST"
+          ]
+        }
+      ]
+    }
+  },
+  "vercel_linkage": {
+    "status": "yellow",
+    "ok": false,
+    "details": {
+      "linked_files": []
+    },
+    "message": "no local Vercel linkage metadata found in this repo"
+  },
+  "vercel_production": {
+    "status": "green",
+    "ok": true,
+    "project_name": "posting-autopilot-next",
+    "details": {
+      "account": "chernushoov",
+      "project_id": "prj_Esqo3jmH1EandblwYS5c2LdfclHx",
+      "framework": "flask",
+      "production_deployment_id": "dpl_6v2xFLQrs5ZZJ3MefEyzzYVMXLxo",
+      "production_ready_state": "READY",
+      "production_created_at": 1774896162099,
+      "production_aliases": [
+        "posting-autopilot-next.vercel.app",
+        "posting-autopilot-next-chernushoovs-projects.vercel.app",
+        "posting-autopilot-next-chernushoov-chernushoovs-projects.vercel.app"
+      ],
+      "deployment_source": "cli",
+      "deployment_target": "production",
+      "deployment_status": "READY",
+      "tls_retry_used": true,
+      "recent_settings_500_count": 6,
+      "latest_settings_500": {
+        "timestamp": 1777100231758,
+        "deployment_id": "dpl_6v2xFLQrs5ZZJ3MefEyzzYVMXLxo",
+        "summary": "DetachedInstanceError in /var/task/app/routes.py:331 after save while reading user.full_name for session['user_name']",
+        "exception": "DetachedInstanceError",
+        "route_file": "/var/task/app/routes.py",
+        "route_line": 331,
+        "request_path": "/settings"
+      },
+      "latest_settings_500_message_tail": "    session[\"user_name\"] = user.full_name\n                           ^^^^^^^^^^^^^^\n  File \"/var/task/_vendor/sqlalchemy/orm/attributes.py\", line 566, in __get__\n    return self.impl.get(state, dict_)  # type: ignore[no-any-return]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/task/_vendor/sqlalchemy/orm/attributes.py\", line 1086, in get\n    value = self._fire_loader_callables(state, key, passive)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/task/_vendor/sqlalchemy/orm/attributes.py\", line 1116, in _fire_loader_callables\n    return state._load_expired(state, passive)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/task/_vendor/sqlalchemy/orm/state.py\", line 796, in _load_expired\n    self.manager.expired_attribute_loader(self, toload, passive)\n  File \"/var/task/_vendor/sqlalchemy/orm/loading.py\", line 1586, in load_scalar_attributes\n    raise orm_exc.DetachedInstanceError(\nsqlalchemy.orm.exc.DetachedInstanceError: Instance <User at 0x7fac2a08cc50> is not bound to a Session; attribute refresh operation cannot proceed (Background on this error at: https://sqlalche.me/e/20/bhk3)"
+    },
+    "message": null
+  },
+  "source_alignment": {
+    "status": "red",
+    "ok": false,
+    "details": [
+      "local app exposes /ai/settings while live deploy operator flow uses /settings",
+      "local repo has no Vercel linkage metadata for posting-autopilot-next",
+      "production deployment source is cli, so the exact live snapshot is not pinned to the current git tree",
+      "live /settings 500 root cause: DetachedInstanceError in /var/task/app/routes.py:331 after save while reading user.full_name for session['user_name']"
+    ]
+  },
+  "live_smoke": {
+    "status": "yellow",
+    "ok": false,
+    "command": "bash scripts/live_deploy_smoke.sh https://posting-autopilot-next.vercel.app",
+    "output": "PASS login page available\nPASS demo login works\nPASS facebook connect page reachable\nWARN settings save persisted despite 500 response\nPASS ad creation works\nPASS schedule creation works\nPASS history displays created run\nPASS history status update works\nSMOKE DEGRADED https://posting-autopilot-next.vercel.app",
+    "details": {
+      "settings_persisted_despite_500": true
+    },
+    "message": "settings save persists values but returns 500 after save"
+  },
+  "environment_blockers": [],
+  "warnings": [
+    "runtime health reported warnings",
+    "settings save persists values but returns 500 after save"
+  ],
+  "blockers": [
+    "local app exposes /ai/settings while live deploy operator flow uses /settings",
+    "local repo has no Vercel linkage metadata for posting-autopilot-next",
+    "production deployment source is cli, so the exact live snapshot is not pinned to the current git tree",
+    "live /settings 500 root cause: DetachedInstanceError in /var/task/app/routes.py:331 after save while reading user.full_name for session['user_name']"
+  ]
+}

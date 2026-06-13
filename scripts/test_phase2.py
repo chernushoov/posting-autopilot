@@ -75,7 +75,7 @@ def test_2_1():
     # Registration route
     try:
         from app.routes.registration import bp, _hash_password, _valid_email, TRIAL_DAYS
-        assert TRIAL_DAYS == 14, f"Trial should be 14 days, got {TRIAL_DAYS}"
+        assert TRIAL_DAYS == 3, f"Trial should be 3 days, got {TRIAL_DAYS}"
         ok(f"Registration module importable, trial={TRIAL_DAYS} days")
     except Exception as e:
         fail("Registration module", str(e))
@@ -114,10 +114,10 @@ def test_2_1():
         assert "company_name" in register_html, "Register form should have company_name"
         # The trial is now advertised via i18n (reg_subtitle), not a hardcoded English
         # string, so the page reads correctly in RU/HE/EN. Verify the key is used and
-        # the translated copy still mentions the 14-day trial.
+        # the translated copy still mentions the 3-day trial.
         assert "reg_subtitle" in register_html, "Register page should show the trial subtitle"
         from common.i18n import ui as _ui
-        assert "14" in _ui("reg_subtitle", "en") and "14" in _ui("reg_subtitle", "ru"), "reg_subtitle should mention the 14-day trial"
+        assert "3" in _ui("reg_subtitle", "en", days=TRIAL_DAYS) and "3" in _ui("reg_subtitle", "ru", days=TRIAL_DAYS), "reg_subtitle should mention the 3-day trial"
         ok("register.html template exists and has required fields")
 
         login_html = (ROOT / "app" / "templates" / "user_login.html").read_text()
@@ -207,9 +207,9 @@ def test_2_2():
 # ── Task 2.3: WhatsApp Integration ──────────────────────────────────────────
 
 def test_2_3():
-    section("Task 2.3: WhatsApp Integration")
+    section("Task 2.3: WhatsApp field (no auto-redirects)")
 
-    # Model field
+    # Model field — the owner can still store a contact number for reference
     try:
         from app.models import Vacancy
         assert hasattr(Vacancy, 'whatsapp_number'), "Vacancy missing whatsapp_number"
@@ -217,22 +217,22 @@ def test_2_3():
     except Exception as e:
         fail("Vacancy whatsapp_number", str(e))
 
-    # Posting asset includes WhatsApp link
+    # Posting asset must NOT inject a wa.me redirect into public posts (invite-only:
+    # the bot handles contact, we don't push people to the owner's WhatsApp)
     try:
         tasks_code = (ROOT / "worker" / "tasks.py").read_text()
-        assert "wa.me" in tasks_code, "tasks.py should generate wa.me links"
-        assert "whatsapp_number" in tasks_code, "tasks.py should check whatsapp_number"
-        ok("Posting asset builder includes WhatsApp wa.me link")
+        assert "wa.me" not in tasks_code, "tasks.py should NOT generate wa.me redirects"
+        ok("Posting asset builder has no wa.me redirect")
     except Exception as e:
-        fail("WhatsApp in posting asset", str(e))
+        fail("WhatsApp removed from posting asset", str(e))
 
-    # Hot lead notification includes WhatsApp
+    # Hot-lead notification must NOT contain a wa.me redirect (phone is shown instead)
     try:
         bot_code = (ROOT / "bot" / "run_bot.py").read_text()
-        assert "wa.me" in bot_code, "Bot should include wa.me in notifications"
-        ok("Hot lead notification includes WhatsApp link")
+        assert "wa.me" not in bot_code, "Bot notifications should NOT include wa.me redirects"
+        ok("Hot lead notification has no wa.me redirect")
     except Exception as e:
-        fail("WhatsApp in notification", str(e))
+        fail("WhatsApp removed from notification", str(e))
 
     # Form has WhatsApp field
     try:
@@ -473,12 +473,12 @@ def test_backward_compat():
     except Exception as e:
         fail("Admin login", str(e))
 
-    # Landing page has both sign-in options
+    # Landing is invite-gated: sign-in present, no public self-serve register CTA
     try:
         landing = (ROOT / "app" / "templates" / "landing.html").read_text()
-        assert "/register" in landing, "Landing should link to /register"
         assert "user-login" in landing or "login" in landing, "Landing should link to login"
-        ok("Landing page has register + sign-in links")
+        assert "/register" not in landing, "Landing should NOT push public self-serve registration (invite-only)"
+        ok("Landing page is invite-gated (sign-in, no public register CTA)")
     except Exception as e:
         fail("Landing links", str(e))
 

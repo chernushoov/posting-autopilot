@@ -1,7 +1,23 @@
-from flask import Blueprint, render_template, session
+from copy import deepcopy
+
+from flask import Blueprint, render_template, request, session
+
+from ..config import Config
 from common.i18n import ui
 
 bp = Blueprint("pricing", __name__)
+
+PLAN_KEYS = ["starter", "pro", "agency"]
+
+
+def _trial_label(lang: str) -> str:
+    days = Config.trial_days()
+    if lang == "ru":
+        return f"{days} дня бесплатно" if days in {2, 3, 4} else f"{days} дней бесплатно"
+    if lang == "he":
+        return f"{days} ימי ניסיון חינם"
+    return f"{days} day free trial" if days == 1 else f"{days} days free trial"
+
 
 PLANS = {
     "ru": [
@@ -16,7 +32,7 @@ PLANS = {
                 "Ручной режим Facebook",
                 "AI-скрининг кандидатов",
                 "Русский + Иврит + English",
-                "14 дней бесплатно",
+                "__TRIAL__",
             ],
             "cta": "Попробовать бесплатно",
             "highlight": False,
@@ -68,7 +84,7 @@ PLANS = {
                 "מצב ידני בפייסבוק",
                 "סינון AI של מועמדים",
                 "רוסית + עברית + אנגלית",
-                "14 ימי ניסיון חינם",
+                "__TRIAL__",
             ],
             "cta": "נסה בחינם",
             "highlight": False,
@@ -120,7 +136,7 @@ PLANS = {
                 "Manual Facebook mode",
                 "AI candidate screening",
                 "Russian + Hebrew + English",
-                "14 days free trial",
+                "__TRIAL__",
             ],
             "cta": "Try Free",
             "highlight": False,
@@ -163,18 +179,33 @@ PLANS = {
 }
 
 
-PLAN_KEYS = ["starter", "pro", "agency"]
+def _plans_for(lang: str):
+    plans = deepcopy(PLANS.get(lang, PLANS["en"]))
+    trial_copy = _trial_label(lang)
+    for plan in plans:
+        plan["features"] = [trial_copy if feature == "__TRIAL__" else feature for feature in plan["features"]]
+    return plans
 
 
 @bp.route("/pricing")
 def pricing_page():
     lang = session.get("ui_lang", "he")
-    plans = PLANS.get(lang, PLANS["en"])
+    plans = _plans_for(lang)
     # A signed-out visitor clicking a "Try free" plan must reach SIGNUP, not the Stripe
     # checkout (which @require_company bounces to the sign-in page — a dead end for a
     # brand-new user). Only authenticated trial users get the real upgrade checkout.
     signed_in = bool(session.get("is_admin") or session.get("user_id"))
     for i, plan in enumerate(plans):
         if i < len(PLAN_KEYS):
-            plan["checkout_url"] = f"/billing/checkout/{PLAN_KEYS[i]}" if signed_in else "/register"
-    return render_template("pricing.html", title="Pricing", plans=plans)
+            if signed_in and Config.billing_enabled():
+                plan["checkout_url"] = f"/billing/checkout/{PLAN_KEYS[i]}"
+            elif signed_in:
+                plan["checkout_url"] = "/pricing?billing=disabled"
+            else:
+                plan["checkout_url"] = "/register"
+    return render_template(
+        "pricing.html",
+        title="Pricing",
+        plans=plans,
+        billing_disabled=request.args.get("billing") == "disabled" or request.args.get("error") == "billing_disabled",
+    )

@@ -4,24 +4,27 @@
 
 # Launch Status Snapshot
 
-Generated at: 2026-03-30T21:37:30.516623+00:00
+Generated at: 2026-06-02T10:16:42.564967+00:00
 
-- Launch readiness status: needs_input
+- Launch readiness status: blocked
 - Missing intake fields: 10
+- Launch blockers: 1
+- Live launch gate: blocked
 - First-wave sources selected: 4
 - First-wave sources posted: 0
 - Posts sent logged: 0
 - Responses logged: 0
 - Active candidates in pipeline: 1
 - Telegram token valid: True
-- Telegram reserved for other runtime: None
-- Telegram username: None
+- Telegram reserved for other runtime: False
+- Telegram username: AutopillotRecruit_bot
+- Top blocker: RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)
 
 ## Posting Evidence Summary
 
 # Posting Evidence Summary
 
-Generated at: 2026-03-30T21:37:30.185013+00:00
+Generated at: 2026-06-02T10:16:42.283091+00:00
 
 - Logged posting evidence rows: 0
 - Rows with proof reference: 0
@@ -34,7 +37,13 @@ Generated at: 2026-03-30T21:37:30.185013+00:00
 
 # Sunday Ops Report
 
-Generated at: 2026-03-30T21:37:30.448287+00:00
+Generated at: 2026-06-02T10:16:42.505909+00:00
+
+## Launch Truth
+- Launch readiness status: blocked
+- Live launch gate: blocked
+- Launch blockers: 1
+- Top blocker: RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)
 
 ## Totals
 - Posts sent: 0
@@ -59,7 +68,7 @@ Generated at: 2026-03-30T21:37:30.448287+00:00
 
 # End Of Day Report
 
-Generated at: 2026-03-30T21:37:30.577311+00:00
+Generated at: 2026-06-02T10:16:42.622155+00:00
 
 - Posts sent today: 0
 - Responses received: 0

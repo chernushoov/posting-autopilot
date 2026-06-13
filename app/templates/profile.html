@@ -4,9 +4,13 @@
 
 <div style="max-width:600px">
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px">
+    {% if c.logo_path %}
+    <img src="/uploads/{{ c.logo_path.split('/')[-1] }}" alt="logo" style="width:56px;height:56px;border-radius:16px;object-fit:cover;border:1px solid var(--border-light)">
+    {% else %}
     <div style="width:56px;height:56px;border-radius:16px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">
-      {{ c.name[0]|upper if c.name else 'P' }}
+      {{ c.logo_emoji if c.logo_emoji else (c.name[0]|upper if c.name else 'P') }}
     </div>
+    {% endif %}
     <div>
       <h1 style="margin:0">{{ c.name }}</h1>
       <span class="badge" style="margin-top:4px">{{ c.business_type or 'company' }}</span>
@@ -22,7 +26,7 @@
   {% if _e == 'hotlead_fail' %}<div class="alert error">{{ ui("hotlead_fail_msg") }}</div>{% endif %}
   {% if _e == 'hotlead_need_start' %}<div class="alert error">{{ ui("hotlead_need_start") }} <a href="https://t.me/{{ bot_username }}" target="_blank" rel="noopener">{{ ui("hotlead_open_bot") }} →</a></div>{% endif %}
 
-  <form method="post" class="card">
+  <form method="post" class="card" enctype="multipart/form-data">
     <div class="grid2">
       <div>
         <label>{{ ui("name") }}</label>
@@ -62,7 +66,41 @@
     <div class="small muted">{{ ui("owner_telegram_id_hint") }}</div>
     <div class="small muted" style="margin-top:4px">{{ ui("tg_id_help") }} <a href="https://t.me/userinfobot" target="_blank" rel="noopener">@userinfobot</a></div>
 
-    <input type="hidden" name="logo_emoji" value="">
+    <label style="margin-top:4px">{{ ui("logo_label") }}</label>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div id="logo-preview-wrap" style="width:64px;height:64px;border-radius:14px;border:1px solid var(--border-light);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--card);flex-shrink:0">
+        {% if c.logo_path %}
+        <img id="logo-preview" src="/uploads/{{ c.logo_path.split('/')[-1] }}" alt="logo" style="width:100%;height:100%;object-fit:cover">
+        {% else %}
+        <img id="logo-preview" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+        <span id="logo-placeholder" style="font-size:24px;font-weight:700;color:var(--accent)">{{ c.logo_emoji or (c.name[0]|upper if c.name else 'P') }}</span>
+        {% endif %}
+      </div>
+      <div style="flex:1;min-width:200px">
+        <input type="file" name="logo" id="logo-input" accept="image/png,image/jpeg,image/webp" style="font-size:13px">
+        <div class="small muted" style="margin-top:4px">{{ ui("logo_helper") }}</div>
+        {% if c.logo_path %}
+        <label class="small" style="display:flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer">
+          <input type="checkbox" name="remove_logo">{{ ui("logo_remove") }}
+        </label>
+        {% endif %}
+      </div>
+    </div>
+    <input type="hidden" name="logo_emoji" value="{{ c.logo_emoji or '' }}">
+    <script>
+    (function(){
+      var inp=document.getElementById('logo-input');
+      if(!inp) return;
+      inp.addEventListener('change',function(){
+        var f=inp.files&&inp.files[0]; if(!f) return;
+        var img=document.getElementById('logo-preview');
+        var ph=document.getElementById('logo-placeholder');
+        var url=URL.createObjectURL(f);
+        if(img){img.src=url;img.style.display='block';}
+        if(ph){ph.style.display='none';}
+      });
+    })();
+    </script>
 
     <div style="display:flex;gap:12px;margin-top:8px">
       <button class="btn" type="submit">{{ ui("save_btn") }}</button>

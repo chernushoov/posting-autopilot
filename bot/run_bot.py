@@ -5,6 +5,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from app.db import db_session
 from app.models import Candidate, CandidateStatus, Company, Vacancy
 from common.ai import build_system_prompt, score_candidate, answer_candidate_question
+from common.env_guard import validate_runtime_environment
 from common.i18n import detect_language, t, get_questions
 from common.notify_targets import resolve_recruit_notify_targets
 from common.runtime_env import get_recruitbot_token
@@ -258,11 +259,6 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
     )
     if candidate.tg_username:
         text += f"💬 Telegram: @{candidate.tg_username}\n"
-    if candidate.phone:
-        wa_num = candidate.phone.lstrip('+').replace('-', '').replace(' ', '')
-        if not wa_num.startswith('972') and wa_num.startswith('0'):
-            wa_num = '972' + wa_num[1:]
-        text += f"📲 WhatsApp: https://wa.me/{wa_num}\n"
 
     targets = resolve_recruit_notify_targets(company)
 
@@ -855,6 +851,7 @@ async def start_screening(message: Message, candidate, vacancy, lang: str, db):
 
 
 def main():
+    validate_runtime_environment("bot")
     if not BOT_TOKEN:
         raise SystemExit("RECRUITBOT_TELEGRAM_BOT_TOKEN/TELEGRAM_BOT_TOKEN missing")
 

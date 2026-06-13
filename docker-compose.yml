@@ -5,114 +5,158 @@ x-runtime-env: &runtime-env
   RECRUITBOT_AI_API_KEY: ${RECRUITBOT_AI_API_KEY}
   AI_PROVIDER: ${AI_PROVIDER}
   AI_API_KEY: ${AI_API_KEY}
-  # RQ worker job timeout (seconds). Must exceed POST_DELAY_MAX in common/tg_client.py
-  # plus Telethon connect/send margins so jobs don't silently expire mid-post.
   RQ_WORKER_TIMEOUT: ${RQ_WORKER_TIMEOUT:-900}
   DEFAULT_LANG: ${DEFAULT_LANG:-ru}
-  # Hot lead notifications fallback — sent when company.owner_id is not a TG user_id.
-  # Per-company override is RECRUIT_OPERATOR_NOTIFY_CHAT_<company_id>.
   RECRUIT_OPERATOR_NOTIFY_CHAT: ${RECRUIT_OPERATOR_NOTIFY_CHAT:-}
-  # SMTP for email digest + hot-lead email notifications. Operator can leave
-  # blank to skip email entirely (Telegram channel still works). Gmail App
-  # Password recommended over real password (https://myaccount.google.com/apppasswords).
   SMTP_HOST: ${SMTP_HOST:-}
   SMTP_PORT: ${SMTP_PORT:-587}
   SMTP_USER: ${SMTP_USER:-}
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   SMTP_FROM: ${SMTP_FROM:-}
 
+x-python-service: &python-service
+  build: .
+  init: true
+  env_file:
+    - ${APP_ENV_FILE:-.env}
+    - ${APP_RUNTIME_ENV_FILE:-.env.runtime}
+  environment:
+    <<: *runtime-env
+  networks:
+    - recruit_net
+
 services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ra
+    command: ["postgres", "-c", "max_connections=200"]
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ra_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ra"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - recruit_net
 
   redis:
     image: redis:7
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - ra_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    networks:
+      - recruit_net
 
   web:
-    build: .
+    <<: *python-service
     command: ["bash", "-lc", "python -m app.web"]
-    env_file:
-      - .env
-      - .env.runtime
-    environment: *runtime-env
     ports:
-      - "8080:8000"
+      - "127.0.0.1:8080:8000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - ./:/app
+      - ra_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "python scripts/service_healthcheck.py web"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
 
   worker:
-    build: .
+    <<: *python-service
     command: ["bash", "-lc", "python -m worker.run_worker"]
-    env_file:
-      - .env
-      - .env.runtime
-    environment: *runtime-env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - ./:/app
+      - ra_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "python scripts/service_healthcheck.py worker"]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
 
   scheduler:
-    build: .
+    <<: *python-service
     command: ["bash", "-lc", "python -m worker.run_scheduler"]
-    env_file:
-      - .env
-      - .env.runtime
-    environment: *runtime-env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - ./:/app
+      - ra_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "python scripts/service_healthcheck.py scheduler"]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
 
   bot:
-    build: .
-    command: ["bash", "-lc", "sleep 5 && python -u -m bot.run_bot"]
-    # R5: was "no" — a crashed DM bot silently stopped all candidate screening
-    # while ads kept posting. Keep it alive so the inbound side never dies quietly.
-    restart: unless-stopped
+    <<: *python-service
+    command: ["bash", "-lc", "python -u -m bot.run_bot"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    env_file:
-      - .env
-      - .env.runtime
-    environment: *runtime-env
-    depends_on:
-      - postgres
-      - redis
     volumes:
-      - ./:/app
+      - ra_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "python scripts/service_healthcheck.py bot"]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
 
   listener:
-    build: .
+    <<: *python-service
     command: ["bash", "-lc", "python -m worker.tg_listener"]
-    # Inbound Telegram listener — captures candidate replies in groups we posted to
-    # and DMs to the connected account, turns them into leads, notifies the operator.
-    # No-op until a company connects a Telegram account.
-    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    env_file:
-      - .env
-      - .env.runtime
-    environment: *runtime-env
-    depends_on:
-      - postgres
     volumes:
-      - ./:/app
+      - ra_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "python scripts/service_healthcheck.py listener"]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
 
 volumes:
   ra_pg:
+  ra_redis:
+  ra_data:
+
+networks:
+  recruit_net:

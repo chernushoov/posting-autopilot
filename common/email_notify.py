@@ -52,11 +52,6 @@ Summary: {lead_summary}
 """
     if lead_telegram:
         body += f"Telegram: @{lead_telegram}\n"
-    if lead_phone:
-        wa_num = lead_phone.lstrip('+').replace('-', '').replace(' ', '')
-        if not wa_num.startswith('972') and wa_num.startswith('0'):
-            wa_num = '972' + wa_num[1:]
-        body += f"WhatsApp: https://wa.me/{wa_num}\n"
 
     body += "\n— Posting Autopilot"
 

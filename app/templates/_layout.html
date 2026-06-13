@@ -39,6 +39,7 @@
       <a href="/connect/telegram" {% if '/connect/telegram' in request.path %}class="active"{% endif %}>Telegram</a>
       <a href="/connect/facebook" {% if '/connect/facebook' in request.path %}class="active"{% endif %}>Facebook</a>
       <a href="/vacancies/" {% if request.path.startswith('/vacancies') %}class="active"{% endif %}>{{ ui("nav_vacancies") }}</a>
+      <a href="/creatives/" {% if request.path.startswith('/creatives') %}class="active"{% endif %}>{{ ui("nav_creatives") }}</a>
       <a href="/sources/" {% if request.path.startswith('/sources') %}class="active"{% endif %}>{{ ui("nav_destinations") }}</a>
       <a href="/campaigns/" {% if request.path.startswith('/campaigns') %}class="active"{% endif %}>{{ ui("nav_campaigns") }}</a>
       <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
@@ -61,7 +62,7 @@
         {% endif %}
         <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
       {% elif not is_public_auth_page %}
-        <a class="pill" href="/login" style="font-weight:500">{{ ui("sign_in") }}</a>
+        <a class="pill" href="{{ public_login_url }}" style="font-weight:500">{{ ui("sign_in") }}</a>
       {% endif %}
     </div>
   </header>

@@ -105,8 +105,10 @@ def main():
     from common.notify_targets import resolve_recruit_notify_targets, sample_hot_lead_message
     db = db_session(); comp = db.query(Company).get(cid); tgts = resolve_recruit_notify_targets(comp); db.close()
     check("owner_telegram_id honoured in targets", "8175553706" in tgts)
-    check("sample alert: 🔥 + wa.me in all langs",
-          all(sample_hot_lead_message(comp, l).startswith("🔥") and "wa.me/972501234567" in sample_hot_lead_message(comp, l)
+    check("sample alert: 🔥 + phone, no wa.me, all langs",
+          all(sample_hot_lead_message(comp, l).startswith("🔥")
+              and "050-1234567" in sample_hot_lead_message(comp, l)
+              and "wa.me" not in sample_hot_lead_message(comp, l)
               for l in ("ru", "he", "en")))
 
     print("# Renders: language detect + panels + ROI card")

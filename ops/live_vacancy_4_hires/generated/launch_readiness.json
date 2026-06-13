@@ -1,5 +1,28 @@
 {
-  "status": "needs_input",
+  "status": "blocked",
+  "ready_now": [
+    "Sunday bundle files",
+    "Client intake message",
+    "Operator intake structure",
+    "Posting templates",
+    "Screening pack",
+    "Source plan",
+    "Pilot tracking",
+    "Case-study capture",
+    "Manual candidate pipeline"
+  ],
+  "needs_quick_input": [
+    "vacancy_title",
+    "location.city",
+    "compensation.salary_or_pay",
+    "schedule.shift_type",
+    "schedule.days",
+    "schedule.hours",
+    "schedule.start_date_or_urgency",
+    "requirements.must_have",
+    "response_path.primary_apply_path",
+    "recruiter_owner"
+  ],
   "missing_fields": [
     "vacancy_title",
     "location.city",
@@ -12,13 +35,58 @@
     "response_path.primary_apply_path",
     "recruiter_owner"
   ],
+  "blocked": [
+    "RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)"
+  ],
   "generated_files": [
+    "NIGHT_STATUS_SNAPSHOT_2026-04-22.md",
+    "client_approval_message.txt",
+    "client_approval_packet.md",
+    "client_progress_update.md",
+    "client_progress_update.txt",
+    "day_close_packet.md",
+    "end_of_day_report.md",
+    "execution_board.md",
     "facebook_groups_compact.txt",
     "facebook_standard.txt",
     "final_launch_packet.md",
     "final_vacancy_card.md",
+    "launch_readiness.json",
+    "launch_status_snapshot.md",
     "missing_fields_message.txt",
+    "morning_handoff_note.md",
     "operator_start_brief.md",
+    "posting_batch_sheet.csv",
+    "posting_evidence_summary.md",
+    "recruiter_handoff_batch.md",
+    "runtime_status.json",
+    "sunday_ops_report.md",
+    "telegram_connect_topstaff.cookies.txt",
     "telegram_short.txt"
-  ]
+  ],
+  "telegram": {
+    "source": ".env:RECRUITBOT_TELEGRAM_BOT_TOKEN",
+    "present": true,
+    "placeholder": false,
+    "valid_format": true,
+    "masked": "8786...PgrA",
+    "bot_identity": {
+      "id": 8786784416,
+      "username": "AutopillotRecruit_bot",
+      "first_name": "RecruitBot_Israel"
+    },
+    "reserved_for_other_runtime": false
+  },
+  "launch_gate": {
+    "source": "live_deploy_smoke",
+    "checked_at": "2026-06-03T13:18:08Z",
+    "fresh": true,
+    "status": "blocked",
+    "message": "RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)",
+    "blockers": [
+      "RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)"
+    ],
+    "output_tail": "FAIL login page unavailable: status 402, x-vercel-error DEPLOYMENT_DISABLED, body Payment required  DEPLOYMENT_DISABLED  fra1::c92jz-1780492688544-f7753ba1f7c6",
+    "base_url": "https://posting-autopilot-next.vercel.app"
+  }
 }

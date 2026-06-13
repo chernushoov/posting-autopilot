@@ -1,7 +1,42 @@
-# Caddy auto-HTTPS reverse proxy. DOMAIN is injected from the environment
-# (see docker-compose.prod.yml). Caddy fetches+renews a Let's Encrypt cert
-# automatically — just point the domain's A record at this server first.
-{$DOMAIN} {
-	encode gzip
-	reverse_proxy web:8000
+{
+	email {$LETSENCRYPT_EMAIL}
+}
+
+(security_headers) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https://graph.facebook.com https://api.stripe.com https://r.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com;"
+	}
+}
+
+(app_proxy) {
+	import security_headers
+	reverse_proxy web:8000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}
+
+{$MARKETING_DOMAIN} {
+	import security_headers
+
+	@app_routes path /login /logout /register /user-login /dashboard /pricing /billing* /profile* /companies* /vacancies* /sources* /campaigns* /candidates* /analytics* /connect* /creatives* /prospecting* /demo* /api/*
+	redir @app_routes https://{$APP_DOMAIN}{uri} 302
+
+	reverse_proxy web:8000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}
+
+{$APP_DOMAIN} {
+	import app_proxy
+
+	@root path /
+	redir @root /login 302
 }

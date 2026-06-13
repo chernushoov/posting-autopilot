@@ -1,9 +1,11 @@
 # Launch Status Snapshot
 
-Generated at: 2026-04-01T05:37:59.975998+00:00
+Generated at: 2026-06-03T21:50:07.967477+00:00
 
-- Launch readiness status: needs_input
+- Launch readiness status: blocked
 - Missing intake fields: 10
+- Launch blockers: 1
+- Live launch gate: blocked
 - First-wave sources selected: 4
 - First-wave sources posted: 0
 - Posts sent logged: 0
@@ -12,3 +14,4 @@ Generated at: 2026-04-01T05:37:59.975998+00:00
 - Telegram token valid: True
 - Telegram reserved for other runtime: False
 - Telegram username: AutopillotRecruit_bot
+- Top blocker: RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)

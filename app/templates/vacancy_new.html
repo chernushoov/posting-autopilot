@@ -107,29 +107,56 @@
         <input name="whatsapp_number" id="f-whatsapp" value="{{ form_values.get('whatsapp_number', '') }}" placeholder="{{ ui('ph_whatsapp') }}">
       </div>
     </div>
-    <div class="grid2">
-      <div>
-        <label>{{ ui("apply_link") }}</label>
-        <input name="apply_url" value="{{ form_values.get('apply_url', '') }}" placeholder="https://...">
-        <div class="small muted" style="margin-top:6px">{{ ui('apply_link_helper') }}</div>
-      </div>
-      <div>
-        <label>{{ ui('photos_label') }}</label>
-        {% if existing_images %}
-        <div class="small muted" style="margin-bottom:6px">
-          {{ ui('photos_existing_count') }}: <b>{{ existing_images|length }}</b>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
-            {% for img in existing_images %}<span class="pill" style="font-size:11px;padding:2px 8px">{{ img.split('/')[-1][:24] }}</span>{% endfor %}
-          </div>
-          <label class="small" style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer">
-            <input type="checkbox" name="replace_photos">{{ ui('photos_replace_helper') }}
-          </label>
-        </div>
-        {% endif %}
-        <input type="file" name="images" accept="image/*" multiple style="font-size:13px">
-        <div class="small muted" style="margin-top:4px">{{ ui('photos_helper') }}</div>
-      </div>
+    <div>
+      <label>{{ ui("apply_link") }}</label>
+      <input name="apply_url" value="{{ form_values.get('apply_url', '') }}" placeholder="https://...">
+      <div class="small muted" style="margin-top:6px">{{ ui('apply_link_helper') }}</div>
     </div>
+
+    <!-- Listing photos: prominent, full-width — they go straight into the TG/FB post -->
+    <div class="card" style="margin-top:1.2rem;padding:1.1rem;border:1px solid var(--border-light)">
+      <label style="font-size:15px;font-weight:600;display:block;margin-bottom:2px">{{ ui('photos_label') }}</label>
+      <div class="small muted" style="margin-bottom:12px">{{ ui('photos_for_posts') }}</div>
+      {% if existing_images %}
+      <div class="small muted" style="margin-bottom:12px">
+        {{ ui('photos_existing_count') }}: <b>{{ existing_images|length }}</b>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          {% for img in existing_images %}<img src="/uploads/{{ img.split('/')[-1] }}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border-light)">{% endfor %}
+        </div>
+        <label class="small" style="display:flex;align-items:center;gap:6px;margin-top:10px;cursor:pointer">
+          <input type="checkbox" name="replace_photos">{{ ui('photos_replace_helper') }}
+        </label>
+      </div>
+      {% endif %}
+      <label for="vac-images" id="vac-drop" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px;border:2px dashed var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s">
+        <div style="font-weight:600">{{ ui('photos_drop') }}</div>
+        <div class="small muted">{{ ui('photos_helper') }}</div>
+        <input id="vac-images" type="file" name="images" accept="image/png,image/jpeg,image/webp" multiple style="display:none">
+      </label>
+      <div id="vac-images-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"></div>
+    </div>
+    <script>
+    (function(){
+      var inp=document.getElementById('vac-images');
+      var drop=document.getElementById('vac-drop');
+      var prev=document.getElementById('vac-images-preview');
+      if(!inp||!drop) return;
+      function render(){
+        prev.innerHTML='';
+        var files=inp.files||[];
+        for(var i=0;i<files.length;i++){
+          var im=document.createElement('img');
+          im.src=URL.createObjectURL(files[i]);
+          im.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border-light)';
+          prev.appendChild(im);
+        }
+      }
+      inp.addEventListener('change',render);
+      ['dragenter','dragover'].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='var(--accent)';drop.style.background='var(--accent-light)';});});
+      ['dragleave','drop'].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='var(--border)';drop.style.background='';});});
+      drop.addEventListener('drop',function(e){ if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){ inp.files=e.dataTransfer.files; render(); } });
+    })();
+    </script>
 
     <details class="card" style="margin-top:1.2rem;padding:1rem;" id="post-asset-override">
       <summary style="cursor:pointer;font-weight:600">{{ ui('wiz_post_text_override') }}</summary>

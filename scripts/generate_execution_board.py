@@ -43,6 +43,8 @@ def main() -> int:
     pipeline_live = [row for row in pipeline if (row.get("candidate_name") or "").strip()]
     shortlist_live = [row for row in shortlist if (row.get("candidate_name") or "").strip()]
     telegram = runtime.get("telegram", {})
+    blocked = readiness.get("blocked", []) or []
+    launch_gate = readiness.get("launch_gate", {}) or {}
 
     lines = [
         "# Execution Board",
@@ -51,6 +53,7 @@ def main() -> int:
         "",
         f"- Readiness status: {readiness.get('status', 'unknown')}",
         f"- Missing intake fields: {len(readiness.get('missing_fields', []) or [])}",
+        f"- Launch blockers: {len(blocked)}",
         f"- First-wave sources selected: {len(roster_selected)}",
         f"- Raw inbound responses logged: {len(raw_logged)}",
         f"- Candidates in pipeline: {len(pipeline_live)}",
@@ -59,6 +62,11 @@ def main() -> int:
         f"- Telegram reserved for other runtime: {telegram.get('reserved_for_other_runtime')}",
         "",
     ]
+    if launch_gate:
+        lines.append(f"- Live launch gate: {launch_gate.get('status', 'unknown')}")
+    if blocked:
+        lines.append(f"- Top blocker: {blocked[0]}")
+        lines.append("")
 
     GENERATED.mkdir(parents=True, exist_ok=True)
     out_path = GENERATED / "execution_board.md"

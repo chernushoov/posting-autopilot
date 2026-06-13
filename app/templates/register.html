@@ -2,19 +2,23 @@
 {% block content %}
 <div style="max-width:400px;margin:40px auto">
   <h1>{{ ui("reg_title") }}</h1>
-  <p style="color:var(--muted);margin-bottom:1.5rem">{{ ui("reg_subtitle") }}</p>
+  <p style="color:var(--muted);margin-bottom:1.5rem">{{ ui("reg_invite_note") if invite_required else ui("reg_subtitle", days=trial_days) }}</p>
   {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
   <form method="post" class="card" style="padding:1.5rem">
+    {% if invite_required %}
+    <label>{{ ui("reg_invite_label") }}</label>
+    <input name="invite_code" required placeholder="{{ ui('reg_invite_ph') }}" value="{{ request.form.get('invite_code','') }}">
+    {% endif %}
     <label>{{ ui("email_label") }}</label>
-    <input name="email" type="email" required placeholder="you@company.com">
+    <input name="email" type="email" required placeholder="you@company.com" value="{{ request.form.get('email','') }}">
     <label>{{ ui("reg_password") }}</label>
     <input name="password" type="password" required minlength="6" placeholder="{{ ui('reg_password_hint') }}">
     <label>{{ ui("reg_company") }}</label>
-    <input name="company_name" required placeholder="{{ ui('reg_company_ph') }}">
+    <input name="company_name" required placeholder="{{ ui('reg_company_ph') }}" value="{{ request.form.get('company_name','') }}">
     <button class="btn" type="submit" style="width:100%;margin-top:1rem">{{ ui("reg_start_trial") }}</button>
   </form>
   <p style="text-align:center;margin-top:1rem;color:var(--muted)">
-    {{ ui("reg_have_account") }} <a href="/login">{{ ui("reg_signin") }}</a>
+    {{ ui("reg_have_account") }} <a href="{{ public_login_url }}">{{ ui("reg_signin") }}</a>
   </p>
 </div>
 {% endblock %}

@@ -48,11 +48,15 @@ def main() -> int:
     responses = sum(int(float((row.get("responses_received") or "0") or 0)) for row in metrics if (row.get("responses_received") or "").strip())
 
     telegram = runtime.get("telegram", {})
+    blocked = readiness.get("blocked", []) or []
+    launch_gate = readiness.get("launch_gate", {}) or {}
     snapshot = (
         "# Launch Status Snapshot\n\n"
         f"Generated at: {utc_now()}\n\n"
         f"- Launch readiness status: {readiness.get('status', 'unknown')}\n"
         f"- Missing intake fields: {len(readiness.get('missing_fields', []) or [])}\n"
+        f"- Launch blockers: {len(blocked)}\n"
+        f"- Live launch gate: {launch_gate.get('status', 'unknown')}\n"
         f"- First-wave sources selected: {len(ready_sources)}\n"
         f"- First-wave sources posted: {len(posted_sources)}\n"
         f"- Posts sent logged: {posts_sent}\n"
@@ -62,6 +66,8 @@ def main() -> int:
         f"- Telegram reserved for other runtime: {telegram.get('reserved_for_other_runtime')}\n"
         f"- Telegram username: {(telegram.get('bot_identity') or {}).get('username') if telegram else None}\n"
     )
+    if blocked:
+        snapshot += f"- Top blocker: {blocked[0]}\n"
     GENERATED.mkdir(parents=True, exist_ok=True)
     out_path = GENERATED / "launch_status_snapshot.md"
     out_path.write_text(snapshot, encoding="utf-8")

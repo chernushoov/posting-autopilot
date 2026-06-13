@@ -1,6 +1,10 @@
 """Company/Individual profile — view and edit current account."""
 from flask import Blueprint, render_template, request, redirect, url_for, session
 import re
+from pathlib import Path
+from uuid import uuid4
+
+from werkzeug.utils import secure_filename
 
 from ..auth import require_company
 from ..db import db_session
@@ -10,6 +14,26 @@ from ..tenant import current_company_id
 bp = Blueprint("profile", __name__, url_prefix="/profile")
 
 CHAT_ID_RE = re.compile(r"^-?\d+$")
+
+UPLOAD_DIR = Path(__file__).resolve().parents[2] / "data" / "uploads"
+_ALLOWED_IMG_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+
+
+def _save_logo(file_storage) -> str | None:
+    """Save an uploaded company logo and return its filesystem path (or None).
+
+    Mirrors the vacancy image upload: validates the extension, gives the file a
+    random name, and drops it in data/uploads (served via /uploads/<basename>).
+    """
+    if not file_storage or not (file_storage.filename or "").strip():
+        return None
+    ext = Path(secure_filename(file_storage.filename or "")).suffix.lower()
+    if ext not in _ALLOWED_IMG_EXT:
+        raise ValueError("Only JPG, PNG, and WebP logo uploads are allowed.")
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    save_path = UPLOAD_DIR / f"logo_{uuid4().hex}{ext}"
+    file_storage.save(save_path)
+    return str(save_path)
 
 
 @bp.get("/")
@@ -51,6 +75,17 @@ def update_profile():
     company.website = request.form.get("website", "").strip() or None
     company.logo_emoji = request.form.get("logo_emoji", "").strip() or None
     company.owner_telegram_id = raw_owner_telegram_id or None
+
+    # Company logo: upload a new image, or tick "remove" to clear it.
+    if request.form.get("remove_logo"):
+        company.logo_path = None
+    else:
+        try:
+            saved_logo = _save_logo(request.files.get("logo"))
+        except ValueError as exc:
+            return render_template("profile.html", c=company, error=str(exc))
+        if saved_logo:
+            company.logo_path = saved_logo
 
     db.commit()
     db.close()

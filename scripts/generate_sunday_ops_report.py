@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,6 +12,7 @@ OPS_DIR = ROOT / "ops" / "live_vacancy_4_hires"
 PILOT_METRICS = OPS_DIR / "pilot_metrics.csv"
 CANDIDATE_PIPELINE = OPS_DIR / "candidate_pipeline.csv"
 SOURCE_ROSTER = OPS_DIR / "first_wave_source_roster.csv"
+READINESS = OPS_DIR / "generated" / "launch_readiness.json"
 OUT_DIR = OPS_DIR / "generated"
 
 
@@ -35,6 +37,13 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def load_json(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
 def nonempty(values: list[str]) -> list[str]:
     seen: set[str] = set()
     ordered: list[str] = []
@@ -51,6 +60,7 @@ def build_report() -> str:
     metric_rows = read_csv(PILOT_METRICS)
     candidate_rows = read_csv(CANDIDATE_PIPELINE)
     source_rows = read_csv(SOURCE_ROSTER)
+    readiness = load_json(READINESS)
 
     totals = {
         "posts_sent": 0,
@@ -74,11 +84,19 @@ def build_report() -> str:
         row for row in candidate_rows
         if (row.get("current_status") or "").strip().lower() in {"qualified", "interview_requested", "interview_scheduled", "passed", "hired"}
     ]
+    blocked = readiness.get("blocked", []) or []
+    launch_gate = readiness.get("launch_gate", {}) or {}
 
     lines = [
         "# Sunday Ops Report",
         "",
         f"Generated at: {utc_now()}",
+        "",
+        "## Launch Truth",
+        f"- Launch readiness status: {readiness.get('status', 'unknown')}",
+        f"- Live launch gate: {launch_gate.get('status', 'unknown')}",
+        f"- Launch blockers: {len(blocked)}",
+        f"- Top blocker: {blocked[0] if blocked else 'none'}",
         "",
         "## Totals",
         f"- Posts sent: {totals['posts_sent']}",

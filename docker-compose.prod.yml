@@ -1,54 +1,60 @@
 # Production overlay.
-# Run: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-# Hardens the dev compose: real restart policies, no source bind-mount (uses the
-# baked image), Postgres not exposed to the host, env-driven DB password, and a
-# Caddy reverse proxy that terminates HTTPS with automatic Let's Encrypt certs.
+# Run:
+#   APP_ENV_FILE=.env.prod APP_RUNTIME_ENV_FILE=.env.runtime \
+#   docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 services:
   postgres:
     restart: unless-stopped
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ra
     ports: []
 
   redis:
     restart: unless-stopped
+    ports: []
 
   web:
     restart: unless-stopped
-    volumes:
-      - ra_data:/app/data
-    ports: []
+    environment:
+      APP_ENV: production
+    command:
+      [
+        "bash",
+        "-lc",
+        "gunicorn --workers ${WEB_CONCURRENCY:-2} --threads ${WEB_THREADS:-4} --bind 0.0.0.0:8000 'app.factory:create_app()'",
+      ]
     expose:
       - "8000"
+    ports: []
 
   worker:
     restart: unless-stopped
-    volumes:
-      - ra_data:/app/data
+    environment:
+      APP_ENV: production
 
   scheduler:
     restart: unless-stopped
-    volumes:
-      - ra_data:/app/data
+    environment:
+      APP_ENV: production
 
   bot:
     restart: unless-stopped
-    volumes:
-      - ra_data:/app/data
+    environment:
+      APP_ENV: production
 
   listener:
     restart: unless-stopped
-    volumes:
-      - ra_data:/app/data
+    environment:
+      APP_ENV: production
 
   caddy:
     image: caddy:2
     restart: unless-stopped
     depends_on:
-      - web
+      web:
+        condition: service_healthy
     environment:
-      DOMAIN: ${DOMAIN:?set DOMAIN (e.g. app.example.com) in .env}
+      MARKETING_DOMAIN: ${MARKETING_DOMAIN:?set MARKETING_DOMAIN in .env.prod}
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env.prod}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-}
     ports:
       - "80:80"
       - "443:443"
@@ -56,8 +62,15 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - recruit_net
+    healthcheck:
+      test: ["CMD-SHELL", "caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
 volumes:
   caddy_data:
   caddy_config:
-  ra_data:

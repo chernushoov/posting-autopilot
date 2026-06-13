@@ -27,6 +27,8 @@ class Config:
 
     DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ra.db")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    PUBLIC_MARKETING_URL = os.getenv("PUBLIC_MARKETING_URL", "").strip().rstrip("/")
+    PUBLIC_APP_URL = os.getenv("PUBLIC_APP_URL", "").strip().rstrip("/")
 
     TELEGRAM_BOT_TOKEN = get_recruitbot_token()
     AI_PROVIDER = get_ai_provider()
@@ -51,3 +53,18 @@ class Config:
     @classmethod
     def session_cookie_secure(cls) -> bool:
         return _truthy_env("FORCE_HTTPS") or cls.APP_ENV in {"prod", "production", "staging"}
+
+    @classmethod
+    def trial_days(cls) -> int:
+        raw = (os.getenv("TRIAL_DAYS") or "3").strip()
+        try:
+            value = int(raw)
+        except ValueError:
+            raise RuntimeError("TRIAL_DAYS must be an integer")
+        if value <= 0:
+            raise RuntimeError("TRIAL_DAYS must be greater than 0")
+        return value
+
+    @classmethod
+    def billing_enabled(cls) -> bool:
+        return _truthy_env("BILLING_ENABLED")

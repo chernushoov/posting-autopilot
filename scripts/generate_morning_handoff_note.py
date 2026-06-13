@@ -28,6 +28,8 @@ def main() -> int:
     readiness = load_json(READINESS)
     missing = readiness.get("missing_fields", []) or []
     generated_files = readiness.get("generated_files", []) or []
+    blocked = readiness.get("blocked", []) or []
+    launch_gate = readiness.get("launch_gate", {}) or {}
 
     note = [
         "# Morning Handoff Note",
@@ -36,12 +38,21 @@ def main() -> int:
         "",
         "## Current state",
         f"- Launch readiness status: {readiness.get('status', 'unknown')}",
+        f"- Live launch gate: {launch_gate.get('status', 'unknown')}",
         f"- Generated files: {', '.join(generated_files) if generated_files else 'none'}",
         "",
         "## Still needed before clean launch",
     ]
     if missing:
         note.extend(f"- {item}" for item in missing)
+    else:
+        note.append("- none")
+    note.extend([
+        "",
+        "## Current blockers",
+    ])
+    if blocked:
+        note.extend(f"- {item}" for item in blocked)
     else:
         note.append("- none")
     note.extend([

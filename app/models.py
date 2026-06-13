@@ -138,7 +138,8 @@ class Company(Base):
     phone = Column(String(30), nullable=True)
     email = Column(String(300), nullable=True)
     website = Column(String(500), nullable=True)
-    logo_emoji = Column(String(10), nullable=True)  # simple emoji avatar
+    logo_emoji = Column(String(10), nullable=True)  # simple emoji avatar (fallback)
+    logo_path = Column(String(500), nullable=True)  # uploaded company logo (served via /uploads/<basename>)
     owner_telegram_id = Column(String(64), nullable=True)  # explicit notify target for HOT lead alerts
 
     # AI settings
@@ -575,4 +576,18 @@ class OutreachAttempt(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     prospect = relationship("Prospect", back_populates="outreach_attempts")
+    company = relationship("Company")
+
+
+class Creative(Base):
+    """A reusable brand asset (banner, poster, logo, photo) the company uploads
+    once and reuses across Telegram/Facebook posts. Served via /uploads/<basename>."""
+    __tablename__ = "creatives"
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    kind = Column(String(20), nullable=False, default="banner")  # banner | poster | logo | photo
+    title = Column(String(200), nullable=True)
+    file_path = Column(String(500), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
     company = relationship("Company")

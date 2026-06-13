@@ -1,6 +1,12 @@
 # Sunday Ops Report
 
-Generated at: 2026-04-01T07:18:28.100695+00:00
+Generated at: 2026-06-03T13:07:29.398341+00:00
+
+## Launch Truth
+- Launch readiness status: blocked
+- Live launch gate: blocked
+- Launch blockers: 1
+- Top blocker: RecruitBot production deployment disabled on Vercel (DEPLOYMENT_DISABLED / Payment required)
 
 ## Totals
 - Posts sent: 0

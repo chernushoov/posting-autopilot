@@ -30,6 +30,7 @@ from datetime import datetime
 
 from app.db import db_session
 from app.models import Candidate, CandidateStatus, Company, PostingAttempt, Source, Vacancy
+from common.env_guard import validate_runtime_environment
 from common.tg_client import _session_path
 
 logger = logging.getLogger("tg_listener")
@@ -231,6 +232,7 @@ async def _main_async() -> None:
 
 
 def main() -> None:
+    validate_runtime_environment("listener")
     asyncio.run(_main_async())
 
 
