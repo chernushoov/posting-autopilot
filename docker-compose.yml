@@ -75,7 +75,7 @@ services:
     volumes:
       - ra_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "python scripts/service_healthcheck.py web"]
+      test: ["CMD-SHELL", "python -m scripts.service_healthcheck web"]
       interval: 15s
       timeout: 10s
       retries: 12
@@ -92,7 +92,7 @@ services:
     volumes:
       - ra_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "python scripts/service_healthcheck.py worker"]
+      test: ["CMD-SHELL", "python -m scripts.service_healthcheck worker"]
       interval: 20s
       timeout: 10s
       retries: 12
@@ -109,7 +109,7 @@ services:
     volumes:
       - ra_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "python scripts/service_healthcheck.py scheduler"]
+      test: ["CMD-SHELL", "python -m scripts.service_healthcheck scheduler"]
       interval: 20s
       timeout: 10s
       retries: 12
@@ -129,7 +129,7 @@ services:
     volumes:
       - ra_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "python scripts/service_healthcheck.py bot"]
+      test: ["CMD-SHELL", "python -m scripts.service_healthcheck bot"]
       interval: 20s
       timeout: 10s
       retries: 12
@@ -147,7 +147,7 @@ services:
     volumes:
       - ra_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "python scripts/service_healthcheck.py listener"]
+      test: ["CMD-SHELL", "python -m scripts.service_healthcheck listener"]
       interval: 20s
       timeout: 10s
       retries: 12
