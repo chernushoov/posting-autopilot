@@ -1,108 +1,167 @@
 {% extends "_layout.html" %}
 {% block content %}
 {% set focus_source = request.args.get('focus_source', '') %}
-<div class="row">
-  <h1>{{ ui("destinations_title") }}</h1>
-</div>
+<style>
+  .sources-page{max-width:1080px;margin:0 auto 56px}
+  .sources-rules{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:14px;margin-bottom:16px}
+  .source-form{margin-bottom:18px}
+  .dest-list{display:flex;flex-direction:column;gap:10px}
+  .dest-card{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(170px,.55fr) minmax(230px,.75fr);gap:18px;align-items:center;padding:16px 18px;border:1px solid var(--border-light);background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .dest-card.focus-row{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+  .dest-main{min-width:0}
+  .dest-title{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:5px}
+  .dest-title strong{font-size:15px;overflow-wrap:anywhere}
+  .platform-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;background:var(--bg);color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .platform-chip.facebook{background:#eef4ff;color:#1764cc}
+  .platform-chip.telegram{background:#eef7ff;color:var(--accent)}
+  .dest-address{font-size:12px;color:var(--muted);line-height:1.35;display:flex;flex-direction:column;gap:3px}
+  .dest-address a,.dest-address span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dest-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .dest-status{min-width:0}
+  .dest-status .status-note{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35;overflow-wrap:anywhere}
+  .dest-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;align-items:center}
+  .dest-actions .inline-action-form{display:inline-flex}
+  .dest-actions .test-action-form{display:flex;gap:8px;justify-content:flex-end}
+  .dest-actions .live-send-check{max-width:160px}
+  .empty-dest{padding:28px;border:1px dashed var(--border);border-radius:var(--radius);text-align:center;color:var(--muted);background:var(--card)}
+  @media(max-width:900px){.sources-rules{grid-template-columns:1fr}.dest-card{grid-template-columns:1fr;align-items:start}.dest-actions{justify-content:flex-start}.dest-address a,.dest-address span{white-space:normal}}
+</style>
 
-<div class="card" style="margin-bottom:16px">
-  <h2 style="margin-top:0">Pilot Destination Rules</h2>
-  <div class="grid3">
+<div class="sources-page">
+  <div class="page-hero">
+    <div>
+      <h1>{{ ui("destinations_title") }}</h1>
+      <p class="muted small">Telegram работает в авто-режиме после READY. Facebook в пилоте остаётся assisted/manual с прямой ссылкой.</p>
+    </div>
+  </div>
+
+  {% if source_summary.telegram_total and not telegram_status.ok %}
+  <div class="alert error">Telegram is not ready: {{ telegram_status.message }}</div>
+  {% endif %}
+  {% if not queue_status.ok %}
+  <div class="alert error">{{ queue_status.message }} Start Redis/worker before running checks or test messages.</div>
+  {% endif %}
+
+  <div class="sources-rules">
     <div class="card card-flat">
       <div class="eyebrow">Telegram</div>
       <div style="font-size:28px;font-weight:700">{{ source_summary.telegram_ready }}/{{ source_summary.telegram_total }}</div>
-      <div class="small muted">ready for auto posting · {{ source_summary.telegram_needs_check }} still need check</div>
+      <div class="small muted">готовы для автопостинга · {{ source_summary.telegram_needs_check }} ждут проверки</div>
     </div>
     <div class="card card-flat">
       <div class="eyebrow">Facebook</div>
       <div style="font-size:28px;font-weight:700">{{ source_summary.facebook_ready }}/{{ source_summary.facebook_total }}</div>
-      <div class="small muted">manual destinations with direct URL · {{ source_summary.facebook_missing_url }} missing URL</div>
+      <div class="small muted">manual-каналы с прямой ссылкой · {{ source_summary.facebook_missing_url }} без URL</div>
     </div>
     <div class="card card-flat">
-      <div class="eyebrow">Operator rule</div>
-      <div class="small muted" style="margin-top:8px">Telegram may auto-post only after READY. Facebook must be prepared here and confirmed later in Pilot Runs.</div>
+      <div class="eyebrow">Правило пилота</div>
+      <div class="small muted">Публикуем только туда, где понятно: платформа, адрес, режим и готовность. Всё спорное остаётся на ручное подтверждение.</div>
       {% if source_summary.telegram_needs_check > 0 %}
       <form method="post" action="/sources/check-all" style="margin-top:10px">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="pill" type="submit" style="width:100%">▶ Check {{ source_summary.telegram_needs_check }} pending Telegram destinations</button>
+        <button class="pill" type="submit" style="width:100%" {% if not queue_status.ok or not telegram_status.ok %}disabled title="{{ queue_status.message if not queue_status.ok else telegram_status.message }}"{% endif %}>Проверить {{ source_summary.telegram_needs_check }} Telegram-каналов</button>
       </form>
       {% endif %}
     </div>
   </div>
-</div>
 
-<form method="post" action="/sources/new" class="card">
-  <div class="grid2">
-    <div>
-      <label>{{ ui("platform") }}</label>
-      <select name="platform">
-        {% for platform in platforms %}<option value="{{ platform }}">{{ platform }}</option>{% endfor %}
-      </select>
+  <form method="post" action="/sources/new" class="card source-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="grid2">
+      <div>
+        <label>{{ ui("platform") }}</label>
+        <select name="platform">
+          {% for platform in platforms %}<option value="{{ platform }}">{{ platform }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ ui("dest_kind") }}</label>
+        <select name="destination_kind" id="destination-kind-select">
+          {% for kind in destination_kind_options %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
+        </select>
+      </div>
     </div>
-    <div>
-      <label>{{ ui("dest_kind") }}</label>
-      <select name="destination_kind" id="destination-kind-select">
-        {% for kind in destination_kind_options %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
-      </select>
+    <div class="grid2">
+      <div>
+        <label>{{ ui("dest_ref") }}</label>
+        <input name="tg_ref" placeholder="Telegram: @groupname or -100123... / Facebook: page or group name">
+      </div>
+      <div>
+        <label>{{ ui("posting_mode") }}</label>
+        <select name="posting_mode">
+          {% for mode in posting_modes %}<option value="{{ mode }}">{{ mode }}</option>{% endfor %}
+        </select>
+      </div>
     </div>
-  </div>
-  <div class="grid2">
-    <div>
-      <label>{{ ui("dest_ref") }}</label>
-      <input name="tg_ref" placeholder="Telegram: @groupname or -100123... / Facebook: page or group name">
-    </div>
-    <div>
-      <label>{{ ui("posting_mode") }}</label>
-      <select name="posting_mode">
-        {% for mode in posting_modes %}<option value="{{ mode }}">{{ mode }}</option>{% endfor %}
-      </select>
-    </div>
-  </div>
-  <label>{{ ui("label") }}</label>
-  <input name="label" placeholder="Optional label">
-  <label>{{ ui("dest_url") }}</label>
-  <input name="destination_url" placeholder="Optional direct URL, especially useful for Facebook manual posting">
-  <button class="btn" type="submit">{{ ui("add_dest_btn") }}</button>
-</form>
+    <label>{{ ui("label") }}</label>
+    <input name="label" placeholder="Понятное имя: Cleaning Tel Aviv, Builders Jobs Israel...">
+    <label>{{ ui("dest_url") }}</label>
+    <input name="destination_url" placeholder="https://facebook.com/groups/... или ссылка на страницу">
+    <button class="btn" type="submit">{{ ui("add_dest_btn") }}</button>
+  </form>
 
-<table class="table">
-  <tr><th>ID</th><th>{{ ui("platform") }}</th><th>{{ ui("dest_ref") }}</th><th>Mode</th><th>{{ ui("ready") }}</th><th>{{ ui("actions") }}</th></tr>
-  {% for s in sources %}
-  <tr id="source-{{ s.id }}" class="{% if focus_source == s.id|string %}focus-row{% endif %}">
-    <td>{{ s.id }}</td>
-    <td>{{ s.platform or "telegram" }}</td>
-    <td>
-      <strong>{{ s.label or s.tg_ref }}</strong>
-      <div class="small muted">{{ s.destination_kind or s.source_type.value }} · {{ s.destination_url or s.tg_ref }}</div>
-    </td>
-    <td>{{ s.posting_mode or "auto" }}</td>
-    <td>
-      {% if s.last_check_ok and s.last_check_message and "stub" in s.last_check_message %}
-        FORMAT ONLY
-      {% elif s.last_check_ok %}
-        READY
-      {% else %}
-        {{ ui("check_needed") }}
-      {% endif %}
-      {% if s.last_check_message %} · <span class="muted">{{ s.last_check_message }}</span>{% endif %}
-    </td>
-    <td class="actions">
-      <form method="post" action="/sources/check/{{ s.id }}" style="display:inline"><button class="pill" type="submit">{{ ui("check_btn") }}</button></form>
-      {% if (s.platform or "telegram") == "telegram" %}
-        <form method="post" action="/sources/test/{{ s.id }}" style="display:inline">
-          <label class="checkbox muted" style="display:inline-flex;gap:6px;align-items:center">
-            <input type="checkbox" name="confirm_live_send" value="yes">
-            {{ ui("confirm_live_send") }}
-          </label>
-          <button class="pill" type="submit">{{ ui("test_msg_btn") }}</button>
+  <div class="dest-list">
+    {% for s in sources %}
+    {% set source_platform = s.platform or "telegram" %}
+    {% set dest_value = s.destination_url or s.tg_ref %}
+    <div id="source-{{ s.id }}" class="dest-card {% if focus_source == s.id|string %}focus-row{% endif %}">
+      <div class="dest-main">
+        <div class="dest-title">
+          <span class="platform-chip {{ source_platform }}">{{ source_platform }}</span>
+          <strong>{{ s.label or s.tg_ref }}</strong>
+        </div>
+        <div class="dest-address">
+          <span>{{ s.destination_kind or s.source_type.value }} · {{ s.posting_mode or "auto" }}</span>
+          {% if dest_value and dest_value.startswith('http') %}
+            <a href="{{ dest_value }}" target="_blank" rel="noopener">{{ dest_value }}</a>
+          {% else %}
+            <span>{{ dest_value }}</span>
+          {% endif %}
+        </div>
+        <div class="dest-meta">
+          <span class="badge">ID {{ s.id }}</span>
+          {% if s.folder %}<span class="badge">{{ s.folder }}</span>{% endif %}
+          {% if s.last_post_at %}<span class="badge">last post {{ s.last_post_at.strftime('%d.%m %H:%M') }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="dest-status">
+        {% if source_platform == "telegram" and not telegram_status.ok %}
+          <span class="status status-failed">not connected</span>
+        {% elif s.last_check_ok and s.last_check_message and "stub" in s.last_check_message %}
+          <span class="status status-scheduled">format only</span>
+        {% elif s.last_check_ok %}
+          <span class="status status-posted">ready</span>
+        {% else %}
+          <span class="status status-pending">{{ ui("check_needed") }}</span>
+        {% endif %}
+        {% if s.last_check_message %}<div class="status-note">{{ s.last_check_message }}</div>{% endif %}
+      </div>
+
+      <div class="dest-actions">
+        <form method="post" action="/sources/check/{{ s.id }}" class="inline-action-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="pill" type="submit" {% if source_platform == "telegram" and (not queue_status.ok or not telegram_status.ok) %}disabled title="{{ queue_status.message if not queue_status.ok else telegram_status.message }}"{% endif %}>{{ ui("check_btn") }}</button>
         </form>
-      {% else %}
-        <span class="small muted">Use assisted/manual flow in Pilot Runs.</span>
-      {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+        {% if source_platform == "telegram" %}
+          <form method="post" action="/sources/test/{{ s.id }}" class="inline-action-form test-action-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="checkbox muted live-send-check">
+              <input type="checkbox" name="confirm_live_send" value="yes">
+              {{ ui("confirm_live_send") }}
+            </label>
+            <button class="pill" type="submit" {% if not queue_status.ok or not telegram_status.ok %}disabled title="{{ queue_status.message if not queue_status.ok else telegram_status.message }}"{% endif %}>{{ ui("test_msg_btn") }}</button>
+          </form>
+        {% else %}
+          <span class="small muted">Assisted/manual в кампании</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-dest">Каналы ещё не добавлены. Добавь Telegram-группу или Facebook-ссылку выше.</div>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}
 {% block scripts %}
 <script>

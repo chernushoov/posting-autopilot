@@ -139,6 +139,13 @@ class Company(Base):
     email = Column(String(300), nullable=True)
     website = Column(String(500), nullable=True)
     logo_emoji = Column(String(10), nullable=True)  # simple emoji avatar
+    logo_path = Column(String(500), nullable=True)
+    service_area = Column(String(300), nullable=True)
+    specialties = Column(Text, nullable=True)
+    proof_points = Column(Text, nullable=True)
+    documents_text = Column(Text, nullable=True)
+    education_text = Column(Text, nullable=True)
+    ai_context = Column(Text, nullable=True)
     owner_telegram_id = Column(String(64), nullable=True)  # explicit notify target for HOT lead alerts
 
     # AI settings

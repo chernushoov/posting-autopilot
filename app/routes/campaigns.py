@@ -123,6 +123,16 @@ def _count_eligible_sources(sources):
     return sum(1 for source in sources if _is_source_pilot_ready(source))
 
 
+def _format_campaign_window(campaign: Campaign) -> str:
+    try:
+        hours = json.loads(campaign.active_hours_json or "{}")
+        start = int(hours.get("start", 9))
+        end = int(hours.get("end", 19))
+        return f"{start:02d}:00-{end:02d}:00"
+    except Exception:
+        return "09:00-19:00"
+
+
 @bp.get("/")
 @require_company
 def list_campaigns():
@@ -144,22 +154,28 @@ def list_campaigns():
     )
     attempt_summary = _build_attempt_summary(recent_attempts)
     destination_summary = _build_destination_summary(all_active_sources)
-    pilot_checklist = [
-        "Confirm the vacancy asset text, salary, contact, and apply path.",
-        "Use only Telegram destinations marked READY for auto posting.",
-        "Use Facebook only through assisted/manual posting with a direct destination URL.",
-        "Run the pilot and then resolve every manual_action_required row before leaving the screen.",
-        "Record operator notes on every failed or blocked_or_suspected destination.",
-    ]
+    campaign_cards = []
+    for campaign in campaigns:
+        linked_sources = list(campaign.sources or [])
+        campaign_cards.append({
+            "id": campaign.id,
+            "name": campaign.name or f"Campaign #{campaign.id}",
+            "vacancy_id": campaign.vacancy_id,
+            "vacancy_title": campaign.vacancy.title if campaign.vacancy else f"Listing #{campaign.vacancy_id}",
+            "interval": campaign.interval_minutes,
+            "window": _format_campaign_window(campaign),
+            "sources_count": len(linked_sources),
+            "is_running": campaign.is_running,
+        })
     db.close()
     return render_template(
         "campaigns.html",
         campaigns=campaigns,
+        campaign_cards=campaign_cards,
         recent_attempts=recent_attempts,
         open_manual_attempts=open_manual_attempts,
         attempt_summary=attempt_summary,
         destination_summary=destination_summary,
-        pilot_checklist=pilot_checklist,
         error=request.args.get("error"),
         message=request.args.get("message"),
     )

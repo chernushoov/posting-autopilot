@@ -1,7 +1,9 @@
 import time
 import secrets
+import re
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from common.i18n import ui
 from ..auth import admin_login_ok
 from ..db import db_session
 from ..models import Company, User
@@ -14,6 +16,21 @@ from common.connection_flows import (
 from common.passwords import hash_password, verify_password
 
 bp = Blueprint("auth", __name__)
+
+
+def _normalize_telegram_phone(phone: str) -> str:
+    phone = (phone or "").strip()
+    phone = re.sub(r"[^\d+]", "", phone)
+    if phone.startswith("00"):
+        phone = "+" + phone[2:]
+    if phone.startswith("+"):
+        return "+" + re.sub(r"\D", "", phone[1:])
+    return re.sub(r"\D", "", phone)
+
+
+def _telegram_phone_ok(phone: str) -> bool:
+    return bool(re.fullmatch(r"\+\d{8,15}", phone or ""))
+
 
 @bp.get("/")
 def index():
@@ -306,10 +323,12 @@ def tg_send_code():
     company_id = session.get("current_company_id")
     api_id = request.form.get("api_id", "").strip()
     api_hash = request.form.get("api_hash", "").strip()
-    phone = request.form.get("phone", "").strip()
+    phone = _normalize_telegram_phone(request.form.get("phone", ""))
 
     if not api_id or not api_hash or not phone:
         return redirect(url_for("auth.connect_telegram", error="All fields required"))
+    if not _telegram_phone_ok(phone):
+        return redirect(url_for("auth.connect_telegram", error=ui("tg_phone_invalid_format", session.get("ui_lang", "he"))))
 
     try:
         from common.tg_client import send_code

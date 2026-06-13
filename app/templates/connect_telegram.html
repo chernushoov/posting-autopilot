@@ -29,6 +29,12 @@
   .sort-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
   .sort-btn{font-size:11px;padding:4px 12px;border-radius:999px;cursor:pointer;background:var(--bg);border:1px solid var(--border-light);color:var(--muted);transition:all .15s}
   .sort-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .phone-tools{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px}
+  .phone-tools button{padding:5px 10px;font-size:11px}
+  .phone-helper{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:11px;color:var(--muted);line-height:1.35}
+  .phone-helper strong{color:var(--fg);font-weight:600}
+  .phone-helper.error{color:var(--danger)}
+  @media(max-width:520px){.phone-helper{flex-direction:column;gap:4px}.phone-tools button{flex:1 1 auto}}
   @media(max-width:768px){.tg-layout{grid-template-columns:1fr}.tg-sidebar{position:static}}
 </style>
 
@@ -69,13 +75,33 @@
   <p class="muted" style="margin-bottom:24px">{{ ui("tg_connect_desc") }}</p>
   <div class="card">
     <div class="eyebrow">{{ ui("tg_credentials") }}</div>
-    <p class="small muted" style="margin-bottom:16px">{{ ui("tg_credentials_desc") }}</p>
+    <p class="small muted" style="margin-bottom:10px">
+      {{ ui("tg_credentials_desc") }}
+      <a href="https://my.telegram.org/apps" target="_blank" rel="noopener noreferrer">my.telegram.org/apps</a>
+    </p>
+    <a class="pill" href="https://my.telegram.org/apps" target="_blank" rel="noopener noreferrer" style="margin-bottom:16px;align-self:flex-start">
+      {{ ui("tg_open_api_tools") }}
+    </a>
     <form method="post" action="/connect/telegram/send-code" class="stack">
       <div class="grid2">
         <div><label>API ID</label><input name="api_id" type="number" value="{{ tg_api_id or '' }}" required></div>
         <div><label>API Hash</label><input name="api_hash" value="{{ tg_api_hash or '' }}" required></div>
       </div>
-      <div><label>{{ ui("tg_phone") }}</label><input name="phone" type="tel" placeholder="+972..." value="{{ tg_phone or '' }}" required></div>
+      <div class="phone-field">
+        <label>{{ ui("tg_phone") }}</label>
+        <div class="phone-tools" aria-label="{{ ui('tg_phone') }}">
+          <button class="pill" type="button" data-phone-prefix="+972">{{ ui("tg_country_israel") }}</button>
+          <button class="pill" type="button" data-phone-prefix="+1">{{ ui("tg_country_usa") }}</button>
+          <button class="pill" type="button" data-phone-prefix="+7">{{ ui("tg_country_ru") }}</button>
+          <button class="pill" type="button" data-phone-prefix="+">{{ ui("tg_country_other") }}</button>
+        </div>
+        <input id="tg-phone-input" name="phone" type="tel" inputmode="tel" autocomplete="tel"
+               placeholder="+972551234567" value="{{ tg_phone or '+972' }}" pattern="^\+[0-9]{8,15}$" required>
+        <div id="tg-phone-helper" class="phone-helper">
+          <span>{{ ui("tg_phone_hint") }}</span>
+          <span>{{ ui("tg_phone_preview") }}: <strong id="tg-phone-preview">+972</strong></span>
+        </div>
+      </div>
       <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>
     </form>
   </div>
@@ -286,5 +312,46 @@
 })();
 window.updateHours=function(){var s=document.querySelector('[name=active_start]'),e=document.querySelector('[name=active_end]'),l=document.getElementById('hours-val');if(s&&e&&l)l.textContent=String(s.value).padStart(2,'0')+':00 - '+String(e.value).padStart(2,'0')+':00'};
 window.sortG=function(by){var l=document.getElementById('gl');if(!l)return;var it=Array.from(l.children);it.sort(function(a,b){if(by==='members')return(parseInt(b.dataset.members)||0)-(parseInt(a.dataset.members)||0);return(a.dataset.name||'').localeCompare(b.dataset.name||'')});it.forEach(function(i){l.appendChild(i)})};
+(function(){
+  var input=document.getElementById('tg-phone-input');
+  if(!input)return;
+  var helper=document.getElementById('tg-phone-helper');
+  var preview=document.getElementById('tg-phone-preview');
+  var form=input.closest('form');
+  function clean(v){
+    v=(v||'').trim().replace(/[\s().-]/g,'');
+    if(v.indexOf('00')===0)v='+'+v.slice(2);
+    if(v.charAt(0)==='+')return '+'+v.slice(1).replace(/\D/g,'');
+    return v.replace(/\D/g,'');
+  }
+  function removeCountryPrefix(v){
+    if(v.indexOf('+972')===0)return v.slice(4);
+    if(v.indexOf('+1')===0)return v.slice(2);
+    if(v.indexOf('+7')===0)return v.slice(2);
+    if(v.charAt(0)==='+')return v.slice(1).replace(/^\d{1,3}/,'');
+    return v.replace(/^0+/,'');
+  }
+  function update(){
+    var v=clean(input.value);
+    if(input.value!==v)input.value=v;
+    if(preview)preview.textContent=v||'+';
+    var ok=/^\+\d{8,15}$/.test(v);
+    if(helper)helper.classList.toggle('error', Boolean(v)&&!ok);
+    input.setCustomValidity((v&&!ok)?'{{ ui("tg_phone_invalid_format") }}':'');
+  }
+  document.querySelectorAll('[data-phone-prefix]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var prefix=btn.getAttribute('data-phone-prefix')||'+';
+      var local=removeCountryPrefix(clean(input.value));
+      input.value=prefix+local;
+      input.focus();
+      update();
+    });
+  });
+  input.addEventListener('input',update);
+  input.addEventListener('blur',update);
+  if(form)form.addEventListener('submit',update);
+  update();
+})();
 </script>
 {% endblock %}

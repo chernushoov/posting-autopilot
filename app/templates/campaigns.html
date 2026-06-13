@@ -1,142 +1,167 @@
 {% extends "_layout.html" %}
 {% block content %}
 {% set focus_attempt = request.args.get('focus_attempt', '') %}
-<div class="row">
-  <h1>{{ ui("campaigns_title") }}</h1>
-  <a class="btn" href="/campaigns/new">{{ ui("new_campaign") }}</a>
-</div>
+<style>
+  .campaign-page{max-width:1080px;margin:0 auto 56px}
+  .campaign-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+  .summary-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .summary-chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border-light);background:var(--card);border-radius:999px;padding:7px 11px;font-size:12px;color:var(--muted)}
+  .summary-chip strong{color:var(--fg)}
+  .campaign-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:18px}
+  .campaign-card{border:1px solid var(--border-light);background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .campaign-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .campaign-card h3{font-size:16px;overflow-wrap:anywhere}
+  .campaign-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .metric{background:var(--bg);border-radius:var(--radius-sm);padding:9px 10px}
+  .metric span{display:block;color:var(--muted);font-size:11px;margin-bottom:2px}
+  .metric strong{font-size:13px}
+  .event-list{display:flex;flex-direction:column;gap:10px}
+  .event-card{display:grid;grid-template-columns:150px minmax(0,1fr) 150px;gap:16px;align-items:start;border:1px solid var(--border-light);background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+  .event-card.focus-row{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+  .event-time{font-size:12px;color:var(--muted);line-height:1.35}
+  .event-main{min-width:0}
+  .event-title{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+  .event-title strong{overflow-wrap:anywhere}
+  .event-ref{font-size:12px;color:var(--muted);line-height:1.35;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .event-copy{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.45}
+  .event-side{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+  .manual-card{border-color:rgba(0,113,227,.2);background:linear-gradient(0deg,#fff,#fff),var(--accent-light)}
+  .manual-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .empty-log{padding:28px;border:1px dashed var(--border);border-radius:var(--radius);text-align:center;color:var(--muted);background:var(--card)}
+  @media(max-width:760px){.campaign-hero{flex-direction:column}.event-card{grid-template-columns:1fr}.event-ref{white-space:normal}.campaign-meta{grid-template-columns:1fr}}
+</style>
 
-{% if night_mode_active %}
-<div class="alert" style="background:#fff7e6;border:1px solid #f0c36d;color:#8a6d3b;padding:10px 14px;border-radius:6px;margin-bottom:14px">
-  <strong>Auto-posting paused — night hours ({{ night_mode_window }}).</strong>
-  <span class="small muted">Telegram posts are deferred until the night window closes. Manual actions and Facebook assisted posts are unaffected.</span>
-</div>
-{% endif %}
-
-<div class="card" style="margin-bottom:16px">
-  <div class="row">
+<div class="campaign-page">
+  <div class="campaign-hero">
     <div>
-      <h2 style="margin:0">Pilot Mode</h2>
-      <div class="small muted">Telegram runs through the real auto path. Facebook stays assisted/manual and must be confirmed in the destination log.</div>
+      <h1>{{ ui("campaigns_title") }}</h1>
+      <p class="muted">Запуски, ручные подтверждения и свежий журнал публикаций. Каналы настраиваются отдельно.</p>
+      <div class="summary-chips">
+        <span class="summary-chip">Telegram <strong>{{ destination_summary.telegram_ready }}/{{ destination_summary.telegram_total }}</strong></span>
+        <span class="summary-chip">Facebook manual <strong>{{ destination_summary.facebook_ready }}/{{ destination_summary.facebook_total }}</strong></span>
+        <span class="summary-chip">Нужно действие <strong>{{ attempt_summary.manual_required }}</strong></span>
+      </div>
     </div>
-    <a class="pill" href="/sources/">Open Destinations</a>
-  </div>
-  <div class="grid3" style="margin-top:14px">
-    <div class="card card-flat">
-      <div class="eyebrow">Telegram auto</div>
-      <div style="font-size:28px;font-weight:700">{{ destination_summary.telegram_ready }}/{{ destination_summary.telegram_total }}</div>
-      <div class="small muted">ready destinations</div>
-    </div>
-    <div class="card card-flat">
-      <div class="eyebrow">Facebook manual</div>
-      <div style="font-size:28px;font-weight:700">{{ destination_summary.facebook_ready }}/{{ destination_summary.facebook_total }}</div>
-      <div class="small muted">destinations with direct URL</div>
-    </div>
-    <div class="card card-flat">
-      <div class="eyebrow">Needs operator action</div>
-      <div style="font-size:28px;font-weight:700">{{ attempt_summary.manual_required }}</div>
-      <div class="small muted">manual_action_required rows</div>
+    <div class="actions">
+      <a class="pill" href="/sources/">Каналы</a>
+      <a class="btn" href="/campaigns/new">{{ ui("new_campaign") }}</a>
     </div>
   </div>
-  <div class="list" style="margin-top:14px">
-    {% for item in pilot_checklist %}
-      <div class="small">• {{ item }}</div>
+
+  {% if night_mode_active %}
+  <div class="alert" style="background:#fff7e6;border:1px solid #f0c36d;color:#8a6d3b">
+    <strong>Auto-posting paused: night hours ({{ night_mode_window }}).</strong>
+    <span class="small muted">Telegram posts are deferred until the window closes. Manual actions are still available.</span>
+  </div>
+  {% endif %}
+
+  {% if campaign_cards %}
+  <div class="section-head">
+    <div>
+      <h2>Активные пилоты</h2>
+      <p class="small muted">Короткий контроль запуска без повторения всей настройки каналов.</p>
+    </div>
+  </div>
+  <div class="campaign-grid">
+    {% for c in campaign_cards %}
+    <div class="campaign-card">
+      <div class="campaign-card-head">
+        <div>
+          <h3>{{ c.name }}</h3>
+          <div class="small muted">{{ c.vacancy_title }}</div>
+        </div>
+        <span class="status {% if c.is_running %}status-posted{% else %}status-scheduled{% endif %}">{{ ui("yes") if c.is_running else ui("no") }}</span>
+      </div>
+      <div class="campaign-meta">
+        <div class="metric"><span>{{ ui("interval") }}</span><strong>{{ c.interval }} min</strong></div>
+        <div class="metric"><span>Окно</span><strong>{{ c.window }}</strong></div>
+        <div class="metric"><span>Каналы</span><strong>{{ c.sources_count }}</strong></div>
+        <div class="metric"><span>Объявление</span><strong>#{{ c.vacancy_id }}</strong></div>
+      </div>
+      <div class="actions">
+        <form method="post" action="/campaigns/run/{{ c.id }}">
+          <button class="pill" type="submit">{{ ui("run_now") }}</button>
+        </form>
+        <form method="post" action="/campaigns/toggle/{{ c.id }}">
+          <button class="pill" type="submit">{{ ui("pause") if c.is_running else ui("start") }}</button>
+        </form>
+      </div>
+    </div>
     {% endfor %}
   </div>
-</div>
+  {% endif %}
 
-{% if open_manual_attempts %}
-<div class="card" style="margin-bottom:16px">
-  <div class="row">
-    <h2 style="margin:0">Manual Actions Queue</h2>
+  {% if open_manual_attempts %}
+  <div class="section-head">
+    <div>
+      <h2>Очередь ручных действий</h2>
+      <p class="small muted">Facebook и спорные публикации подтверждаются оператором здесь.</p>
+    </div>
     <span class="status status-manual_action_required">{{ open_manual_attempts|length }} open</span>
   </div>
-  <table class="table">
-    <tr><th>{{ ui("when") }}</th><th>{{ ui("platform") }}</th><th>{{ ui("destination") }}</th><th>{{ ui("asset") }}</th><th>{{ ui("error_notes") }}</th></tr>
+  <div class="event-list" style="margin-bottom:18px">
     {% for attempt in open_manual_attempts %}
-    <tr>
-      <td>{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
-      <td>{{ attempt.platform }}</td>
-      <td>
-        <strong>{{ attempt.destination }}</strong>
-        <div class="small muted">
-          {% if attempt.destination_ref.startswith('http') %}
-            <a href="{{ attempt.destination_ref }}" target="_blank" rel="noopener">{{ attempt.destination_ref }}</a>
-          {% else %}
-            {{ attempt.destination_ref }}
-          {% endif %}
+    <div class="event-card manual-card">
+      <div class="event-time">{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}<br>{{ attempt.platform }}</div>
+      <div class="event-main">
+        <div class="event-title">
+          <strong>{{ attempt.destination }}</strong>
+          <span class="status status-manual_action_required">manual</span>
         </div>
-      </td>
-      <td>
-        <strong>{{ attempt.asset_title }}</strong>
-        <div class="small muted">{{ attempt.asset_body[:120] }}{% if attempt.asset_body|length > 120 %}...{% endif %}</div>
-      </td>
-      <td>
+        {% if attempt.destination_ref.startswith('http') %}
+          <a class="event-ref" href="{{ attempt.destination_ref }}" target="_blank" rel="noopener">{{ attempt.destination_ref }}</a>
+        {% else %}
+          <div class="event-ref">{{ attempt.destination_ref }}</div>
+        {% endif %}
+        <div class="event-copy"><strong>{{ attempt.asset_title }}</strong><br>{{ attempt.asset_body[:180] }}{% if attempt.asset_body|length > 180 %}...{% endif %}</div>
+      </div>
+      <div class="event-side">
         <div class="small muted">{{ attempt.operator_notes or ui('manual_action_hint') }}</div>
-      </td>
-    </tr>
+      </div>
+    </div>
     {% endfor %}
-  </table>
-</div>
-{% endif %}
-
-<table class="table">
-  <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("interval") }}</th><th>{{ ui("running") }}</th><th>Pilot focus</th><th>{{ ui("actions") }}</th></tr>
-  {% for c in campaigns %}
-  <tr>
-    <td>{{ c.id }}</td>
-    <td>{{ c.name }}</td>
-    <td>#{{ c.vacancy_id }}</td>
-    <td>{{ c.interval_minutes }} min</td>
-    <td>{{ ui("yes") if c.is_running else ui("no") }}</td>
-    <td class="small muted">{{ ui('campaign_pilot_focus') }}</td>
-    <td class="actions">
-      <form method="post" action="/campaigns/run/{{ c.id }}">
-        <button class="pill" type="submit">{{ ui("run_now") }}</button>
-      </form>
-      <form method="post" action="/campaigns/toggle/{{ c.id }}">
-        <button class="pill" type="submit">{{ ui("pause") if c.is_running else ui("start") }}</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-
-<div style="height:16px"></div>
-
-<div class="card">
-  <div class="row">
-    <h2 style="margin:0">{{ ui("dest_log") }}</h2>
-    <span class="muted small">pending · scheduled · manual_action_required · posted · failed · blocked_or_suspected</span>
   </div>
-  <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">
+  {% endif %}
+
+  <div class="section-head">
+    <div>
+      <h2>{{ ui("dest_log") }}</h2>
+      <p class="small muted">Последние события публикации по всем активным пилотам.</p>
+    </div>
+  </div>
+  <div class="summary-chips" style="margin-bottom:12px">
     {% for status, count in attempt_summary.by_status.items() %}
+      {% if count %}
       <span class="status status-{{ status }}">{{ status }}: {{ count }}</span>
+      {% endif %}
     {% endfor %}
   </div>
-  <table class="table">
-  <tr><th>{{ ui("when") }}</th><th>{{ ui("platform") }}</th><th>{{ ui("destination") }}</th><th>{{ ui("asset") }}</th><th>{{ ui("action") }}</th><th>{{ ui("status") }}</th><th>{{ ui("error_notes") }}</th><th>{{ ui("manual_result") }}</th></tr>
+
+  <div class="event-list">
     {% for attempt in recent_attempts %}
-    <tr id="attempt-{{ attempt.id }}" class="{% if focus_attempt == attempt.id|string %}focus-row{% endif %}">
-      <td>{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
-      <td>{{ attempt.platform }}</td>
-      <td>
-        <strong>{{ attempt.destination }}</strong>
-        <div class="small muted">{{ attempt.destination_ref }}</div>
-      </td>
-      <td>
-        <strong>{{ attempt.asset_title }}</strong>
-        <div class="small muted">{{ attempt.asset_body[:120] }}{% if attempt.asset_body|length > 120 %}...{% endif %}</div>
-      </td>
-      <td>{{ attempt.action_taken }}</td>
-      <td><span class="status status-{{ attempt.result_status }}">{{ attempt.result_status }}</span></td>
-      <td>
-        {% if attempt.error_message %}<div>{{ attempt.error_message }}</div>{% endif %}
-        {% if attempt.operator_notes %}<div class="small muted">{{ attempt.operator_notes }}</div>{% endif %}
-      </td>
-      <td>
+    <div id="attempt-{{ attempt.id }}" class="event-card {% if focus_attempt == attempt.id|string %}focus-row{% endif %}">
+      <div class="event-time">
+        {{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}<br>
+        {{ attempt.platform }}<br>
+        <span class="muted">{{ attempt.action_taken }}</span>
+      </div>
+      <div class="event-main">
+        <div class="event-title">
+          <strong>{{ attempt.destination }}</strong>
+          <span class="status status-{{ attempt.result_status }}">{{ attempt.result_status }}</span>
+        </div>
+        {% if attempt.destination_ref.startswith('http') %}
+          <a class="event-ref" href="{{ attempt.destination_ref }}" target="_blank" rel="noopener">{{ attempt.destination_ref }}</a>
+        {% else %}
+          <div class="event-ref">{{ attempt.destination_ref }}</div>
+        {% endif %}
+        <div class="event-copy"><strong>{{ attempt.asset_title }}</strong><br>{{ attempt.asset_body[:160] }}{% if attempt.asset_body|length > 160 %}...{% endif %}</div>
+        {% if attempt.error_message %}<div class="alert error" style="margin:10px 0 0">{{ attempt.error_message }}</div>{% endif %}
+        {% if attempt.operator_notes %}<div class="small muted" style="margin-top:8px">{{ attempt.operator_notes }}</div>{% endif %}
+      </div>
+      <div class="event-side">
         {% if attempt.result_status == "manual_action_required" %}
-          <form method="post" action="/campaigns/attempt/{{ attempt.id }}/result" class="list">
+          <form method="post" action="/campaigns/attempt/{{ attempt.id }}/result" class="manual-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <select name="result_status">
               <option value="posted">posted</option>
@@ -152,11 +177,13 @@
             <button class="pill" type="submit" title="{{ ui('retry_hint') }}">{{ ui('retry_btn') }}</button>
           </form>
         {% else %}
-          <span class="small muted">—</span>
+          <span class="small muted">готово</span>
         {% endif %}
-      </td>
-    </tr>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-log">Журнал пока пуст. Запусти кампанию, и здесь появятся публикации и ручные действия.</div>
     {% endfor %}
-  </table>
+  </div>
 </div>
 {% endblock %}

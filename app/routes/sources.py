@@ -1,9 +1,10 @@
 import time
 from flask import Blueprint, redirect, render_template, request, url_for
 
+from common.integration_status import queue_status, telegram_authorization_status, telegram_destination_ready
 from ..auth import require_company
 from ..db import db_session
-from ..models import Source, SourceType
+from ..models import Company, Source, SourceType
 from ..tenant import current_company_id, scoped
 from worker.queue import enqueue_check_source, enqueue_test_message
 
@@ -38,6 +39,9 @@ def _is_telegram_destination_ready(source: Source) -> bool:
 @require_company
 def list_sources():
     db = db_session()
+    company = db.query(Company).filter(Company.id == current_company_id()).first()
+    telegram_status = telegram_authorization_status(company)
+    background_queue_status = queue_status()
     sources = scoped(db, Source).order_by(Source.id.desc()).all()
     source_summary = {
         "telegram_total": 0,
@@ -59,7 +63,7 @@ def list_sources():
                 source_summary["facebook_missing_url"] += 1
         else:
             source_summary["telegram_total"] += 1
-            if _is_telegram_destination_ready(source):
+            if telegram_destination_ready(source, telegram_status):
                 source_summary["telegram_ready"] += 1
             else:
                 source_summary["telegram_needs_check"] += 1
@@ -68,6 +72,8 @@ def list_sources():
         "sources.html",
         sources=sources,
         source_summary=source_summary,
+        telegram_status=telegram_status,
+        queue_status=background_queue_status,
         destination_kind_options=ALL_DESTINATION_KINDS,
         platforms=["telegram", "facebook"],
         posting_modes=["auto", "assisted_manual"],
