@@ -56,6 +56,17 @@
 .hero-ctas .btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,113,227,.35)}
 .hero-ctas .btn-ghost{background:none;border:2px solid var(--border);color:var(--fg);font-size:17px;padding:16px 36px;border-radius:999px;text-decoration:none;font-weight:600;transition:all .2s}
 .hero-ctas .btn-ghost:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.hero-apps{margin-top:30px;display:flex;flex-direction:column;align-items:center;gap:12px;position:relative}
+.hero-apps-label{font-size:13px;color:var(--light);font-weight:600;letter-spacing:.02em}
+.store-badges{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;direction:ltr}
+.store-badge{display:inline-flex;align-items:center;gap:11px;background:#111;color:#fff;border-radius:14px;padding:9px 18px;text-decoration:none;position:relative;transition:transform .2s,opacity .2s;min-width:165px}
+.store-badge:hover{transform:translateY(-2px)}
+.store-badge svg{width:24px;height:24px;flex:0 0 auto;fill:#fff}
+.store-badge .sb-txt{display:flex;flex-direction:column;line-height:1.12;text-align:left}
+.store-badge .sb-txt small{font-size:10px;opacity:.82;font-weight:500}
+.store-badge .sb-txt b{font-size:18px;font-weight:600}
+.store-badge.soon{opacity:.62;pointer-events:none}
+.store-badge .soon-tag{position:absolute;top:-9px;right:10px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.05em;text-transform:uppercase}
 .hero-scroll{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--light);font-size:12px;font-weight:500;animation:bounce 2s ease-in-out infinite}
 .hero-scroll .arrow{width:24px;height:24px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
 @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
@@ -294,6 +305,21 @@ body{direction:rtl;text-align:right}
   <div class="hero-ctas reveal stagger-3">
     <a href="{{ public_register_url }}" class="btn">{% if ui_lang == 'he' %}הרשמה &rarr;{% elif ui_lang == 'ru' %}Регистрация &rarr;{% else %}Register &rarr;{% endif %}</a>
     <a href="{{ public_login_url }}" class="btn-ghost">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
+  </div>
+  <div class="hero-apps reveal stagger-3">
+    <span class="hero-apps-label">{% if ui_lang == 'he' %}בקרוב גם באפליקציה לנייד{% elif ui_lang == 'ru' %}Скоро и в мобильном приложении{% else %}Coming soon on mobile{% endif %}</span>
+    <div class="store-badges">
+      <a class="store-badge soon" href="#" aria-disabled="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.12 2.98-.84.94-2.2 1.66-3.34 1.57-.14-1.1.43-2.27 1.1-3 .76-.84 2.07-1.46 3.36-1.55zM20.5 17.2c-.6 1.38-.88 1.99-1.65 3.2-1.08 1.69-2.6 3.8-4.48 3.81-1.67.02-2.1-1.09-4.37-1.08-2.27.01-2.74 1.1-4.41 1.09-1.88-.02-3.32-1.92-4.4-3.61-3.07-4.41-3.39-9.6-.49-12.59 1.07-1.1 2.53-1.8 4-1.8 1.7 0 2.77 1.1 4.18 1.1 1.37 0 2.2-1.1 4.17-1.1 1.3 0 2.68.7 3.66 1.92-3.22 1.76-2.7 6.36.89 7.78z"/></svg>
+        <span class="sb-txt"><small>{% if ui_lang == 'he' %}הורד מ-{% elif ui_lang == 'ru' %}Скачать в{% else %}Download on the{% endif %}</small><b>App Store</b></span>
+        <em class="soon-tag" style="font-style:normal">{% if ui_lang == 'he' %}בקרוב{% elif ui_lang == 'ru' %}Скоро{% else %}Soon{% endif %}</em>
+      </a>
+      <a class="store-badge soon" href="#" aria-disabled="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.3.2-.5.6-.5 1.1v17.2c0 .5.2.9.5 1.1l9.6-9.7L3.6 2.3zm11 8.6l2.9 1.7c.8.5.8 1.3 0 1.8l-2.9 1.7-2.2-2.6 2.2-2.6zm-1.1 1.1L5.2 21.4l8.3-4.8-1-1.6zm0-2.6l1-1.6L5.2 2.6l8.3 9.4z"/></svg>
+        <span class="sb-txt"><small>{% if ui_lang == 'he' %}זמין ב-{% elif ui_lang == 'ru' %}Доступно в{% else %}Get it on{% endif %}</small><b>Google Play</b></span>
+        <em class="soon-tag" style="font-style:normal">{% if ui_lang == 'he' %}בקרוב{% elif ui_lang == 'ru' %}Скоро{% else %}Soon{% endif %}</em>
+      </a>
+    </div>
   </div>
   <div class="hero-scroll"><div class="arrow">&darr;</div></div>
 </section>
@@ -694,5 +720,8 @@ var botObserver = new IntersectionObserver(function(entries) {
 }, { threshold: 0.3 });
 botObserver.observe(chatContainer);
 </script>
+<noscript><style>.reveal,.reveal-left,.reveal-right,.reveal-scale{opacity:1!important;transform:none!important}</style></noscript>
+<script>/* failsafe: never leave reveal content permanently hidden if the observer never fires */
+setTimeout(function(){document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(function(e){e.classList.add('visible')});},2000);</script>
 </body>
 </html>
