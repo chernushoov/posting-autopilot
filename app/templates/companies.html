@@ -4,10 +4,10 @@
 
 <div class="row" style="margin-bottom:24px">
   <div>
-    <h1>{{ ui("companies_title") }}</h1>
-    <p class="small muted">Pro / Agency: manage multiple accounts</p>
+    <h1>{% if ui_lang == 'he' %}בחירת חברה{% elif ui_lang == 'ru' %}Выбор компании{% else %}Company switcher{% endif %}</h1>
+    <p class="small muted">{% if ui_lang == 'he' %}נהל חברות רשומות ובחר לאיזו חברה לפרסם, לאסוף לידים ולהפעיל קמפיינים.{% elif ui_lang == 'ru' %}Управляй зарегистрированными компаниями и выбирай, для какой компании запускать постинг, лиды и кампании.{% else %}Manage registered companies and choose which account runs posting, leads and campaigns.{% endif %}</p>
   </div>
-  <a class="btn" href="/companies/new">{{ ui("new_btn") }}</a>
+  <a class="btn" href="/companies/new">{% if ui_lang == 'he' %}הוסף חברה{% elif ui_lang == 'ru' %}Добавить компанию{% else %}Add company{% endif %}</a>
 </div>
 
 <div style="display:flex;flex-direction:column;gap:12px;max-width:600px">
@@ -21,25 +21,25 @@
       <div class="small muted" style="margin-top:2px">
         {% if c.contact_person %}{{ c.contact_person }} · {% endif %}
         {% if c.phone %}{{ c.phone }} · {% endif %}
-        {% if c.is_active %}<span style="color:var(--success)">active</span>{% else %}<span style="color:var(--muted)">disabled</span>{% endif %}
-        {% if current_company_id == c.id %} · <span style="color:var(--accent);font-weight:600">current</span>{% endif %}
+        {% if c.is_active %}<span style="color:var(--success)">{% if ui_lang == 'he' %}פעילה{% elif ui_lang == 'ru' %}активна{% else %}active{% endif %}</span>{% else %}<span style="color:var(--muted)">{% if ui_lang == 'he' %}כבויה{% elif ui_lang == 'ru' %}отключена{% else %}disabled{% endif %}</span>{% endif %}
+        {% if current_company_id == c.id %} · <span style="color:var(--accent);font-weight:600">{% if ui_lang == 'he' %}נבחרה{% elif ui_lang == 'ru' %}текущая{% else %}current{% endif %}</span>{% endif %}
       </div>
     </div>
     <div class="actions" style="flex-shrink:0">
       {% if c.is_active %}
         {% if current_company_id != c.id %}
-          <a class="pill success" href="/companies/switch/{{ c.id }}">{{ ui("select_btn") }}</a>
+          <a class="pill success" href="/companies/switch/{{ c.id }}">{% if ui_lang == 'he' %}בחר{% elif ui_lang == 'ru' %}Выбрать{% else %}Select{% endif %}</a>
         {% endif %}
-        <a class="pill" href="/profile/">{{ ui("open") }}</a>
+        <a class="pill" href="/profile/">{% if ui_lang == 'he' %}פרופיל{% elif ui_lang == 'ru' %}Профиль{% else %}Profile{% endif %}</a>
         <form method="post" action="/companies/disable/{{ c.id }}" style="display:inline">
-          <button class="pill danger" type="submit" title="Disable">Disable</button>
+          <button class="pill danger" type="submit" title="Disable">{% if ui_lang == 'he' %}כבה{% elif ui_lang == 'ru' %}Отключить{% else %}Disable{% endif %}</button>
         </form>
       {% else %}
         <form method="post" action="/companies/enable/{{ c.id }}" style="display:inline">
-          <button class="pill" type="submit">Enable</button>
+          <button class="pill" type="submit">{% if ui_lang == 'he' %}הפעל{% elif ui_lang == 'ru' %}Включить{% else %}Enable{% endif %}</button>
         </form>
         <form method="post" action="/companies/delete/{{ c.id }}" style="display:inline" onsubmit="return confirm('Delete this company permanently?')">
-          <button class="pill danger" type="submit" title="Delete permanently">Delete</button>
+          <button class="pill danger" type="submit" title="Delete permanently">{% if ui_lang == 'he' %}מחק{% elif ui_lang == 'ru' %}Удалить{% else %}Delete{% endif %}</button>
         </form>
       {% endif %}
     </div>

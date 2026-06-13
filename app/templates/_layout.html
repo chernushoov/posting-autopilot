@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ title or 'Posting Autopilot' }}</title>
   <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='app-icon.svg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon-180.png') }}">
+  <meta property="og:image" content="{{ url_for('static', filename='icon-512.png') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
@@ -30,7 +33,7 @@
 <body>
   {% set is_public_auth_page = request.path in ['/login', '/register', '/user-login'] %}
   <header class="topbar">
-    <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+    <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none"><img class="brand-logo" src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="28" height="28"><span>Posting&nbsp;<em>Autopilot</em></span></a>
     {% if session.get('is_admin') or session.get('user_id') %}
     <button class="hamburger" onclick="document.querySelector('.nav').classList.toggle('open')" aria-label="Menu">&#9776;</button>
     <nav class="nav">
@@ -44,6 +47,10 @@
       <a href="/campaigns/" {% if request.path.startswith('/campaigns') %}class="active"{% endif %}>{{ ui("nav_campaigns") }}</a>
       <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
       <a href="/analytics/" {% if request.path.startswith('/analytics') %}class="active"{% endif %}>{{ ui("nav_analytics") }}</a>
+      <a href="/activity/" {% if request.path.startswith('/activity') %}class="active"{% endif %}>{% if ui_lang == 'he' %}הוכחה{% elif ui_lang == 'ru' %}Доказательство{% else %}Proof{% endif %}</a>
+      <a href="/experiment" {% if request.path.startswith('/experiment') %}class="active"{% endif %}>{% if ui_lang == 'he' %}ניסוי{% elif ui_lang == 'ru' %}Эксперимент{% else %}Experiment{% endif %}</a>
+      <a href="/demo/story" {% if request.path.startswith('/demo/story') %}class="active"{% endif %}>{% if ui_lang == 'he' %}סטורис{% elif ui_lang == 'ru' %}Сторис{% else %}Story{% endif %}</a>
+      <a href="/admin/autopilot" {% if request.path.startswith('/admin/autopilot') %}class="active"{% endif %}>Autopilot</a>
     </nav>
     {% endif %}
     <div class="right">
@@ -58,7 +65,10 @@
       </div>
       {% if session.get('is_admin') or session.get('user_id') %}
         {% if current_company_name %}
-          <a class="pill" href="/companies/" style="font-weight:500">{{ current_company_name }}</a>
+          <a class="pill company-switch-pill" href="/companies/" title="{% if ui_lang == 'he' %}בחירת חברה{% elif ui_lang == 'ru' %}Выбор зарегистрированных компаний{% else %}Select company{% endif %}">
+            <span class="company-switch-label">{% if ui_lang == 'he' %}חברה{% elif ui_lang == 'ru' %}Компания{% else %}Company{% endif %}</span>
+            <strong>{{ current_company_name }}</strong>
+          </a>
         {% endif %}
         <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
       {% elif not is_public_auth_page %}

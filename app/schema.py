@@ -82,6 +82,12 @@ def bootstrap_schema() -> None:
             "logo_emoji": "VARCHAR(10)",
             "logo_path": "VARCHAR(500)",
             "owner_telegram_id": "VARCHAR(64)",
+            "service_area": "VARCHAR(300)",
+            "specialties": "TEXT",
+            "proof_points": "TEXT",
+            "documents_text": "TEXT",
+            "education_text": "TEXT",
+            "ai_context": "TEXT",
         },
     )
 

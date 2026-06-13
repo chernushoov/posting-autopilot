@@ -140,6 +140,12 @@ class Company(Base):
     website = Column(String(500), nullable=True)
     logo_emoji = Column(String(10), nullable=True)  # simple emoji avatar (fallback)
     logo_path = Column(String(500), nullable=True)  # uploaded company logo (served via /uploads/<basename>)
+    service_area = Column(String(300), nullable=True)
+    specialties = Column(Text, nullable=True)
+    proof_points = Column(Text, nullable=True)
+    documents_text = Column(Text, nullable=True)
+    education_text = Column(Text, nullable=True)
+    ai_context = Column(Text, nullable=True)
     owner_telegram_id = Column(String(64), nullable=True)  # explicit notify target for HOT lead alerts
 
     # AI settings

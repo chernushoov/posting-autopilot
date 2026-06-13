@@ -20,10 +20,8 @@ def list_companies():
     active = [c for c in companies if c.is_active]
     if len(active) == 1 and not session.get("current_company_id"):
         session["current_company_id"] = active[0].id
-    # If only 1 company total → redirect to profile (no need for list)
     if len(companies) == 1:
         session["current_company_id"] = companies[0].id
-        return redirect(url_for("profile.view_profile"))
     return render_template("companies.html", companies=companies, current_company_id=session.get("current_company_id"))
 
 
