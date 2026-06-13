@@ -2,13 +2,54 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 import json
 import logging
+import os
 from app.db import db_session
 from app.models import Source, Campaign, CampaignSource, Vacancy, Company, Candidate, CandidateStatus, PostingAttempt
 from common.ai import build_system_prompt
 from common.recruitbot_links import build_recruitbot_apply_link
+from common.posting_guard import is_paused, effective_daily_cap
 from bot.tg import tg_send_message_safe
 
 logger = logging.getLogger(__name__)
+
+
+def _alert_posting_issues(company_id: int, context_label: str, issues: list[str]) -> None:
+    """Best-effort operator alert when posts fail or look blocked/banned (C9).
+
+    Reuses the hot-lead notify resolution so it lands in the operator's chat, and
+    sends via the Bot API directly (NOT through the posting guard) so a safety
+    alert is never itself silenced by the kill switch or quiet hours.
+    """
+    if not issues:
+        return
+    from common.notify_targets import resolve_recruit_notify_targets
+
+    db = db_session()
+    try:
+        comp = db.query(Company).filter(Company.id == company_id).first()
+        targets = resolve_recruit_notify_targets(comp) if comp else []
+        comp_name = comp.name if comp else str(company_id)
+    finally:
+        db.close()
+    if not targets:
+        logger.warning(
+            "[campaign_tick] %d posting issue(s) for company %s but no operator notify chat configured",
+            len(issues), company_id,
+        )
+        return
+    body = "\n".join(issues[:12])
+    text = (
+        f"⚠️ Posting alert — {comp_name}\n"
+        f"{context_label}\n"
+        f"{len(issues)} destination(s) failed or look blocked:\n{body}\n\n"
+        f"Open the dashboard to review. If this looks like a ban/flood, engage the "
+        f"kill switch: python -m scripts.posting_kill_switch pause"
+    )
+    try:
+        for chat_id in targets:
+            tg_send_message_safe(chat_id, text)
+    except Exception as e:
+        logger.warning("[campaign_tick] operator posting-alert failed: %s", e)
 
 def _load_campaign_window(campaign: Campaign):
     try:
@@ -87,7 +128,26 @@ def _source_destination_kind(source: Source) -> str:
     return "group"
 
 
+def _bot_api_pace() -> None:
+    """Randomized delay before a Bot-API send so a multi-channel tick doesn't burst
+    (the Telethon path already paces itself inside post_to_group). C1 anti-spam.
+    Disable with BOT_API_DELAY_MAX=0."""
+    import random
+    import time as _time
+    hi = float(os.getenv("BOT_API_DELAY_MAX", "90"))
+    if hi <= 0:
+        return
+    lo = float(os.getenv("BOT_API_DELAY_MIN", "20"))
+    _time.sleep(max(1.0, random.uniform(min(lo, hi), hi)))
+
+
 def _send_telegram_post(source: Source, company: Company | None, text: str, file_path: str | None = None) -> tuple[bool, str, str]:
+    # Global kill switch + quiet hours, enforced for BOTH the Telethon and the
+    # Bot-API branch — the Bot-API path previously had no anti-spam guard at all (C1/C2/C4).
+    from common.posting_guard import block_reason
+    reason = block_reason()
+    if reason:
+        return False, reason, "blocked"
     kind = _source_destination_kind(source)
     use_telethon = bool(company and company.tg_api_id and company.tg_api_hash) and kind != "chat"
     if use_telethon:
@@ -109,6 +169,7 @@ def _send_telegram_post(source: Source, company: Company | None, text: str, file
             return ok, msg, "bot_api"
         return ok, msg, "telethon"
 
+    _bot_api_pace()
     ok, msg = tg_send_message_safe(source.tg_ref, text)
     logger.info(f"[telegram_post] Bot API post to {source.tg_ref}: ok={ok}, msg={msg}")
     return ok, msg, "bot_api"
@@ -177,6 +238,11 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
     allow_paused_run = trigger == "operator_run_now"
     if not c or (not c.is_running and not allow_paused_run):
         db.close(); return
+    # C4: the global kill switch halts every campaign immediately, including an
+    # operator "Run now" — the single switch that stops all autonomous posting.
+    if is_paused():
+        logger.warning("[campaign_tick] skipped: global posting kill switch engaged (campaign %s)", campaign_id)
+        db.close(); return
     if c.interval_minutes <= 0:
         db.close(); return
 
@@ -198,6 +264,8 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
         db.close(); return
     asset_title, asset_body = _build_post_asset(v)
 
+    company_for_cap = db.query(Company).filter(Company.id == c.company_id).first()
+
     links = db.query(CampaignSource).filter(CampaignSource.campaign_id == c.id).all()
     posted_today = 0
     for link in links:
@@ -208,7 +276,16 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
             last_local_date = s.last_post_at.replace(tzinfo=timezone.utc).astimezone(ISRAEL_TZ).date()
             if last_local_date == now.date():
                 posted_today += 1
-    remaining_posts = max(c.max_posts_per_day - posted_today, 0)
+    # C1: warm-up ramp — a fresh account climbs to its configured cap over several
+    # days instead of blasting full volume on day one (a classic ban trigger).
+    company_age_days = (
+        (datetime.utcnow() - company_for_cap.created_at).days
+        if company_for_cap and getattr(company_for_cap, "created_at", None)
+        else None
+    )
+    daily_cap = effective_daily_cap(c.max_posts_per_day, company_age_days)
+    remaining_posts = max(daily_cap - posted_today, 0)
+    issues: list[str] = []
 
     for link in links:
         s = db.query(Source).filter(Source.id == link.source_id, Source.company_id == c.company_id).first()
@@ -278,6 +355,33 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
             s.last_check_message = attempt.error_message
             continue
 
+        # C5: don't re-post the same vacancy to the same channel within the min
+        # repost interval — identical repeat content is a top spam/ban trigger.
+        min_repost_h = int(os.getenv("MIN_REPOST_INTERVAL_HOURS", "20"))
+        if min_repost_h > 0:
+            recent_post = (
+                db.query(PostingAttempt)
+                .filter(
+                    PostingAttempt.company_id == c.company_id,
+                    PostingAttempt.vacancy_id == v.id,
+                    PostingAttempt.source_id == s.id,
+                    PostingAttempt.result_status == "posted",
+                )
+                .order_by(PostingAttempt.created_at.desc())
+                .first()
+            )
+            if (
+                recent_post
+                and recent_post.created_at
+                and (datetime.utcnow() - recent_post.created_at) < timedelta(hours=min_repost_h)
+            ):
+                attempt.action_taken = "duplicate_skipped"
+                attempt.result_status = "skipped"
+                attempt.error_message = (
+                    f"Already posted to this destination within {min_repost_h}h (anti-duplicate)."
+                )
+                continue
+
         post_text = f"{asset_title}\n\n{asset_body}".strip()
 
         # Routing rules:
@@ -296,11 +400,24 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
             attempt.operator_notes = f"Telegram post sent via {'Telethon' if delivery_method == 'telethon' else 'Bot API'}."
             remaining_posts -= 1
         else:
-            if _should_clear_source_ready(msg):
-                s.last_check_ok = False
-            attempt.result_status = _blocked_status_from_message(msg)
-            attempt.error_message = msg
+            if delivery_method == "blocked":
+                # Guard deferral (kill switch / quiet hours) — not a real failure:
+                # don't burn the daily cap, don't alert, leave the source state intact.
+                attempt.action_taken = "deferred_by_guard"
+                attempt.result_status = "skipped"
+                attempt.error_message = msg
+            else:
+                if _should_clear_source_ready(msg):
+                    s.last_check_ok = False
+                status = _blocked_status_from_message(msg)
+                attempt.result_status = status
+                attempt.error_message = msg
+                issues.append(f"• {s.label or s.tg_ref}: {status} — {(msg or '')[:160]}")
     db.commit()
+    # C9: surface failed/blocked posts to the operator instead of burying them in
+    # the dashboard — a silent shadow-ban otherwise burns customer spend unnoticed.
+    if issues:
+        _alert_posting_issues(c.company_id, f"Vacancy: {getattr(v, 'title', '') or v.id}", issues)
     db.close()
 
 def daily_digest(company_id: int):

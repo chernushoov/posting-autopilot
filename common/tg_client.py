@@ -475,9 +475,11 @@ def post_to_group(
 
     Enforces anti-spam: rate limits, night hours, random delays.
     """
-    # Night hours check
-    if _is_night_hours():
-        return False, "NIGHT_MODE: posting paused (23:00-07:00)"
+    # Global kill switch + quiet hours (centralised so every send site agrees).
+    from common.posting_guard import block_reason
+    reason = block_reason()
+    if reason:
+        return False, reason
 
     # Rate limit check
     ok, reason = _check_rate_limit(company_id)

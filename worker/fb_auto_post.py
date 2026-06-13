@@ -89,6 +89,18 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
         company_id = run.company_id
         session_name = _resolve_session_name(company_id)
 
+        # C2/C4: respect the global kill switch + quiet hours for Facebook too — this
+        # browser poster previously had NO night guard, so a staggered job fired at
+        # 02:00. Defer (keep the item pending), don't fail, so nothing is lost.
+        from common.posting_guard import block_reason
+        guard_reason = block_reason()
+        if guard_reason:
+            item.status = FacebookPostingQueueItemStatus.pending
+            item.skip_reason = guard_reason
+            db.commit()
+            logger.info("[fb_auto_post] deferred queue_item=%s: %s", item.id, guard_reason)
+            return {"ok": False, "deferred": True, "error": guard_reason}
+
         from common.fb_browser_poster import post_to_group, session_exists
 
         if not session_exists(session_name):

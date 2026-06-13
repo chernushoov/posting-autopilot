@@ -43,6 +43,35 @@ def get_candidate_lang(candidate) -> str:
     return candidate.language or "ru"
 
 
+def _resolve_company(db, vacancy=None):
+    """Resolve the tenant for this conversation.
+
+    When a vacancy is in play (apply deep link / apply or reapply button) the tenant
+    is THAT vacancy's company — not "the first active company" — so a candidate's
+    lead + PII are captured under the right tenant (C3). With no vacancy context (a
+    bare /start on the shared bot) we fall back to the single primary company.
+
+    NOTE: a single shared bot token is effectively single-tenant for the in-screening
+    continuation handlers (message/contact look the candidate up by company). True
+    multi-tenant onboarding needs per-tenant bot identity (or candidate-by-tg_user_id
+    resolution in every handler) before a SECOND live tenant is added.
+    """
+    if vacancy is not None and getattr(vacancy, "company_id", None):
+        comp = (
+            db.query(Company)
+            .filter(Company.id == vacancy.company_id, Company.is_active == True)
+            .first()
+        )
+        if comp:
+            return comp
+    return (
+        db.query(Company)
+        .filter(Company.is_active == True)
+        .order_by(Company.id.asc())
+        .first()
+    )
+
+
 def resume_keyboard(lang: str):
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text=t("resume_button", lang), callback_data="screening:resume"),
@@ -302,15 +331,29 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
 async def cmd_start(message: Message):
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await message.answer(t("not_configured", "en"))
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
 
         args = message.text.split(maxsplit=1)
         deep_link = args[1] if len(args) > 1 else None
+
+        # C3: when the candidate arrives via apply_<vacancy_id>, resolve the vacancy
+        # FIRST so the tenant is that vacancy's company — not "the first active
+        # company" — and the lead + PII are attributed to the right tenant.
+        deep_vacancy = None
+        if deep_link and deep_link.startswith("apply_"):
+            try:
+                vacancy_id = int(deep_link.split("_", 1)[1])
+                deep_vacancy = db.query(Vacancy).filter(
+                    Vacancy.id == vacancy_id,
+                    Vacancy.is_active == True
+                ).first()
+            except (ValueError, IndexError):
+                deep_vacancy = None
+
+        comp = _resolve_company(db, deep_vacancy)
+        if not comp:
+            await message.answer(t("not_configured", "en"))
+            return
 
         c = None
         if tg_user_id:
@@ -336,22 +379,13 @@ async def cmd_start(message: Message):
 
         lang = get_candidate_lang(c)
 
-        if deep_link and deep_link.startswith("apply_"):
-            try:
-                vacancy_id = int(deep_link.split("_", 1)[1])
-                vacancy = db.query(Vacancy).filter(
-                    Vacancy.id == vacancy_id,
-                    Vacancy.is_active == True
-                ).first()
-                if vacancy:
-                    c.vacancy_id = vacancy.id
-                    c.status = CandidateStatus.qualifying
-                    c.chat_log_json = "[]"
-                    db.commit()
-                    await start_screening(message, c, vacancy, lang, db)
-                    return
-            except (ValueError, IndexError):
-                pass
+        if deep_vacancy:
+            c.vacancy_id = deep_vacancy.id
+            c.status = CandidateStatus.qualifying
+            c.chat_log_json = "[]"
+            db.commit()
+            await start_screening(message, c, deep_vacancy, lang, db)
+            return
 
         if not c.language:
             await message.answer(t("welcome", lang), reply_markup=lang_keyboard())
@@ -405,13 +439,14 @@ async def on_apply(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
+        vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
+        if not vacancy:
             await callback.answer()
             return
 
-        vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
-        if not vacancy:
+        # C3: attribute to the vacancy's company, not "the first active company".
+        comp = _resolve_company(db, vacancy)
+        if not comp:
             await callback.answer()
             return
 
@@ -459,13 +494,14 @@ async def on_reapply(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
+        vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
+        if not vacancy:
             await callback.answer()
             return
 
-        vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
-        if not vacancy:
+        # C3: attribute to the vacancy's company, not "the first active company".
+        comp = _resolve_company(db, vacancy)
+        if not comp:
             await callback.answer()
             return
 
