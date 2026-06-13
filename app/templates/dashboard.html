@@ -112,26 +112,28 @@
       <span class="status status-{{ status }}">{{ status }}: {{ count }}</span>
     {% endfor %}
   </div>
-  <table class="table" style="margin-top:12px">
-    <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("status") }}</th><th>{{ ui("score") }}</th><th>{{ ui("phone_label_full") }}</th><th>{{ ui("when") }}</th><th></th></tr>
-    {% for candidate in recent_candidates %}
-    <tr>
-      <td>{{ candidate.id }}</td>
-      <td>
-        <strong>{{ candidate.name }}</strong>
-        {% if candidate.classification %}
-        <div class="small muted">{{ candidate.classification }}</div>
-        {% endif %}
-      </td>
-      <td>{{ candidate.vacancy_title or "-" }}</td>
-      <td><span class="status status-{{ candidate.status }}">{{ candidate.status }}</span></td>
-      <td>{{ candidate.score if candidate.score is not none else "-" }}</td>
-      <td>{{ candidate.phone or "-" }}</td>
-      <td>{{ candidate.created_at.strftime("%Y-%m-%d %H:%M") if candidate.created_at else "-" }}</td>
-      <td><a class="pill" href="/candidates/{{ candidate.id }}">{{ ui("open") }}</a></td>
-    </tr>
-    {% endfor %}
-  </table>
+  <div class="table-wrap" style="margin-top:12px">
+    <table class="table dashboard-candidates-table">
+      <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("status") }}</th><th>{{ ui("score") }}</th><th>{{ ui("phone_label_full") }}</th><th>{{ ui("when") }}</th><th></th></tr>
+      {% for candidate in recent_candidates %}
+      <tr>
+        <td>{{ candidate.id }}</td>
+        <td>
+          <strong>{{ candidate.name }}</strong>
+          {% if candidate.classification %}
+          <div class="small muted">{{ candidate.classification }}</div>
+          {% endif %}
+        </td>
+        <td>{{ candidate.vacancy_title or "-" }}</td>
+        <td><span class="status status-{{ candidate.status }}">{{ candidate.status }}</span></td>
+        <td>{{ candidate.score if candidate.score is not none else "-" }}</td>
+        <td>{{ candidate.phone or "-" }}</td>
+        <td>{{ candidate.created_at.strftime("%Y-%m-%d %H:%M") if candidate.created_at else "-" }}</td>
+        <td><a class="pill" href="/candidates/{{ candidate.id }}">{{ ui("open") }}</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
 </div>
 {% endif %}
 
