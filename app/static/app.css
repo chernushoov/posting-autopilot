@@ -13,6 +13,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
 a{color:var(--accent);text-decoration:none}
+.tabbar{display:none}
 a:hover{text-decoration:underline}
 h1,h2,h3{font-weight:700;letter-spacing:-.03em;line-height:1.15;margin:0}
 h1{font-size:32px} h2{font-size:22px} h3{font-size:17px}
@@ -238,4 +239,13 @@ textarea{resize:vertical}
   table.mobile-card-list td.mobile-primary,.mobile-card-list table td.mobile-primary{display:block}
   table.mobile-card-list td.mobile-primary::before,.mobile-card-list table td.mobile-primary::before{display:block;margin-bottom:4px}
   table.mobile-card-list .actions,.mobile-card-list table .actions{justify-content:flex-start;gap:8px}
+  /* Bottom tab bar — native-app mobile nav */
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:120;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border-top:1px solid var(--border-light);padding-bottom:env(safe-area-inset-bottom,0);box-shadow:0 -1px 10px rgba(0,0,0,.05)}
+  .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;padding:7px 2px;background:none;border:0;border-radius:0;color:var(--muted);text-decoration:none;font-size:10px;font-weight:600;font-family:inherit;line-height:1}
+  .tabbar-item svg{width:23px;height:23px;display:block}
+  .tabbar-item span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tabbar-item.active{color:var(--accent)}
+  .tabbar-item:hover{color:var(--accent);background:none;border:0}
+  .tabbar-item:active{opacity:.55}
+  body{padding-bottom:calc(56px + env(safe-area-inset-bottom,0))}
 }
