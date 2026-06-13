@@ -24,6 +24,7 @@ p{line-height:1.55;margin:0}
 .brand{font-weight:700;font-size:17px;color:var(--fg);letter-spacing:-.02em;display:inline-flex;align-items:center;gap:8px;min-width:0}
 .brand em{font-style:normal;color:var(--accent)}
 .brand-logo{display:block;flex:0 0 auto}
+.brand-word{display:inline-flex;align-items:baseline;gap:0}
 .nav{display:flex;gap:6px;flex-wrap:wrap}
 .nav a{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
 .nav a:hover{background:var(--accent-light);color:var(--accent);text-decoration:none}
@@ -122,8 +123,12 @@ textarea{resize:vertical}
 .landing-feature p{color:var(--muted);font-size:14px}
 
 /* ── Login page ───────────────────────────────────────────────────────────── */
-.login-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg)}
-.login-card{max-width:400px;width:100%;background:var(--card);border-radius:24px;padding:48px 40px;box-shadow:var(--shadow-lg);text-align:center}
+.login-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px;background:radial-gradient(circle at 50% 28%,rgba(0,113,227,.09),transparent 34%),linear-gradient(135deg,#f7fbff 0%,#f5f7fb 48%,#ffffff 100%)}
+.login-card{max-width:430px;width:100%;background:rgba(255,255,255,.88);border:1px solid var(--border-light);border-radius:28px;padding:44px 40px;box-shadow:0 24px 80px rgba(15,23,42,.12);text-align:center;backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px)}
+.login-logo{width:74px;height:74px;margin:0 auto 18px;border-radius:22px;box-shadow:0 16px 42px rgba(0,113,227,.28)}
+.login-brand{display:flex;align-items:center;justify-content:center;gap:8px;font-size:26px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px;color:var(--fg)}
+.login-brand em{font-style:normal;color:var(--accent)}
+.login-title{font-size:14px;color:var(--muted);margin-bottom:24px}
 .login-card h1{font-size:28px;margin-bottom:6px}
 .login-card .muted{margin-bottom:28px}
 .login-card form{text-align:left}
@@ -219,6 +224,9 @@ textarea{resize:vertical}
   .company-switch-pill{max-width:46vw;padding:5px 10px}
   .company-switch-pill strong{font-size:11px}
   .company-switch-label{font-size:9px}
+  .login-shell{padding:28px 16px;align-items:flex-start}
+  .login-card{padding:32px 22px;border-radius:24px;margin-top:22px}
+  .login-logo{width:64px;height:64px;border-radius:20px}
   .table-wrap.mobile-card-list{overflow:visible}
   table.mobile-card-list,.mobile-card-list table{display:block;width:100%;min-width:0;border-spacing:0}
   table.mobile-card-list tbody,.mobile-card-list table tbody{display:block}

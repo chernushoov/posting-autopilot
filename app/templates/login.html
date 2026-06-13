@@ -12,8 +12,9 @@
 <body>
 <div class="login-shell">
   <div class="login-card">
-    <div class="brand" style="font-size:24px;margin-bottom:4px">Posting<em>Autopilot</em></div>
-    <p class="muted" style="font-size:14px">{{ ui("login_title") }}</p>
+    <img class="login-logo" src="{{ url_for('static', filename='app-icon.svg') }}" alt="Posting Autopilot">
+    <div class="login-brand">Posting<em>Autopilot</em></div>
+    <p class="login-title">{{ ui("login_title") }}</p>
     <div class="lang-switcher" style="display:flex;gap:4px;justify-content:center;margin-bottom:20px">
       {% for l in (supported_langs or ['en','ru','he']) %}
         {% if l == (ui_lang or 'en') %}

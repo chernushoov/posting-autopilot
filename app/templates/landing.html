@@ -27,7 +27,8 @@
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 .l-nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0);backdrop-filter:blur(0);transition:all .4s}
 .l-nav.scrolled{background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-light);box-shadow:0 1px 12px rgba(0,0,0,.04)}
-.l-nav .brand{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.l-nav .brand{font-size:20px;font-weight:800;letter-spacing:-.03em;display:inline-flex;align-items:center;gap:8px;color:var(--fg)}
+.l-nav .brand img{width:28px;height:28px;display:block}
 .l-nav .brand em{font-style:normal;color:var(--accent)}
 .l-nav-links{display:flex;gap:8px;align-items:center}
 .l-nav-links a{font-size:13px;font-weight:500;padding:8px 16px;border-radius:999px;color:var(--muted);transition:all .2s;text-decoration:none}
@@ -273,7 +274,7 @@ body{direction:rtl;text-align:right}
 
 <!-- ═══ NAV ═══ -->
 <nav class="l-nav" id="nav">
-  <a href="/" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
+  <a href="/" class="brand" style="text-decoration:none"><img src="{{ url_for('static', filename='logo-mark.svg') }}" alt=""><span>Posting<em>Autopilot</em></span></a>
   <button class="l-burger" id="l-burger" aria-label="Menu" aria-expanded="false" onclick="var l=document.getElementById('l-links');var o=l.classList.toggle('open');this.setAttribute('aria-expanded',o)">&#9776;</button>
   <div class="l-nav-links" id="l-links">
     <div class="lang-dots">
