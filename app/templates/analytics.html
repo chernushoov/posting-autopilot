@@ -25,15 +25,15 @@
 <!-- Conversion Funnel -->
 <div class="card" style="padding:20px;margin:20px 0">
   <h2>{{ ui("conversion_funnel") }}</h2>
-  <table class="table" style="width:100%">
+  <table class="table mobile-card-list" style="width:100%">
     <thead><tr><th>{{ ui("stage") }}</th><th>{{ ui("count") }}</th><th>%</th><th style="width:50%">Bar</th></tr></thead>
     <tbody>
     {% for step in funnel %}
       <tr>
-        <td>{{ step.stage }}</td>
-        <td><strong>{{ step.count }}</strong></td>
-        <td>{{ step.pct }}%</td>
-        <td>
+        <td data-label="{{ ui('stage') }}">{{ step.stage }}</td>
+        <td data-label="{{ ui('count') }}"><strong>{{ step.count }}</strong></td>
+        <td data-label="%">{{ step.pct }}%</td>
+        <td data-label="Bar">
           <div style="background:#21262d;border-radius:4px;height:24px;width:100%;position:relative">
             <div style="background:{% if step.pct > 50 %}#3fb950{% elif step.pct > 20 %}#d29922{% else %}#f85149{% endif %};height:100%;border-radius:4px;width:{{ step.pct }}%;min-width:2px;transition:width 0.3s"></div>
           </div>
@@ -49,20 +49,20 @@
   <!-- Language Breakdown -->
   <div class="card" style="padding:20px">
     <h2>{{ ui("languages_title") }}</h2>
-    <table class="table" style="width:100%">
+    <table class="table mobile-card-list" style="width:100%">
       <thead><tr><th>{{ ui("language") }}</th><th>{{ ui("candidates_title") }}</th><th>%</th></tr></thead>
       <tbody>
       {% for lang, cnt in lang_stats.items() %}
         <tr>
-          <td>
+          <td data-label="{{ ui('language') }}">
             {% if lang == 'ru' %}Russian
             {% elif lang == 'he' %}Hebrew
             {% elif lang == 'en' %}English
             {% else %}{{ lang or 'Unknown' }}
             {% endif %}
           </td>
-          <td>{{ cnt }}</td>
-          <td>{{ (cnt / total * 100) | round(0) if total > 0 else 0 }}%</td>
+          <td data-label="{{ ui('candidates_title') }}">{{ cnt }}</td>
+          <td data-label="%">{{ (cnt / total * 100) | round(0) if total > 0 else 0 }}%</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -72,11 +72,11 @@
   <!-- Operations -->
   <div class="card" style="padding:20px">
     <h2>{{ ui("operations") }}</h2>
-    <table class="table" style="width:100%">
+    <table class="table mobile-card-list" style="width:100%">
       <tbody>
-        <tr><td>{{ ui("active_vacancies") }}</td><td><strong>{{ active_vacancies }}</strong></td></tr>
-        <tr><td>{{ ui("active_campaigns") }}</td><td><strong>{{ active_campaigns }}</strong></td></tr>
-        <tr><td>{{ ui("active_sources") }}</td><td><strong>{{ active_sources }}</strong></td></tr>
+        <tr><td data-label="{{ ui('operations') }}">{{ ui("active_vacancies") }}</td><td data-label="{{ ui('count') }}"><strong>{{ active_vacancies }}</strong></td></tr>
+        <tr><td data-label="{{ ui('operations') }}">{{ ui("active_campaigns") }}</td><td data-label="{{ ui('count') }}"><strong>{{ active_campaigns }}</strong></td></tr>
+        <tr><td data-label="{{ ui('operations') }}">{{ ui("active_sources") }}</td><td data-label="{{ ui('count') }}"><strong>{{ active_sources }}</strong></td></tr>
       </tbody>
     </table>
   </div>
@@ -85,18 +85,18 @@
 <!-- Vacancy Performance -->
 <div class="card" style="padding:20px;margin:20px 0">
   <h2>{{ ui("vacancy_performance") }}</h2>
-  <table class="table" style="width:100%">
+  <table class="table mobile-card-list" style="width:100%">
     <thead><tr><th>{{ ui("vacancy") }}</th><th>{{ ui("applicants") }}</th><th>{{ ui("avg_score") }}</th></tr></thead>
     <tbody>
     {% for v in vacancies %}
       <tr>
-        <td>{{ v.title }}</td>
-        <td>{{ v.applicants }}</td>
-        <td>{% if v.avg_score %}{{ v.avg_score | round(0) }}{% else %}—{% endif %}</td>
+        <td data-label="{{ ui('vacancy') }}">{{ v.title }}</td>
+        <td data-label="{{ ui('applicants') }}">{{ v.applicants }}</td>
+        <td data-label="{{ ui('avg_score') }}">{% if v.avg_score %}{{ v.avg_score | round(0) }}{% else %}—{% endif %}</td>
       </tr>
     {% endfor %}
     {% if not vacancies %}
-      <tr><td colspan="3" class="muted">{{ ui("no_data") }}</td></tr>
+      <tr><td colspan="3" class="muted" data-label="">{{ ui("no_data") }}</td></tr>
     {% endif %}
     </tbody>
   </table>

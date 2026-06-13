@@ -219,4 +219,15 @@ textarea{resize:vertical}
   .company-switch-pill{max-width:46vw;padding:5px 10px}
   .company-switch-pill strong{font-size:11px}
   .company-switch-label{font-size:9px}
+  .table-wrap.mobile-card-list{overflow:visible}
+  table.mobile-card-list,.mobile-card-list table{display:block;width:100%;min-width:0;border-spacing:0}
+  table.mobile-card-list tbody,.mobile-card-list table tbody{display:block}
+  table.mobile-card-list thead,.mobile-card-list table thead{display:none}
+  table.mobile-card-list tr,.mobile-card-list table tr{display:grid;gap:9px;margin:0 0 12px;padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--bg-white);box-shadow:var(--shadow-sm)}
+  table.mobile-card-list tr:has(> th),.mobile-card-list table tr:has(> th){display:none}
+  table.mobile-card-list td,.mobile-card-list table td{display:grid;grid-template-columns:minmax(92px,34%) 1fr;gap:10px;align-items:start;padding:0;border:0;white-space:normal;word-break:break-word;font-size:13px}
+  table.mobile-card-list td::before,.mobile-card-list table td::before{content:attr(data-label);color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  table.mobile-card-list td.mobile-primary,.mobile-card-list table td.mobile-primary{display:block}
+  table.mobile-card-list td.mobile-primary::before,.mobile-card-list table td.mobile-primary::before{display:block;margin-bottom:4px}
+  table.mobile-card-list .actions,.mobile-card-list table .actions{justify-content:flex-start;gap:8px}
 }

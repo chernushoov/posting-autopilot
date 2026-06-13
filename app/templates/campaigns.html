@@ -51,13 +51,13 @@
     <h2 style="margin:0">{% if ui_lang=='he' %}פעולות ידניות{% elif ui_lang=='en' %}Manual actions{% else %}Ручные действия{% endif %}</h2>
     <span class="status status-manual_action_required">{{ open_manual_attempts|length }}</span>
   </div>
-  <table class="table">
+  <table class="table mobile-card-list">
     <tr><th>{{ ui("when") }}</th><th>{{ ui("platform") }}</th><th>{{ ui("destination") }}</th><th>{{ ui("asset") }}</th><th>{{ ui("error_notes") }}</th></tr>
     {% for attempt in open_manual_attempts %}
     <tr>
-      <td>{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
-      <td>{{ attempt.platform }}</td>
-      <td>
+      <td data-label="{{ ui('when') }}">{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
+      <td data-label="{{ ui('platform') }}">{{ attempt.platform }}</td>
+      <td data-label="{{ ui('destination') }}" class="mobile-primary">
         <strong>{{ attempt.destination }}</strong>
         <div class="small muted">
           {% if attempt.destination_ref.startswith('http') %}
@@ -67,11 +67,11 @@
           {% endif %}
         </div>
       </td>
-      <td>
+      <td data-label="{{ ui('asset') }}" class="mobile-primary">
         <strong>{{ attempt.asset_title }}</strong>
         <div class="small muted">{{ attempt.asset_body[:120] }}{% if attempt.asset_body|length > 120 %}...{% endif %}</div>
       </td>
-      <td>
+      <td data-label="{{ ui('error_notes') }}">
         <div class="small muted">{{ attempt.operator_notes or ui('manual_action_hint') }}</div>
       </td>
     </tr>
@@ -80,17 +80,17 @@
 </div>
 {% endif %}
 
-<table class="table">
+<table class="table mobile-card-list">
   <tr><th>ID</th><th>{{ ui("name") }}</th><th>{{ ui("vacancy") }}</th><th>{{ ui("interval") }}</th><th>{{ ui("running") }}</th><th>{% if ui_lang=='he' %}פוקוס{% elif ui_lang=='en' %}Focus{% else %}Фокус{% endif %}</th><th>{{ ui("actions") }}</th></tr>
   {% for c in campaigns %}
   <tr>
-    <td>{{ c.id }}</td>
-    <td>{{ c.name }}</td>
-    <td>#{{ c.vacancy_id }}</td>
-    <td>{{ c.interval_minutes }} min</td>
-    <td>{{ ui("yes") if c.is_running else ui("no") }}</td>
-    <td class="small muted">{{ ui('campaign_pilot_focus') }}</td>
-    <td class="actions">
+    <td data-label="ID">{{ c.id }}</td>
+    <td data-label="{{ ui('name') }}" class="mobile-primary">{{ c.name }}</td>
+    <td data-label="{{ ui('vacancy') }}">#{{ c.vacancy_id }}</td>
+    <td data-label="{{ ui('interval') }}">{{ c.interval_minutes }} min</td>
+    <td data-label="{{ ui('running') }}">{{ ui("yes") if c.is_running else ui("no") }}</td>
+    <td data-label="{% if ui_lang=='he' %}פוקוס{% elif ui_lang=='en' %}Focus{% else %}Фокус{% endif %}" class="small muted">{{ ui('campaign_pilot_focus') }}</td>
+    <td data-label="{{ ui('actions') }}" class="actions">
       <form method="post" action="/campaigns/run/{{ c.id }}">
         <button class="pill" type="submit">{{ ui("run_now") }}</button>
       </form>
@@ -113,27 +113,27 @@
       <span class="status status-{{ status }}">{{ slabel(status) }}: {{ count }}</span>
     {% endfor %}
   </div>
-  <table class="table">
+  <table class="table mobile-card-list">
   <tr><th>{{ ui("when") }}</th><th>{{ ui("platform") }}</th><th>{{ ui("destination") }}</th><th>{{ ui("asset") }}</th><th>{{ ui("action") }}</th><th>{{ ui("status") }}</th><th>{{ ui("error_notes") }}</th><th>{{ ui("manual_result") }}</th></tr>
     {% for attempt in recent_attempts %}
     <tr id="attempt-{{ attempt.id }}" class="{% if focus_attempt == attempt.id|string %}focus-row{% endif %}">
-      <td>{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
-      <td>{{ attempt.platform }}</td>
-      <td>
+      <td data-label="{{ ui('when') }}">{{ attempt.created_at.strftime("%Y-%m-%d %H:%M") if attempt.created_at else "-" }}</td>
+      <td data-label="{{ ui('platform') }}">{{ attempt.platform }}</td>
+      <td data-label="{{ ui('destination') }}" class="mobile-primary">
         <strong>{{ attempt.destination }}</strong>
         <div class="small muted">{{ attempt.destination_ref }}</div>
       </td>
-      <td>
+      <td data-label="{{ ui('asset') }}" class="mobile-primary">
         <strong>{{ attempt.asset_title }}</strong>
         <div class="small muted">{{ attempt.asset_body[:120] }}{% if attempt.asset_body|length > 120 %}...{% endif %}</div>
       </td>
-      <td>{{ attempt.action_taken }}</td>
-      <td><span class="status status-{{ attempt.result_status }}">{{ slabel(attempt.result_status) }}</span></td>
-      <td>
+      <td data-label="{{ ui('action') }}">{{ attempt.action_taken }}</td>
+      <td data-label="{{ ui('status') }}"><span class="status status-{{ attempt.result_status }}">{{ slabel(attempt.result_status) }}</span></td>
+      <td data-label="{{ ui('error_notes') }}">
         {% if attempt.error_message %}<div>{{ attempt.error_message }}</div>{% endif %}
         {% if attempt.operator_notes %}<div class="small muted">{{ attempt.operator_notes }}</div>{% endif %}
       </td>
-      <td>
+      <td data-label="{{ ui('manual_result') }}">
         {% if attempt.result_status == "manual_action_required" %}
           <form method="post" action="/campaigns/attempt/{{ attempt.id }}/result" class="list">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

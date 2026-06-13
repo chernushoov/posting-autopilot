@@ -65,19 +65,19 @@
   <button class="btn" type="submit">{{ ui("add_dest_btn") }}</button>
 </form>
 
-<div class="table-wrap">
+<div class="table-wrap mobile-card-list">
 <table class="table">
   <tr><th>ID</th><th>{{ ui("platform") }}</th><th>{{ ui("dest_ref") }}</th><th>Mode</th><th>{{ ui("ready") }}</th><th>{{ ui("actions") }}</th></tr>
   {% for s in sources %}
   <tr id="source-{{ s.id }}" class="{% if focus_source == s.id|string %}focus-row{% endif %}">
-    <td>{{ s.id }}</td>
-    <td>{{ s.platform or "telegram" }}</td>
-    <td style="max-width:340px;word-break:break-word">
+    <td data-label="ID">{{ s.id }}</td>
+    <td data-label="{{ ui('platform') }}">{{ s.platform or "telegram" }}</td>
+    <td data-label="{{ ui('dest_ref') }}" class="mobile-primary" style="max-width:340px;word-break:break-word">
       <strong>{{ s.label or s.tg_ref }}</strong>
       <div class="small muted">{{ s.destination_kind or s.source_type.value }} · {{ s.destination_url or s.tg_ref }}</div>
     </td>
-    <td>{{ s.posting_mode or "auto" }}</td>
-    <td>
+    <td data-label="Mode">{{ s.posting_mode or "auto" }}</td>
+    <td data-label="{{ ui('ready') }}">
       {% if s.last_check_ok and s.last_check_message and "stub" in s.last_check_message %}
         FORMAT ONLY
       {% elif s.last_check_ok %}
@@ -87,7 +87,7 @@
       {% endif %}
       {% if s.last_check_message %} · <span class="muted">{{ s.last_check_message }}</span>{% endif %}
     </td>
-    <td>
+    <td data-label="{{ ui('actions') }}">
       <div class="actions">
         <form method="post" action="/sources/check/{{ s.id }}"><button class="pill" type="submit">{{ ui("check_btn") }}</button></form>
         {% if (s.platform or "telegram") == "telegram" %}
