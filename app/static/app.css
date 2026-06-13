@@ -21,13 +21,18 @@ p{line-height:1.55;margin:0}
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .container{max-width:1080px;margin:0 auto;padding:0 20px}
 .topbar{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-light);position:sticky;top:0;z-index:100}
-.brand{font-weight:700;font-size:17px;color:var(--fg);letter-spacing:-.02em}
+.brand{font-weight:700;font-size:17px;color:var(--fg);letter-spacing:-.02em;display:inline-flex;align-items:center;gap:8px;min-width:0}
 .brand em{font-style:normal;color:var(--accent)}
+.brand-logo{display:block;flex:0 0 auto}
 .nav{display:flex;gap:6px;flex-wrap:wrap}
 .nav a{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
 .nav a:hover{background:var(--accent-light);color:var(--accent);text-decoration:none}
 .nav a.active{background:var(--accent);color:#fff}
-.right{display:flex;gap:10px;align-items:center}
+.right{display:flex;gap:10px;align-items:center;min-width:0}
+.lang-switcher{display:flex;gap:4px;flex:0 0 auto}
+.company-switch-pill{max-width:220px;min-width:0;display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.1;overflow:hidden}
+.company-switch-pill strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.company-switch-label{font-size:10px;color:var(--muted);font-weight:500}
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .pill,.btn,button{border:1px solid var(--border);background:var(--bg-white);color:var(--fg);padding:8px 16px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:all .15s;white-space:nowrap}
@@ -189,6 +194,7 @@ textarea{resize:vertical}
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media(max-width:960px){.panel-grid,.queue-layout{grid-template-columns:1fr}.page-hero{flex-direction:column}}
 @media(max-width:720px){
+  .container{padding:0 14px}
   .grid2,.grid3,.setup-grid{grid-template-columns:1fr}
   /* Wide data tables: scroll horizontally on phones instead of clipping the
      right-most Actions buttons off-screen (covers tables not wrapped in .table-wrap). */
@@ -200,11 +206,17 @@ textarea{resize:vertical}
   .copilot-header{flex-direction:column}
   .landing-features{grid-template-columns:1fr}
   .landing-hero{padding:60px 20px 40px}
-  .hamburger{display:block}
-  .nav{display:none;position:absolute;top:56px;left:0;right:0;background:var(--bg-white);border-bottom:1px solid var(--border);padding:12px 20px;flex-direction:column;gap:4px;box-shadow:var(--shadow-lg);z-index:99}
+  .hamburger{display:block;order:2;padding:7px 10px;border-radius:12px}
+  .nav{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg-white);border-bottom:1px solid var(--border);padding:12px 20px;flex-direction:column;gap:4px;box-shadow:var(--shadow-lg);z-index:99}
   .nav.open{display:flex}
   .nav a{padding:10px 14px;border-radius:8px}
-  .right{gap:6px}
-  .right .pill{padding:4px 8px;font-size:11px}
-  .topbar{flex-wrap:wrap}
+  .topbar{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 12px}
+  .brand{font-size:15px;max-width:100%;overflow:hidden}
+  .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .right{grid-column:1 / -1;order:3;width:100%;display:flex;justify-content:flex-start;gap:6px;overflow-x:auto;padding:2px 0 1px;-webkit-overflow-scrolling:touch}
+  .right .pill{padding:5px 8px;font-size:11px;flex:0 0 auto}
+  .lang-switcher{gap:4px}
+  .company-switch-pill{max-width:46vw;padding:5px 10px}
+  .company-switch-pill strong{font-size:11px}
+  .company-switch-label{font-size:9px}
 }
