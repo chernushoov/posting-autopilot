@@ -321,11 +321,11 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
     # ── Funnel + analytics (real, best-effort) ───────────────────────────────
     passed_bot = sum(1 for l in leads if l["score"] and l["score"] > 0)
     boot["funnel"] = [
-        {"label": "Все отклики", "val": len(leads), "color": "#0071e3"},
-        {"label": "Прошли бота", "val": passed_bot, "color": "#3a8dff"},
-        {"label": "Тёплые", "val": warm + hot, "color": "var(--warning)"},
-        {"label": "Горячие", "val": hot, "color": "var(--danger)"},
-        {"label": "Закрыто", "val": closed, "color": "var(--success)"},
+        {"label": "Все отклики", "lk": "cb.fn.all", "val": len(leads), "color": "#0071e3"},
+        {"label": "Прошли бота", "lk": "cb.fn.bot", "val": passed_bot, "color": "#3a8dff"},
+        {"label": "Тёплые", "lk": "cb.fn.warm", "val": warm + hot, "color": "var(--warning)"},
+        {"label": "Горячие", "lk": "cb.fn.hot", "val": hot, "color": "var(--danger)"},
+        {"label": "Закрыто", "lk": "cb.fn.closed", "val": closed, "color": "var(--success)"},
     ]
 
     # 7-day activity from candidate created_at
@@ -344,26 +344,31 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
     total_lg = sum(langs_map.values()) or 1
     lg_label = {"ru": "Русский", "he": "עברית", "en": "English"}
     lg_color = {"ru": "#0071e3", "he": "var(--warning)", "en": "var(--success)"}
-    langs = [{"label": lg_label.get(k, k), "val": v, "pct": round(v * 100 / total_lg),
+    _lg_lk = {"ru": "bot.la.ru", "he": "bot.la.he", "en": "bot.la.en"}
+    langs = [{"label": lg_label.get(k, k), "lk": _lg_lk.get(k), "val": v, "pct": round(v * 100 / total_lg),
               "color": lg_color.get(k, "#3a8dff")}
              for k, v in sorted(langs_map.items(), key=lambda kv: -kv[1])]
 
     conv = (closed * 100.0 / len(leads)) if leads else 0
     boot["analytics"] = {
         "kpi": [
-            {"ic": "send", "label": "Публикаций", "val": str(posts_total), "sub": "за всё время", "up": posts_total > 0},
-            {"ic": "bot", "label": "Обработано ботом", "val": str(len(leads)), "sub": "лидов от бота"},
-            {"ic": "flame", "label": "Горячих лидов", "val": str(hot), "sub": f"{with_phone} с телефоном", "up": hot > 0},
-            {"ic": "check", "label": "Закрыто сделок", "val": str(closed), "sub": f"конверсия {conv:.1f}%"},
+            {"ic": "send", "label": "Публикаций", "lk": "cb.k.posts", "val": str(posts_total),
+             "sub": "за всё время", "sk": "cb.ks.alltime", "up": posts_total > 0},
+            {"ic": "bot", "label": "Обработано ботом", "lk": "cb.k.processed", "val": str(len(leads)),
+             "sub": "лидов от бота", "sk": "cb.ks.frombot"},
+            {"ic": "flame", "label": "Горячих лидов", "lk": "cb.k.hot", "val": str(hot),
+             "sub": f"{with_phone} с телефоном", "sk": "cb.ks.withphone", "sv": {"n": with_phone}, "up": hot > 0},
+            {"ic": "check", "label": "Закрыто сделок", "lk": "cb.k.closed", "val": str(closed),
+             "sub": f"конверсия {conv:.1f}%", "sk": "cb.ks.conv", "sv": {"x": f"{conv:.1f}"}},
         ],
         "funnel": boot["funnel"],
         "langs": langs,
         "days": days,
         "ops": [
-            {"label": "Постов опубликовано", "val": str(posts_total)},
-            {"label": "Ручных действий", "val": str(manual_count)},
-            {"label": "Кампаний активно", "val": str(active_camps)},
-            {"label": "Назначений", "val": str(len(sources))},
+            {"label": "Постов опубликовано", "lk": "cb.ops.posts", "val": str(posts_total)},
+            {"label": "Ручных действий", "lk": "cb.ops.manual", "val": str(manual_count)},
+            {"label": "Кампаний активно", "lk": "cb.ops.camps", "val": str(active_camps)},
+            {"label": "Назначений", "lk": "cb.ops.sources", "val": str(len(sources))},
         ],
         "ads": [{"title": a["title"], "leads": a["leads"],
                  "conv": "—", "pct": min(100, a["leads"] * 10)} for a in ads[:6]],
@@ -408,12 +413,12 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
 
 def _onboard(has_company, has_vacancy, has_tg, has_fb, has_campaign, has_posted):
     return [
-        {"n": "01", "t": "Компания", "done": has_company, "go": "company"},
-        {"n": "02", "t": "Объявление", "done": has_vacancy, "go": "ads"},
+        {"n": "01", "t": "Компания", "lk": "cb.ob.company", "done": has_company, "go": "company"},
+        {"n": "02", "t": "Объявление", "lk": "cb.ob.ad", "done": has_vacancy, "go": "ads"},
         {"n": "03", "t": "Telegram", "done": has_tg, "go": "channel-tg"},
         {"n": "04", "t": "Facebook", "done": has_fb, "go": "channel-fb"},
-        {"n": "05", "t": "Кампания", "done": has_campaign, "go": "campaigns"},
-        {"n": "06", "t": "Первый постинг", "done": has_posted, "go": "campaigns"},
+        {"n": "05", "t": "Кампания", "lk": "cb.ob.campaign", "done": has_campaign, "go": "campaigns"},
+        {"n": "06", "t": "Первый постинг", "lk": "cb.ob.first", "done": has_posted, "go": "campaigns"},
     ]
 
 
@@ -421,73 +426,137 @@ def _empty_analytics():
     return {"kpi": [], "funnel": [], "langs": [], "days": [], "ops": [], "ads": []}
 
 
-def _fact(ic, tone, label, val):
-    return {"ic": ic, "tone": tone, "label": label, "val": str(val)}
+def _fact(ic, tone, label, val, lk=None, vk=None):
+    """Copilot fact. label/val are RU fallbacks; lk/vk are i18n keys the client
+    resolves via t() so the panel re-translates on language switch."""
+    f = {"ic": ic, "tone": tone, "label": label, "val": str(val)}
+    if lk:
+        f["lk"] = lk
+    if vk:
+        f["vk"] = vk
+    return f
+
+
+def _act(label, lk, go, ico):
+    return {"label": label, "lk": lk, "go": go, "ico": ico}
+
+
+def _warn(text, lk):
+    return {"tone": "warn", "text": text, "lk": lk}
+
+
+def _summary(ru, sk, sv=None):
+    """Copilot summary: RU fallback + i18n key (+ template vars) for EN/HE."""
+    s = {"summary": ru, "sk": sk}
+    if sv:
+        s["sv"] = sv
+    return s
 
 
 def _screens(hot, with_phone, active_ads, total_ads, tg_count, fb_count,
              posts, has_fb, trial, has_telegram=False, manual=0, active_camps=0):
-    """Real Operator-Copilot content per screen (RU; chrome localised via t())."""
+    """Real Operator-Copilot content per screen. RU text is the fallback; lk/sk/vk
+    are i18n keys (see cabinet-i18n.js) the client resolves via t() so the whole
+    panel re-translates on language switch — no Russian leak in EN/HE."""
     td = trial.get("days")
+    yn = lambda b: ("да" if b else "нет")
+    ynk = lambda b: ("cb.v.yes" if b else "cb.v.no")
+    rk = lambda b: ("cb.v.ready" if b else "cb.v.no")
+    leads_cp = dict(tone=("running" if hot else "setup"),
+        facts=[_fact("flame", "bad", "Горячих", hot, "cb.f.hot"),
+               _fact("phone", "ok", "С телефоном", with_phone, "cb.f.withphone")],
+        warn=[], action=_act("Открыть первого", "cb.a.open_first", "leads", "flame"))
+    leads_cp.update(_summary(f"{hot} горячих лидов ждут ответа — звоните тем, кто оставил телефон, пока контакт «тёплый»."
+                             if hot else "Пока нет горячих лидов. Запустите постинг — отклики появятся здесь.",
+                             "cb.cps.leads" if hot else "cb.cps.leads0", {"hot": hot} if hot else None))
+
+    dash_cp = dict(tone="setup",
+        facts=[_fact("doc", "ok" if active_ads else "warn", "Объявлений", active_ads, "cb.f.ads"),
+               _fact("send", "ok" if has_telegram else "warn", "Telegram", yn(has_telegram), None, rk(has_telegram)),
+               _fact("fb", "ok" if has_fb else "warn", "Facebook", yn(has_fb), None, rk(has_fb))],
+        warn=([] if has_fb else [_warn("Facebook не подключён — половина каналов недоступна.", "cb.w.fb_half")]),
+        action=(_act("Подключить Facebook", "cb.a.connect_fb", "channel-fb", "fb") if not has_fb
+                else _act("К объявлениям", "cb.a.to_ads", "ads", "doc")))
+    dash_cp.update(_summary("Подключите Facebook и запустите кампанию — постинг пойдёт автоматически." if not has_fb
+                            else "Каналы на месте. Следите за горячими лидами на экране «Лиды».",
+                            "cb.cps.dash_fb" if not has_fb else "cb.cps.dash_ok"))
+
+    camp_cp = dict(tone=("manual" if manual else "running"),
+        facts=[_fact("rocket", "ok", "Активны", active_camps, "cb.f.active"),
+               _fact("alert", "warn" if manual else "ok", "Ручных", manual, "cb.f.manual")],
+        warn=[], action=_act("Обновить", "cb.a.refresh", "campaigns", "refresh"))
+    camp_cp.update(_summary(f"Активных кампаний: {active_camps}." + (f" Ручных действий по Facebook: {manual}." if manual else ""),
+                            "cb.cps.campaigns_m" if manual else "cb.cps.campaigns",
+                            {"active": active_camps, "manual": manual} if manual else {"active": active_camps}))
+
+    ads_cp = dict(tone=("running" if active_ads else "setup"),
+        facts=[_fact("doc", "ok", "Активных", active_ads, "cb.f.active"),
+               _fact("lock", "warn", "Лимит Pro", f"{active_ads} / 5", "cb.f.limit")],
+        warn=[], action=_act("Создать объявление", "cb.a.create_ad", "ads", "plus"))
+    ads_cp.update(_summary(f"Активны {active_ads} из {total_ads} объявлений (лимит Pro 5)." if total_ads
+                           else "Создайте первое объявление — одно объявление публикуется во все каналы.",
+                           "cb.cps.ads" if total_ads else "cb.cps.ads0",
+                           {"active": active_ads, "total": total_ads} if total_ads else None))
+
+    tg_cp = dict(tone=("running" if has_telegram else "setup"),
+        facts=[_fact("check", "ok" if has_telegram else "bad", "Подключено", yn(has_telegram), "cb.f.connected", ynk(has_telegram)),
+               _fact("send", "ok", "Групп", tg_count, "cb.f.groups")],
+        warn=[], action=_act("К назначениям", "cb.a.to_sources", "sources", "target"))
+    tg_cp.update(_summary(f"Telegram подключён, групп для постинга: {tg_count}." if has_telegram
+                          else "Подключите Telegram, чтобы постить в группы автоматически.",
+                          "cb.cps.tg" if has_telegram else "cb.cps.tg0", {"n": tg_count} if has_telegram else None))
+
+    fb_cp = dict(tone=("running" if has_fb else "setup"),
+        facts=[_fact("fb", "ok" if has_fb else "bad", "Подключено", yn(has_fb), "cb.f.connected", ynk(has_fb)),
+               _fact("target", "warn", "FB-групп", fb_count, "cb.f.fbgroups")],
+        warn=([] if has_fb else [_warn("Без Facebook доступна только половина охвата.", "cb.w.fb_reach")]),
+        action=_act("Подключить Facebook", "cb.a.connect_fb", "channel-fb", "fb"))
+    fb_cp.update(_summary(f"Facebook подключён, источников: {fb_count}." if has_fb
+                          else "Facebook ещё не подключён. Подключите через OAuth или вставьте ссылки на группы.",
+                          "cb.cps.fb" if has_fb else "cb.cps.fb0", {"n": fb_count} if has_fb else None))
+
+    src_cp = dict(tone="manual",
+        facts=[_fact("send", "ok", "TG", tg_count), _fact("fb", "warn", "FB", fb_count)],
+        warn=[], action=_act("Проверить все", "c.check_all", "sources", "refresh"))
+    src_cp.update(_summary(f"Назначений: Telegram {tg_count}, Facebook {fb_count}.", "cb.cps.sources",
+                           {"tg": tg_count, "fb": fb_count}))
+
+    bot_cp = dict(tone="running",
+        facts=[_fact("bot", "ok", "Статус", "активен", "cb.f.status", "cb.v.active"),
+               _fact("flame", "bad", "Горячих", hot, "cb.f.hot")],
+        warn=[], action=_act("Протестировать бота", "cb.a.test_bot", "bot", "bot"))
+    bot_cp.update(_summary("Бот общается с откликами, отсеивает спам и помечает горячих лидов. Проверьте критерии «горячий».",
+                           "cb.cps.bot"))
+
+    an_cp = dict(tone="running",
+        facts=[_fact("send", "ok", "Публикаций", posts, "cb.f.posts"),
+               _fact("flame", "bad", "Горячих", hot, "cb.f.hot")],
+        warn=[], action=_act("К объявлениям", "cb.a.to_ads", "ads", "doc"))
+    an_cp.update(_summary(f"Публикаций {posts}, горячих лидов {hot}." if posts else "Данных пока мало — запустите постинг.",
+                          "cb.cps.analytics" if posts else "cb.cps.analytics0",
+                          {"posts": posts, "hot": hot} if posts else None))
+
+    co_cp = dict(tone="setup",
+        facts=[_fact("users", "ok", "Команда", "—", "cb.f.team")],
+        warn=[], action=_act("Сохранить профиль", "cb.a.save_profile", "company", "users"))
+    co_cp.update(_summary("Профиль компании и маршрутизация горячих лидов. Укажите, куда слать горячих, чтобы не упустить контакт.",
+                          "cb.cps.company"))
+
+    bl_active = td is not None and not trial.get("expired")
+    bl_cp = dict(tone="setup",
+        facts=[_fact("card", "ok", "Тариф", "Pro", "cb.f.plan"),
+               _fact("clock", "warn", "Осталось", (str(td) if td is not None else "—"), "cb.f.left")],
+        warn=[], action=_act("Перейти на Pro", "cb.a.to_pro", "billing", "card"))
+    bl_cp.update(_summary(
+        (f"Пробный период Pro — осталось {td} дней. После окончания автопостинг встанет на паузу." if bl_active
+         else ("Пробный период истёк — выберите тариф, чтобы возобновить автопостинг." if trial.get("expired")
+               else "Тариф Pro активен.")),
+        ("cb.cps.billing" if bl_active else ("cb.cps.billing_exp" if trial.get("expired") else "cb.cps.billing_paid")),
+        {"days": td} if bl_active else None))
+
     return {
-        "leads": {"cp": {"tone": "running" if hot else "setup",
-            "summary": (f"{hot} горячих лидов ждут ответа — звоните тем, кто оставил телефон, пока контакт «тёплый»."
-                        if hot else "Пока нет горячих лидов. Запустите постинг — отклики появятся здесь."),
-            "facts": [_fact("flame", "bad", "Горячих", hot), _fact("phone", "ok", "С телефоном", with_phone)],
-            "warn": [], "action": {"label": "Открыть первого", "go": "leads", "ico": "flame"}}},
-        "dashboard": {"cp": {"tone": "setup",
-            "summary": ("Подключите Facebook и запустите кампанию — постинг пойдёт автоматически."
-                        if not has_fb else "Каналы на месте. Следите за горячими лидами на экране «Лиды»."),
-            "facts": [_fact("doc", "ok" if active_ads else "warn", "Объявлений", active_ads),
-                      _fact("send", "ok" if has_telegram else "warn", "Telegram", "готов" if has_telegram else "нет"),
-                      _fact("fb", "ok" if has_fb else "warn", "Facebook", "готов" if has_fb else "нет")],
-            "warn": ([] if has_fb else [{"tone": "warn", "text": "Facebook не подключён — половина каналов недоступна."}]),
-            "action": ({"label": "Подключить Facebook", "go": "channel-fb", "ico": "fb"} if not has_fb
-                       else {"label": "К объявлениям", "go": "ads", "ico": "doc"})}},
-        "campaigns": {"cp": {"tone": "manual" if manual else "running",
-            "summary": (f"{active_camps} кампаний активны." + (f" {manual} ручных действий по Facebook." if manual else "")),
-            "facts": [_fact("rocket", "ok", "Активны", active_camps), _fact("alert", "warn" if manual else "ok", "Ручных", manual)],
-            "warn": [], "action": {"label": "Обновить", "go": "campaigns", "ico": "refresh"}}},
-        "ads": {"cp": {"tone": "running" if active_ads else "setup",
-            "summary": (f"Активны {active_ads} из {total_ads} объявлений (лимит Pro 5)."
-                        if total_ads else "Создайте первое объявление — одно объявление публикуется во все каналы."),
-            "facts": [_fact("doc", "ok", "Активных", active_ads), _fact("lock", "warn", "Лимит Pro", f"{active_ads} / 5")],
-            "warn": [], "action": {"label": "Создать объявление", "go": "ads", "ico": "plus"}}},
-        "channel-tg": {"cp": {"tone": "running" if has_telegram else "setup",
-            "summary": (f"Telegram подключён, {tg_count} групп для постинга."
-                        if has_telegram else "Подключите Telegram, чтобы постить в группы автоматически."),
-            "facts": [_fact("check", "ok" if has_telegram else "bad", "Подключено", "да" if has_telegram else "нет"),
-                      _fact("send", "ok", "Групп", tg_count)],
-            "warn": [], "action": {"label": "К назначениям", "go": "sources", "ico": "target"}}},
-        "channel-fb": {"cp": {"tone": "running" if has_fb else "setup",
-            "summary": (f"Facebook подключён, {fb_count} источников."
-                        if has_fb else "Facebook ещё не подключён. Подключите через OAuth или вставьте ссылки на группы."),
-            "facts": [_fact("fb", "ok" if has_fb else "bad", "Подключено", "да" if has_fb else "нет"),
-                      _fact("target", "warn", "FB-групп", fb_count)],
-            "warn": ([] if has_fb else [{"tone": "warn", "text": "Без Facebook доступна только половина охвата."}]),
-            "action": {"label": "Подключить Facebook", "go": "channel-fb", "ico": "fb"}}},
-        "sources": {"cp": {"tone": "manual",
-            "summary": f"{tg_count} Telegram-назначений + {fb_count} Facebook.",
-            "facts": [_fact("send", "ok", "TG", tg_count), _fact("fb", "warn", "FB", fb_count)],
-            "warn": [], "action": {"label": "Проверить все", "go": "sources", "ico": "refresh"}}},
-        "bot": {"cp": {"tone": "running",
-            "summary": "Бот общается с откликами, отсеивает спам и помечает горячих лидов. Проверьте критерии «горячий».",
-            "facts": [_fact("bot", "ok", "Статус", "активен"), _fact("flame", "bad", "Горячих", hot)],
-            "warn": [], "action": {"label": "Протестировать бота", "go": "bot", "ico": "bot"}}},
-        "analytics": {"cp": {"tone": "running",
-            "summary": f"{len(str(posts))}·Публикаций {posts}, горячих {hot}." if posts else "Данных пока мало — запустите постинг.",
-            "facts": [_fact("send", "ok", "Публикаций", posts), _fact("flame", "bad", "Горячих", hot)],
-            "warn": [], "action": {"label": "К объявлениям", "go": "ads", "ico": "doc"}}},
-        "company": {"cp": {"tone": "setup",
-            "summary": "Профиль компании и маршрутизация горячих лидов. Укажите, куда слать горячих, чтобы не упустить контакт.",
-            "facts": [_fact("users", "ok", "Команда", "—")],
-            "warn": [], "action": {"label": "Сохранить профиль", "go": "company", "ico": "users"}}},
-        "billing": {"cp": {"tone": "setup",
-            "summary": (f"Пробный период Pro — осталось {td} дней. После окончания автопостинг встанет на паузу."
-                        if td is not None and not trial.get("expired")
-                        else ("Пробный период истёк — выберите тариф, чтобы возобновить автопостинг."
-                              if trial.get("expired") else "Тариф Pro активен.")),
-            "facts": [_fact("card", "ok", "Тариф", "Pro"),
-                      _fact("clock", "warn", "Осталось", f"{td} дней" if td is not None else "—")],
-            "warn": [], "action": {"label": "Перейти на Pro", "go": "billing", "ico": "card"}}},
+        "leads": {"cp": leads_cp}, "dashboard": {"cp": dash_cp}, "campaigns": {"cp": camp_cp},
+        "ads": {"cp": ads_cp}, "channel-tg": {"cp": tg_cp}, "channel-fb": {"cp": fb_cp},
+        "sources": {"cp": src_cp}, "bot": {"cp": bot_cp}, "analytics": {"cp": an_cp},
+        "company": {"cp": co_cp}, "billing": {"cp": bl_cp},
     }

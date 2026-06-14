@@ -172,6 +172,31 @@ def create_app():
     PUBLIC_PREFIXES = ("/static/", "/set-lang/", "/billing/")
 
     @app.before_request
+    def _redirect_legacy_duplicates():
+        # The SPA cabinet already renders Leads/Analytics/Sources/Campaigns/Ads as
+        # polished screens. Send the old server-rendered list duplicates there so the
+        # user never lands on an inferior copy. CRUD form pages (/vacancies/new,
+        # /campaigns/new, /candidates/<id>, /profile, /connect/*) are intentionally
+        # NOT listed — they remain as forms inside the new shell.
+        if request.method != "GET":
+            return None
+        if not (session.get("is_admin") or session.get("user_id")):
+            return None
+        if request.args.get("legacy"):
+            return None
+        _dups = {
+            "/analytics": "analytics", "/analytics/": "analytics",
+            "/candidates": "leads", "/candidates/": "leads",
+            "/sources": "sources", "/sources/": "sources",
+            "/campaigns": "campaigns", "/campaigns/": "campaigns",
+            "/vacancies": "ads", "/vacancies/": "ads",
+        }
+        screen = _dups.get(request.path)
+        if screen:
+            return redirect("/cabinet#/" + screen)
+        return None
+
+    @app.before_request
     def enforce_paywall():
         # Dormant until billing is switched on: pre-launch and during owner
         # testing everyone keeps full access (BILLING_ENABLED=false).

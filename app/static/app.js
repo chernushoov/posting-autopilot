@@ -187,10 +187,9 @@ function handleAct(a, el){
      tenant-secured Flask pages instead of mock toasts. The pretty SPA stays the
      hub; the real create/connect/run/billing flows live on their own pages. */
   if(window.PA_BOOT){
-    var NAV={ 'export':'/candidates/', 'new-campaign':'/campaigns/', 'run':'/campaigns/', 'pause':'/campaigns/',
-      'new-ad':'/vacancies/', 'edit-ad':'/vacancies/', 'tg-reconnect':'/connect/telegram', 'tg-add':'/connect/telegram',
+    var NAV={ 'new-campaign':'/campaigns/new',
+      'new-ad':'/vacancies/new', 'edit-ad':'/vacancies/new', 'tg-reconnect':'/connect/telegram', 'tg-add':'/connect/telegram',
       'tg-resync':'/connect/telegram', 'fb-oauth':'/connect/facebook', 'fb-urls':'/connect/facebook',
-      'src-add':'/sources/', 'src-check-all':'/sources/', 'src-test':'/sources/',
       'bot-save':'/profile/', 'company-save':'/profile/', 'company-logo':'/profile/', 'team-add':'/profile/',
       'plan-upgrade':'/pricing', 'plan-manage':'/pricing', 'pay-method':'/pricing', 'invoices':'/pricing' };
     if(a==='wa'||a==='tg'){

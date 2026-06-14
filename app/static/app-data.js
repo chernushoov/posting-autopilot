@@ -390,6 +390,22 @@ function applyLang(lang){
     (c.warn||[]).forEach(function(w,i){ if(d.warn[i]) w.text=d.warn[i].text; });
     if(c.action&&d.action) c.action.label=d.action.label;
   });
+  /* ── REAL-DATA i18n: resolve server-emitted keys (cabinet-i18n.js) so the
+     analytics labels + Operator Copilot translate on every language switch ── */
+  if(window.PA_BOOT){
+    var _R=function(k,v){ return (k&&window.PA_I18N)?window.PA_I18N.t(k,v):null; };
+    FUNNEL.forEach(function(f){ if(f.lk){var x=_R(f.lk); if(x!=null)f.label=x;} });
+    ONBOARD.forEach(function(s){ if(s.lk){var x=_R(s.lk); if(x!=null)s.t=x;} });
+    [ANALYTICS.kpi,ANALYTICS.funnel,ANALYTICS.langs,ANALYTICS.ops].forEach(function(arr){
+      (arr||[]).forEach(function(it){ if(it.lk){var x=_R(it.lk); if(x!=null)it.label=x;}
+        if(it.sk){var s=_R(it.sk,it.sv||{}); if(s!=null)it.sub=s;} }); });
+    Object.keys(SCREENS).forEach(function(k){ var c=SCREENS[k].cp; if(!c) return;
+      if(c.sk){var s=_R(c.sk,c.sv||{}); if(s!=null)c.summary=s;}
+      (c.facts||[]).forEach(function(f){ if(f.lk){var x=_R(f.lk); if(x!=null)f.label=x;}
+        if(f.vk){var y=_R(f.vk,f.vv||{}); if(y!=null)f.val=y;} });
+      (c.warn||[]).forEach(function(w){ if(w.lk){var x=_R(w.lk); if(x!=null)w.text=x;} });
+      if(c.action&&c.action.lk){var a=_R(c.action.lk); if(a!=null)c.action.label=a;} });
+  }
 }
 
 var PUB={ICONS:ICONS,svg:svg,injectIcons:injectIcons,COMPANIES:COMPANIES,LEADS:LEADS,COUNTS:COUNTS,
