@@ -158,6 +158,87 @@ def find_duplicate_candidate(db, company_id: int, phone: str, exclude_id: int | 
     return None
 
 
+def _resolve_active_candidate(db, tg_user_id):
+    """Resolve a Telegram user's ACTIVE conversation candidate WITHOUT any global
+    company default. A user can be a lead for several companies (one Candidate row
+    per company, keyed by company_id + tg_user_id); the active conversation is the
+    most-recent row that is still qualifying/interviewing, else the most-recent row.
+    The tenant is whatever that row belongs to — never 'the first company'. Returns
+    the Candidate or None (caller must then fail closed)."""
+    if not tg_user_id:
+        return None
+    q = db.query(Candidate).filter(Candidate.tg_user_id == tg_user_id)
+    active = (
+        q.filter(Candidate.status.in_([CandidateStatus.qualifying, CandidateStatus.interviewing]))
+        .order_by(Candidate.id.desc())
+        .first()
+    )
+    return active or q.order_by(Candidate.id.desc()).first()
+
+
+def _company_for_vacancy(db, vacancy_id):
+    """Verified tenant mapping for the apply deep-link / button: a vacancy belongs to
+    exactly one company. Returns (vacancy, company) or (None, None) — fail closed."""
+    try:
+        vacancy_id = int(vacancy_id)
+    except (TypeError, ValueError):
+        return None, None
+    vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
+    if not vacancy:
+        return None, None
+    company = db.query(Company).filter(
+        Company.id == vacancy.company_id, Company.is_active == True
+    ).first()
+    return (vacancy, company) if company else (None, None)
+
+
+def _company_of(db, candidate):
+    """Load the active Company that owns a candidate (its tenant), or None."""
+    if not candidate:
+        return None
+    return db.query(Company).filter(
+        Company.id == candidate.company_id, Company.is_active == True
+    ).first()
+
+
+def _sole_company(db):
+    """Only safe fallback for a no-context bare /start: if the deployment has exactly
+    ONE active company the choice is unambiguous. With 2+ companies there is no safe
+    default → return None (fail closed)."""
+    rows = db.query(Company).filter(Company.is_active == True).limit(2).all()
+    return rows[0] if len(rows) == 1 else None
+
+
+def _find_or_create_candidate(db, company_id, message_user):
+    """Find this Telegram user's Candidate row in THIS company, or create one scoped
+    to company_id. A candidate is NEVER created without a company_id."""
+    tg_user_id = str(message_user.id) if message_user else None
+    c = None
+    if tg_user_id:
+        c = db.query(Candidate).filter(
+            Candidate.company_id == company_id, Candidate.tg_user_id == tg_user_id
+        ).first()
+    if c:
+        return c
+    detected = detect_language(message_user.language_code if message_user else None)
+    full_name = (
+        f"{message_user.first_name or ''} {message_user.last_name or ''}".strip()
+        if message_user else None
+    )
+    c = Candidate(
+        company_id=company_id,
+        tg_user_id=tg_user_id,
+        tg_username=message_user.username if message_user else None,
+        full_name=full_name or None,
+        status=CandidateStatus.new,
+        language=detected,
+        chat_log_json="[]",
+    )
+    db.add(c)
+    db.commit()
+    return c
+
+
 def get_screening_questions(vacancy, lang: str) -> list[str]:
     """Get screening questions: bot_qualifying_questions > interview_questions_json > defaults."""
     # Priority 1: Universal bot qualifying questions (Task 1.2)
@@ -302,57 +383,40 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
 async def cmd_start(message: Message):
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await message.answer(t("not_configured", "en"))
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
-
         args = message.text.split(maxsplit=1)
         deep_link = args[1] if len(args) > 1 else None
 
-        c = None
-        if tg_user_id:
-            c = db.query(Candidate).filter(
-                Candidate.company_id == comp.id,
-                Candidate.tg_user_id == tg_user_id
-            ).first()
-
-        if not c:
-            tg_lang = message.from_user.language_code if message.from_user else None
-            detected = detect_language(tg_lang)
-            c = Candidate(
-                company_id=comp.id,
-                tg_user_id=tg_user_id,
-                tg_username=message.from_user.username if message.from_user else None,
-                full_name=f"{message.from_user.first_name or ''} {message.from_user.last_name or ''}".strip() if message.from_user else None,
-                status=CandidateStatus.new,
-                language=detected,
-                chat_log_json="[]",
-            )
-            db.add(c)
+        # Tenant comes from the apply deep link (vacancy -> its company): a VERIFIED
+        # mapping, never a global "first company" default.
+        if deep_link and deep_link.startswith("apply_"):
+            vacancy, comp = _company_for_vacancy(db, deep_link.split("_", 1)[1])
+            if not vacancy or not comp:
+                await message.answer(t("not_configured", "en"))
+                return
+            c = _find_or_create_candidate(db, comp.id, message.from_user)
+            c.vacancy_id = vacancy.id
+            c.status = CandidateStatus.qualifying
+            c.chat_log_json = "[]"
             db.commit()
+            await start_screening(message, c, vacancy, get_candidate_lang(c), db)
+            return
+
+        # No deep link → use the user's existing active conversation; otherwise only a
+        # single-company deployment is unambiguous. With 2+ companies we fail closed
+        # (no global default) and ask the user to use the apply link from the job post.
+        c = _resolve_active_candidate(db, tg_user_id)
+        comp = _company_of(db, c)
+        if not comp:
+            comp = _sole_company(db)
+            if comp:
+                c = _find_or_create_candidate(db, comp.id, message.from_user)
+        if not comp or not c:
+            await message.answer(t("no_active_conversation", detect_language(
+                message.from_user.language_code if message.from_user else None)))
+            return
 
         lang = get_candidate_lang(c)
-
-        if deep_link and deep_link.startswith("apply_"):
-            try:
-                vacancy_id = int(deep_link.split("_", 1)[1])
-                vacancy = db.query(Vacancy).filter(
-                    Vacancy.id == vacancy_id,
-                    Vacancy.is_active == True
-                ).first()
-                if vacancy:
-                    c.vacancy_id = vacancy.id
-                    c.status = CandidateStatus.qualifying
-                    c.chat_log_json = "[]"
-                    db.commit()
-                    await start_screening(message, c, vacancy, lang, db)
-                    return
-            except (ValueError, IndexError):
-                pass
-
         if not c.language:
             await message.answer(t("welcome", lang), reply_markup=lang_keyboard())
         else:
@@ -371,17 +435,11 @@ async def on_lang_select(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
+        c = _resolve_active_candidate(db, str(callback.from_user.id))
+        comp = _company_of(db, c) or _sole_company(db)
         if not comp:
             await callback.answer()
             return
-
-        tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
-
         if c:
             c.language = lang
             db.commit()
@@ -405,25 +463,12 @@ async def on_apply(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
+        vacancy, comp = _company_for_vacancy(db, vacancy_id)
+        if not vacancy or not comp:
             await callback.answer()
             return
 
-        vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
-        if not vacancy:
-            await callback.answer()
-            return
-
-        tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
-        if not c:
-            await callback.answer()
-            return
-
+        c = _find_or_create_candidate(db, comp.id, callback.from_user)
         lang = get_candidate_lang(c)
 
         if c.vacancy_id == vacancy.id and c.status in (CandidateStatus.passed, CandidateStatus.rejected):
@@ -459,25 +504,12 @@ async def on_reapply(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
+        vacancy, comp = _company_for_vacancy(db, vacancy_id)
+        if not vacancy or not comp:
             await callback.answer()
             return
 
-        vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
-        if not vacancy:
-            await callback.answer()
-            return
-
-        tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
-        if not c:
-            await callback.answer()
-            return
-
+        c = _find_or_create_candidate(db, comp.id, callback.from_user)
         c.vacancy_id = vacancy.id
         c.status = CandidateStatus.qualifying
         c.chat_log_json = "[]"
@@ -502,16 +534,7 @@ async def on_screening_action(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await callback.answer()
-            return
-
-        tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
+        c = _resolve_active_candidate(db, str(callback.from_user.id))
         if not c or not c.vacancy_id:
             await callback.answer()
             return
@@ -560,23 +583,12 @@ async def on_screening_action(callback: CallbackQuery):
 async def on_message(message: Message):
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await message.answer(t("not_configured", "en"))
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
-        c = None
-        if tg_user_id:
-            c = db.query(Candidate).filter(
-                Candidate.company_id == comp.id,
-                Candidate.tg_user_id == tg_user_id
-            ).first()
-
-        if not c:
+        c = _resolve_active_candidate(db, tg_user_id)
+        comp = _company_of(db, c)
+        if not c or not comp:
             tg_lang = message.from_user.language_code if message.from_user else None
-            lang = detect_language(tg_lang)
-            await message.answer(t("no_active_conversation", lang))
+            await message.answer(t("no_active_conversation", detect_language(tg_lang)))
             return
 
         lang = get_candidate_lang(c)
@@ -740,20 +752,12 @@ async def on_contact(message: Message):
     """Handle shared contact for phone collection."""
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
         if not tg_user_id:
             return
-
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
-
-        if not c or c.status != CandidateStatus.interviewing:
+        c = _resolve_active_candidate(db, tg_user_id)
+        comp = _company_of(db, c)
+        if not c or not comp or c.status != CandidateStatus.interviewing:
             return
 
         phone = message.contact.phone_number
