@@ -182,19 +182,22 @@ def smoke_session_endpoint(run_id: int):
         return jsonify({"error": "run not found or not in current company"}), 404
 
     try:
-        from common.fb_browser_poster import smoke_session, session_exists
+        from common.fb_browser_poster import smoke_session
     except Exception as exc:
         return jsonify({"error": f"browser poster unavailable: {exc!r}"}), 500
 
-    from common.fb_browser_poster import company_session_name
+    from app.facebook_session import (
+        company_session_name, get_fb_session_status, error_code_for_reason, session_basename,
+    )
     # Per-company session ONLY — status/smoke must never reflect another tenant's session.
     session_name = company_session_name(company_id)
-    if not session_exists(session_name):
+    fb_status = get_fb_session_status(company_id)
+    if not fb_status.get("connected"):
         return jsonify({
             "ok": False,
-            "error": "session_missing",
-            "session_name": session_name,
-            "remediation": "Run scripts/fb_capture_session.py on operator's Mac to capture the FB session.",
+            "error_code": error_code_for_reason(fb_status.get("reason")),
+            "error_message": "Facebook is not connected for this company. Connect Facebook first.",
+            "session_file": session_basename(company_id),
         }), 400
 
     result = smoke_session(session_name)
@@ -216,6 +219,17 @@ def auto_fire_run(run_id: int):
     db.close()
     if not run:
         return jsonify({"error": "run not found or not in current company"}), 404
+
+    # FAIL CLOSED: do not schedule a run if THIS company has no valid FB session.
+    from app.facebook_session import get_fb_session_status, error_code_for_reason, session_basename
+    fb_status = get_fb_session_status(company_id)
+    if not fb_status.get("connected"):
+        return jsonify({
+            "ok": False,
+            "error_code": error_code_for_reason(fb_status.get("reason")),
+            "error_message": "Facebook is not connected for this company. Connect Facebook before auto-firing.",
+            "session_file": session_basename(company_id),
+        }), 400
 
     try:
         from worker.fb_auto_post import fire_run_staggered

@@ -159,14 +159,14 @@ check("other tenant CANNOT fetch foreign upload (404)", lambda: client.get("/upl
 check("uploads path-traversal blocked (404)", lambda: client.get("/uploads/....//....//etc/passwd").status_code == 404)
 
 # 5. FB per-company session + fail-closed (canonical helper the routes/worker use)
-from common.fb_browser_poster import company_session_name, session_exists  # noqa: E402
+from app.facebook_session import company_session_name, fb_session_exists  # noqa: E402
 fbdir = os.path.join(ROOT, "data", "fb_sessions")
 os.makedirs(fbdir, exist_ok=True)
 with open(os.path.join(fbdir, f"company_{A_id}.json"), "w") as f:
     f.write("{}" + " " * 2000)
 check("FB session name is per-company", lambda: company_session_name(A_id) == f"company_{A_id}")
-check("FB session present for A", lambda: session_exists(company_session_name(A_id)) is True)
-check("FB session ABSENT for B → fail-closed", lambda: session_exists(company_session_name(B_id)) is False)
+check("FB session present for A", lambda: fb_session_exists(A_id) is True)
+check("FB session ABSENT for B → fail-closed", lambda: fb_session_exists(B_id) is False)
 login("ownerA@test", A_id)
 check("connect/facebook renders for A (200)", lambda: client.get("/connect/facebook").status_code == 200)
 login("ownerB@test", B_id)

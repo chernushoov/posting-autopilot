@@ -34,6 +34,26 @@ from app.models import (
 
 logger = logging.getLogger(__name__)
 
+# Map low-level poster error_kind -> stable, customer-facing error_code (Phase 4).
+_POSTER_ERROR_CODE = {
+    "session_missing": "FACEBOOK_SESSION_INVALID",
+    "not_logged_in": "FACEBOOK_SESSION_EXPIRED",
+    "group_not_found": "FACEBOOK_TARGET_UNAVAILABLE",
+    "composer_not_found": "FACEBOOK_UI_CHANGED",
+    "composer_click_failed": "FACEBOOK_UI_CHANGED",
+    "textbox_not_found": "FACEBOOK_UI_CHANGED",
+    "submit_not_found": "FACEBOOK_UI_CHANGED",
+    "typing_failed": "FACEBOOK_UI_CHANGED",
+    "submit_click_failed": "FACEBOOK_UI_CHANGED",
+    "post_blocked": "FACEBOOK_PERMISSION_DENIED",
+    "captcha": "FACEBOOK_PERMISSION_DENIED",
+    "timeout": "POSTING_FAILED_UNKNOWN",
+}
+
+
+def _poster_error_code(error_kind) -> str:
+    return _POSTER_ERROR_CODE.get(error_kind or "", "POSTING_FAILED_UNKNOWN")
+
 
 def auto_post_queue_item(queue_item_id: int) -> dict:
     """RQ task. Posts one queue item via browser. Updates DB."""
@@ -82,21 +102,41 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
 
         company_id = run.company_id
 
-        from common.fb_browser_poster import post_to_group, session_exists, company_session_name
-        # Per-company session ONLY — never fall back to another tenant's FB session.
-        session_name = company_session_name(company_id)
+        from app.facebook_session import (
+            company_session_name,
+            error_code_for_reason,
+            get_fb_session_status,
+            session_basename,
+        )
+        from common.fb_browser_poster import post_to_group
 
-        if not session_exists(session_name):
-            err = (
-                f"FB session for company {company_id} not captured "
-                f"(expected data/fb_sessions/{session_name}.json). Capture it for THIS "
-                f"company before auto-posting — fail closed, no shared session."
+        # FAIL CLOSED: post ONLY with THIS company's own valid session. No shared/global
+        # session, no 'floordsgn' fallback, never another tenant's session.
+        fb_status = get_fb_session_status(company_id)
+        if not fb_status.get("connected"):
+            error_code = error_code_for_reason(fb_status.get("reason"))
+            error_message = (
+                "Facebook is not connected for this company. Please connect Facebook first."
+                if error_code == "FACEBOOK_NOT_CONNECTED_FOR_COMPANY"
+                else "Facebook session is invalid or expired for this company. Please reconnect Facebook."
             )
             item.status = FacebookPostingQueueItemStatus.failed
             item.skipped_at = datetime.utcnow()
-            item.skip_reason = err
+            item.skip_reason = f"{error_code}: {error_message}"
             db.commit()
-            return {"ok": False, "error": err}
+            logger.warning(
+                "[fb_auto_post] FAIL-CLOSED company_id=%s run_id=%s queue_item_id=%s "
+                "code=%s session=%s", company_id, run.id, item.id, error_code,
+                session_basename(company_id),
+            )
+            return {
+                "ok": False, "status": "failed", "error_code": error_code,
+                "error_message": error_message, "company_id": company_id,
+                "run_id": run.id, "queue_item_id": item.id,
+                "session_file": session_basename(company_id),
+            }
+
+        session_name = company_session_name(company_id)
 
         item.status = FacebookPostingQueueItemStatus.opened
         item.opened_at = item.opened_at or datetime.utcnow()
@@ -123,6 +163,8 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
         )
 
         notes_blob = "; ".join(result.notes) if result.notes else None
+        error_code = None if result.ok else _poster_error_code(result.error_kind)
+        _sess_base = session_basename(company_id)
 
         if result.ok:
             item.status = FacebookPostingQueueItemStatus.posted
@@ -141,7 +183,8 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
                     interview_count=0,
                     hire_count=0,
                     result_note=(
-                        f"auto-posted via browser; before={result.screenshot_before}; "
+                        f"auto-posted via browser; session={_sess_base}; "
+                        f"before={result.screenshot_before}; "
                         f"after={result.screenshot_after}; duration={result.duration_seconds:.1f}s"
                     ),
                     recorded_by="fb_auto_post_worker",
@@ -150,7 +193,7 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
         else:
             item.status = FacebookPostingQueueItemStatus.failed
             item.skipped_at = datetime.utcnow()
-            item.skip_reason = f"{result.error_kind}: {result.error_message}"
+            item.skip_reason = f"{error_code}: {result.error_message}"
             item.group_note = notes_blob
 
             db.add(
@@ -163,19 +206,35 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
                     interview_count=0,
                     hire_count=0,
                     result_note=(
-                        f"auto-post failed: {result.error_kind} — {result.error_message}; "
+                        f"auto-post failed [{error_code}]: {result.error_kind} — "
+                        f"{result.error_message}; session={_sess_base}; "
                         f"before={result.screenshot_before}; after={result.screenshot_after}"
                     ),
                     recorded_by="fb_auto_post_worker",
                 )
             )
+            logger.warning(
+                "[fb_auto_post] POST FAILED company_id=%s run_id=%s queue_item_id=%s "
+                "code=%s kind=%s session=%s", company_id, run.id, item.id, error_code,
+                result.error_kind, _sess_base,
+            )
 
         db.commit()
+        if result.ok:
+            logger.info(
+                "[fb_auto_post] POSTED company_id=%s run_id=%s queue_item_id=%s session=%s url=%s",
+                company_id, run.id, item.id, _sess_base, result.final_url,
+            )
         return {
             "ok": result.ok,
+            "status": "success" if result.ok else "failed",
+            "company_id": company_id,
+            "run_id": run.id,
             "queue_item_id": item.id,
+            "error_code": error_code,
             "error_kind": result.error_kind,
             "error_message": result.error_message,
+            "session_file": _sess_base,
             "final_url": result.final_url,
             "screenshot_before": result.screenshot_before,
             "screenshot_after": result.screenshot_after,
@@ -216,6 +275,19 @@ def fire_run_staggered(
         )
         if not run:
             return {"ok": False, "error": f"run {run_id} not found"}
+
+        # FAIL CLOSED before scheduling N jobs: the run's company must have its own
+        # valid FB session. No shared/global session, no 'floordsgn' fallback.
+        from app.facebook_session import get_fb_session_status, error_code_for_reason, session_basename
+        fb_status = get_fb_session_status(run.company_id)
+        if not fb_status.get("connected"):
+            return {
+                "ok": False,
+                "error_code": error_code_for_reason(fb_status.get("reason")),
+                "error_message": "Facebook is not connected for this company. Connect Facebook before auto-firing.",
+                "company_id": run.company_id, "run_id": run_id,
+                "session_file": session_basename(run.company_id), "scheduled": [],
+            }
 
         items = (
             db.query(FacebookPostingQueueItem)

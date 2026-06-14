@@ -22,7 +22,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SESSION_DIR = REPO_ROOT / "data" / "fb_sessions"
 SESSION_DIR.mkdir(parents=True, exist_ok=True)
 
-DEFAULT_SESSION_NAME = "floordsgn"
 CRITICAL = {"c_user", "xs", "fr"}
 POLL_SECONDS = 3
 TIMEOUT_SECONDS = 420  # 7 minutes to log in (allows for 2FA)
@@ -39,7 +38,11 @@ def main() -> int:
         print("ERROR: playwright not installed in this venv.")
         return 1
 
-    session_name = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SESSION_NAME
+    if len(sys.argv) < 2:
+        print("Usage: fb_capture_session_auto.py <session_name>  (per-company, e.g. company_7)")
+        print("Refusing to default to a shared FB identity — pass the per-company session name.")
+        return 2
+    session_name = sys.argv[1]
     session_path = SESSION_DIR / f"{session_name}.json"
     print(f"\n→ FB session capture (auto) for: {session_name}")
     print(f"→ Will save to: {session_path}")

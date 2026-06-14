@@ -529,9 +529,9 @@ def connect_facebook():
     # powers group/Marketplace automation.
     import os as _os
     from ..models import FacebookGroup
-    from common.fb_browser_poster import company_session_name, session_exists as _fb_session_exists
+    from ..facebook_session import fb_session_exists as _fb_session_exists
     # Per-company browser session ONLY — never reveal another tenant's connected state.
-    fb_browser_connected = _fb_session_exists(company_session_name(company_id))
+    fb_browser_connected = _fb_session_exists(company_id)
     fb_group_count = db.query(FacebookGroup).filter(FacebookGroup.company_id == company_id).count() if company_id else 0
     if fb_browser_connected and fb_group_count > 0:
         fb_connected = True
@@ -588,6 +588,28 @@ def connect_facebook():
     )
 
 
+@bp.get("/connect/facebook/status")
+@require_company
+def connect_facebook_status():
+    """Tenant-safe Facebook connection status (JSON). company_id is derived ONLY from
+    the server-side authenticated session — a ?company_id= param is ignored by
+    construction, so one tenant can never probe another's connected state."""
+    from flask import jsonify
+    from ..facebook_session import get_fb_session_status
+    company_id = session.get("current_company_id")
+    status = get_fb_session_status(company_id)
+    if status.get("connected"):
+        db = db_session()
+        try:
+            comp = db.query(Company).filter(Company.id == company_id).first()
+            hint = (comp.fb_user_name if comp else None) or None
+        finally:
+            db.close()
+        if hint:
+            status["account_hint"] = hint
+    return jsonify(status)
+
+
 @bp.post("/connect/facebook/browser-connect")
 @require_company
 def fb_browser_connect():
@@ -602,12 +624,12 @@ def fb_browser_connect():
     import os as _os
     import sys as _sys
     import subprocess
-    from common.fb_browser_poster import company_session_name, session_exists as _fb_session_exists
+    from ..facebook_session import company_session_name, fb_session_exists as _fb_session_exists
 
     company_id = session.get("current_company_id")
     session_label = company_session_name(company_id)
     repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
-    if _fb_session_exists(session_label):
+    if _fb_session_exists(company_id):
         return redirect(url_for("auth.connect_facebook", message="Facebook is already connected. Press Sync to refresh your groups."))
 
     gate = _os.getenv("FB_ALLOW_LOCAL_CAPTURE", "").strip().lower()

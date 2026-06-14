@@ -37,8 +37,9 @@ from typing import Optional, TYPE_CHECKING
 
 # Playwright is imported lazily inside the functions that actually drive a browser
 # (post_to_group / smoke_session) so that `import common.fb_browser_poster` stays
-# cheap and dependency-free for callers that only need the session helpers
-# (company_session_name / session_exists) — e.g. the worker and the web status route.
+# cheap and dependency-free. Per-company session identity (company_<id>.json) lives in
+# the single authority app/facebook_session.py; this module is the low-level browser
+# driver and takes an already-resolved session_name.
 if TYPE_CHECKING:  # annotations only (resolved lazily via `from __future__ import annotations`)
     from playwright.sync_api import Page, Playwright
 
@@ -75,19 +76,6 @@ def session_path(session_name: str) -> Path:
 def session_exists(session_name: str) -> bool:
     p = session_path(session_name)
     return p.exists() and p.stat().st_size > 1024
-
-
-def company_session_name(company_id) -> str:
-    """Canonical per-company FB browser-session name → data/fb_sessions/company_<id>.json.
-
-    Optional ops override: FB_BROWSER_SESSION_COMPANY_<id> (e.g. to point a company at a
-    migrated legacy session file). There is deliberately NO global default — a missing
-    per-company session must fail closed, never silently fall back to another tenant's
-    captured Facebook account.
-    """
-    cid = str(company_id)
-    override = os.getenv(f"FB_BROWSER_SESSION_COMPANY_{cid}", "").strip()
-    return override or f"company_{cid}"
 
 
 def screenshot_path(session_name: str, queue_item_id: int, suffix: str) -> Path:
