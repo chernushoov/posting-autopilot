@@ -35,8 +35,32 @@
 }
 
 {$APP_DOMAIN} {
-	import app_proxy
+	# One-time Facebook login viewer (noVNC) — gated by the app session via
+	# forward_auth. handle_path strips the /fbvnc prefix before proxying to the
+	# in-container websockify. NO strict CSP here: noVNC needs eval/blob/workers.
+	# x11vnc binds 127.0.0.1 inside the web container; websockify (web:6080) is
+	# reachable only on the docker network and only after /authz returns 200.
+	handle_path /fbvnc/* {
+		forward_auth web:8000 {
+			uri /connect/facebook/capture/authz
+		}
+		header {
+			X-Content-Type-Options "nosniff"
+			Referrer-Policy "no-referrer"
+			Cache-Control "no-store"
+		}
+		reverse_proxy web:6080
+	}
 
-	@root path /
-	redir @root /login 302
+	handle {
+		import security_headers
+
+		@root path /
+		redir @root /login 302
+
+		reverse_proxy web:8000 {
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+		}
+	}
 }

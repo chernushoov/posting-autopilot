@@ -662,13 +662,13 @@ def connect_facebook_status():
 @bp.post("/connect/facebook/browser-connect")
 @require_company
 def fb_browser_connect():
-    """Launch the one-time browser login that captures THIS company's Facebook session
-    (the EZPost-style path that powers groups + Marketplace).
+    """Start the one-time Facebook login that captures THIS company's browser
+    session (the path that powers group + Marketplace posting).
 
-    This opens a *visible* browser on the machine running the app, so it only makes
-    sense on a local/desktop install. It is gated behind FB_ALLOW_LOCAL_CAPTURE so a
-    server deployment never tries to spawn a browser, and so nothing launches without
-    an explicit opt-in. When the gate is off we just explain how to enable it.
+    Cloud path (FB_SERVER_CAPTURE): run the login ON THE SERVER inside a virtual
+    display and let the owner drive it through a noVNC tab — posting later runs
+    headless from the same server. Desktop fallback (FB_ALLOW_LOCAL_CAPTURE):
+    spawn a visible browser on the local machine.
     """
     import os as _os
     import sys as _sys
@@ -676,19 +676,30 @@ def fb_browser_connect():
     from ..facebook_session import company_session_name, fb_session_exists as _fb_session_exists
 
     company_id = session.get("current_company_id")
-    session_label = company_session_name(company_id)
-    repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
+    user_id = session.get("user_id")
     if _fb_session_exists(company_id):
-        return redirect(url_for("auth.connect_facebook", message="Facebook is already connected. Press Sync to refresh your groups."))
+        return redirect(url_for("auth.connect_facebook", message="Facebook уже подключён. Нажмите «Синхронизировать», чтобы обновить группы."))
 
+    # ── Cloud path: server-side capture via noVNC ────────────────────────────
+    from .. import fb_capture_server as _cap
+    if _cap.is_enabled():
+        res = _cap.start_capture(company_id, user_id)
+        if res.get("busy"):
+            return redirect(url_for("auth.connect_facebook", error="Сейчас на сервере идёт другое подключение Facebook. Подождите минуту и попробуйте снова."))
+        if not res.get("ok"):
+            return redirect(url_for("auth.connect_facebook", error="Не удалось запустить подключение Facebook: " + str(res.get("error", ""))[:160]))
+        return redirect(url_for("auth.fb_capture_view"))
+
+    # ── Desktop fallback (local install only) ────────────────────────────────
     gate = _os.getenv("FB_ALLOW_LOCAL_CAPTURE", "").strip().lower()
     if gate not in {"1", "true", "yes", "on"}:
         return redirect(url_for(
             "auth.connect_facebook",
-            error="Facebook auto-connect runs on a desktop only. For now, add your Facebook groups and Marketplace by pasting their links in the form above.",
+            error="Подключение Facebook через сервер сейчас выключено. Добавьте группы и Marketplace, вставив ссылки в форме выше.",
         ))
-
     try:
+        session_label = company_session_name(company_id)
+        repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
         script = _os.path.join(repo_root, "scripts", "fb_capture_session_auto.py")
         py = _os.path.join(repo_root, ".venv-fb", "bin", "python")
         if not _os.path.exists(py):
@@ -701,10 +712,66 @@ def fb_browser_connect():
         )
         return redirect(url_for(
             "auth.connect_facebook",
-            message="A browser window is opening — sign into Facebook there. When you're done, come back and press Sync.",
+            message="Открывается окно браузера — войдите в Facebook. Потом вернитесь и нажмите «Синхронизировать».",
         ))
     except Exception as exc:  # pragma: no cover - best effort launch
-        return redirect(url_for("auth.connect_facebook", error="Couldn't launch the Facebook login: " + str(exc)[:160]))
+        return redirect(url_for("auth.connect_facebook", error="Не удалось запустить вход в Facebook: " + str(exc)[:160]))
+
+
+@bp.get("/connect/facebook/capture")
+@require_company
+def fb_capture_view():
+    """Authed viewer for the server-side FB login: shows the live browser via noVNC
+    and polls until the session is captured. The VNC password is delivered ONLY on
+    this page, to the authenticated owner of the active capture slot."""
+    from .. import fb_capture_server as _cap
+    if not _cap.is_enabled():
+        return redirect(url_for("auth.connect_facebook"))
+    company_id = session.get("current_company_id")
+    user_id = session.get("user_id")
+    pwd = _cap.current_password(company_id, user_id)
+    if not pwd:
+        return redirect(url_for("auth.connect_facebook"))
+    from urllib.parse import quote
+    vnc_url = ("/fbvnc/vnc.html?autoconnect=1&resize=remote&reconnect=1"
+               "&path=" + quote("fbvnc/websockify") + "&password=" + quote(pwd))
+    return render_template("connect_facebook_capture.html", vnc_url=vnc_url)
+
+
+@bp.get("/connect/facebook/capture/status")
+@require_company
+def fb_capture_status():
+    from flask import jsonify
+    from .. import fb_capture_server as _cap
+    company_id = session.get("current_company_id")
+    user_id = session.get("user_id")
+    return jsonify(_cap.get_status(company_id, user_id))
+
+
+@bp.post("/connect/facebook/capture/cancel")
+@require_company
+def fb_capture_cancel():
+    from .. import fb_capture_server as _cap
+    company_id = session.get("current_company_id")
+    user_id = session.get("user_id")
+    _cap.cancel(company_id, user_id)
+    return redirect(url_for("auth.connect_facebook", message="Подключение Facebook отменено."))
+
+
+@bp.route("/connect/facebook/capture/authz", methods=["GET", "POST", "HEAD"])
+def fb_capture_authz():
+    """Caddy forward_auth target for /fbvnc/*. Returns ONLY 200 (allow) or 403
+    (deny) — never a 3xx, so a redirect can't be mistaken for success. No
+    @require_company here (it can 302); we check the session directly. Allow iff
+    there is a logged-in user whose validated company owns the live capture slot."""
+    from .. import fb_capture_server as _cap
+    user_id = session.get("user_id")
+    company_id = session.get("current_company_id")
+    if not user_id or not company_id:
+        return ("", 403)
+    if _cap.authz(company_id, user_id):
+        return ("", 200)
+    return ("", 403)
 
 
 @bp.post("/connect/facebook/setup")

@@ -43,3 +43,20 @@ data/fb_screenshots/
 .venv-fb/
 .openclaw/
 data/fb_sessions/*.json
+node_modules/
+package.json
+package-lock.json
+/data/uploads/
+# local scratch QA scripts
+/auth-shot.js
+/cap.js
+/dshot.js
+/fb.js
+/l2.js
+/l3.js
+/lshot.js
+/prod.js
+/shot.js
+/tg.js
+/v2.js
+/ver.js

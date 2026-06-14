@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Подключение Facebook — Posting Autopilot</title>
+<style>
+  :root{--bg:#0e1016;--card:#171a23;--bd:#262a36;--fg:#eef1f6;--muted:#9aa3b2;--accent:#6E63FF;--ok:#3ad29f;--warn:#ffb020}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,Segoe UI,Roboto,Inter,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;max-width:560px;width:100%;padding:28px 26px}
+  h1{font-size:20px;margin:0 0 4px}
+  p{color:var(--muted);line-height:1.5;font-size:14px}
+  ol{color:var(--muted);font-size:14px;line-height:1.7;padding-left:18px}
+  .btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;font-size:15px;border:0;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid var(--bd);color:var(--muted)}
+  .status{display:flex;align-items:center;gap:10px;margin:18px 0;padding:12px 14px;border:1px solid var(--bd);border-radius:10px;font-size:14px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--warn);flex:none;animation:pulse 1.3s infinite}
+  .dot.ok{background:var(--ok);animation:none}
+  .dot.bad{background:#ff5470;animation:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .muted{color:var(--muted)}
+  code{background:#0c0e14;padding:1px 6px;border-radius:5px;color:#cdd5e3}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Подключение Facebook</h1>
+    <p>Вход в Facebook открыт на сервере в защищённом окне. Войдите в свой аккаунт — сессия сохранится на сервере, и постинг в группы/Marketplace будет работать из облака.</p>
+
+    <ol>
+      <li>Нажмите <b>«Открыть окно входа»</b> — откроется новая вкладка с Facebook.</li>
+      <li>Войдите в свой аккаунт (включая код 2FA / подтверждение, если попросит).</li>
+      <li>Когда увидите свою ленту Facebook — вернитесь на эту вкладку. Подключение определится <b>автоматически</b>.</li>
+    </ol>
+
+    <div class="row">
+      <a class="btn" href="{{ vnc_url }}" target="fbvnc" rel="noopener" id="openBtn">Открыть окно входа</a>
+      <form method="post" action="/connect/facebook/capture/cancel" style="margin:0">
+        <button type="submit" class="btn ghost">Отмена</button>
+      </form>
+    </div>
+
+    <div class="status" id="status"><span class="dot" id="dot"></span><span id="statusText">Окно входа запускается…</span></div>
+
+    <p class="muted" style="font-size:12px">Окно входа автоматически закроется после подключения или через 10 минут. Никто, кроме вас, не видит это окно.</p>
+  </div>
+
+<script>
+(function(){
+  var vnc = {{ vnc_url|tojson }};
+  // Try to auto-open the login tab (popup blockers may require the button).
+  try { window.open(vnc, "fbvnc", "noopener"); } catch(e){}
+
+  var dot = document.getElementById('dot');
+  var txt = document.getElementById('statusText');
+  function set(state){
+    var map = {
+      awaiting_login: ['', 'Ждём входа в Facebook в соседней вкладке…'],
+      starting:       ['', 'Окно входа запускается…'],
+      connected:      ['ok', 'Facebook подключён! Перенаправляем…'],
+      expired:        ['bad', 'Время вышло. Закройте вкладку входа и начните заново.'],
+      failed:         ['bad', 'Не удалось завершить вход. Попробуйте ещё раз.'],
+      busy_other:     ['bad', 'Сейчас идёт другое подключение. Подождите минуту.'],
+      idle:           ['bad', 'Сессия подключения не найдена. Начните заново.']
+    };
+    var m = map[state] || ['', state];
+    dot.className = 'dot' + (m[0] ? ' ' + m[0] : '');
+    txt.textContent = m[1];
+  }
+  function poll(){
+    fetch('/connect/facebook/capture/status', {credentials:'same-origin'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        set(j.state);
+        if(j.state === 'connected'){
+          setTimeout(function(){ location.href = '/connect/facebook?message=' + encodeURIComponent('Facebook подключён! Можно синхронизировать группы.'); }, 1200);
+          return;
+        }
+        if(['expired','failed','idle'].indexOf(j.state) >= 0){
+          setTimeout(function(){ location.href = '/connect/facebook'; }, 4000);
+          return;
+        }
+        setTimeout(poll, 2500);
+      })
+      .catch(function(){ setTimeout(poll, 3000); });
+  }
+  poll();
+})();
+</script>
+</body>
+</html>

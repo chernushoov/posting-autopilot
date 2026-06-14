@@ -48,6 +48,9 @@ def create_app():
         csrf.exempt("fb_safe_workflow.api_groups")
         csrf.exempt("billing.stripe_webhook")
         csrf.exempt("auth.fb_callback")
+        # Caddy forward_auth target for /fbvnc/* (called GET, no form): exempt so a
+        # non-form gateway probe is never rejected by CSRF.
+        csrf.exempt("auth.fb_capture_authz")
 
         # Auto-inject CSRF token into all POST forms via after_request
         @app.after_request
