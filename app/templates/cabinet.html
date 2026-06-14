@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script>try{localStorage.setItem("pa_app_auth","1");}catch(e){}</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Posting Autopilot — Кабинет</title>
+<link rel="icon" type="image/svg+xml" href="/static/app-icon.svg">
+<link rel="stylesheet" href="/static/ds.css">
+<link rel="stylesheet" href="/static/cabinet.css">
+<link rel="stylesheet" href="/static/app2.css">
+</head>
+<body class="app">
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<section class="app-screen" id="screen-login" data-screen-label="Login">
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="brand-mark"><img class="brand-mark-icon" src="/static/app-icon.svg" alt="" width="60" height="60"><span>Posting<em>Autopilot</em></span></div>
+      <p class="muted">Войдите, чтобы управлять постингом и лидами</p>
+      <button class="btn-tg" id="tgLogin"><span class="ico" data-i="send"></span>Войти через Telegram</button>
+      <div class="auth-divider">или по email</div>
+      <form id="emailForm">
+        <div class="stack tight">
+          <div><label>Email</label><input type="email" placeholder="you@company.com" value="demo@posting-autopilot.com" required></div>
+          <div><label>Пароль</label><input type="password" placeholder="••••••••" value="demo1234" required></div>
+        </div>
+        <button class="btn" type="submit">Войти</button>
+      </form>
+      <div class="auth-switch">Нет аккаунта? <a id="signupLink" href="#/login">Создать за 5 минут →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ APP SHELL ═══════════════ -->
+<div class="shell hide" id="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><img src="/static/logo-mark.svg" alt="" width="26" height="26">Posting<em>Autopilot</em></div>
+    <button class="sb-company" id="cmpBtn">
+      <span class="cmp-logo" id="cmpLogo">Д</span>
+      <span style="flex:1;min-width:0;text-align:left">
+        <span class="cmp-name" id="cmpName">Dirot TLV</span>
+        <span class="cmp-sub">Недвижимость · Pro</span>
+      </span>
+      <span class="ico" data-i="chevron"></span>
+    </button>
+
+    <nav id="sbnav">
+      <div class="sb-group">
+        <div class="sb-group-label">Лиды</div>
+        <div class="sb-link" data-go="leads"><span class="ico" data-i="flame"></span>Лиды<span class="sb-count" id="navLeadCount">7</span></div>
+        <div class="sb-link" data-go="dashboard"><span class="ico" data-i="grid"></span>Дашборд</div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Постинг</div>
+        <div class="sb-link" data-go="campaigns"><span class="ico" data-i="rocket"></span>Кампании<span class="sb-dot" id="navCampDot"></span></div>
+        <div class="sb-link" data-go="ads"><span class="ico" data-i="doc"></span>Объявления</div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Каналы</div>
+        <div class="sb-link" data-go="channel-tg"><span class="ico" data-i="send"></span>Telegram</div>
+        <div class="sb-link" data-go="channel-fb"><span class="ico" data-i="fb"></span>Facebook</div>
+        <div class="sb-link" data-go="sources"><span class="ico" data-i="target"></span>Назначения</div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Настройка</div>
+        <div class="sb-link" data-go="bot"><span class="ico" data-i="bot"></span>AI-бот</div>
+        <div class="sb-link" data-go="analytics"><span class="ico" data-i="chart"></span>Аналитика</div>
+        <div class="sb-link" data-go="company"><span class="ico" data-i="users"></span>Компания и команда</div>
+        <div class="sb-link" data-go="billing"><span class="ico" data-i="card"></span>Биллинг</div>
+      </div>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="trial-chip"><span class="ico" data-i="clock"></span>Триал · осталось 11 дней</div>
+      <div class="sb-link" id="logoutBtn"><span class="ico" data-i="logout"></span>Выйти</div>
+    </div>
+  </aside>
+
+  <!-- Work column -->
+  <div class="work">
+    <header class="workbar">
+      <button class="burger" id="burger"><span class="ico" data-i="menu"></span></button>
+      <div class="wb-title" id="wbTitle">Лиды</div>
+      <div class="spacer"></div>
+      <div class="lang-switch" id="langSwitch">
+        <button class="active" data-lang="ru">RU</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="he">HE</button>
+      </div>
+      <div class="avatar" id="avatar" title="Аккаунт">ПА</div>
+    </header>
+
+    <div class="work-grid">
+      <main class="view" id="view"></main>
+      <aside class="copilot" id="copilot"></aside>
+    </div>
+  </div>
+</div>
+
+<!-- company switch popover + scrim -->
+<div class="scrim" id="scrim"></div>
+<div class="cmp-pop" id="cmpPop"></div>
+
+<script src="/static/app-data.js"></script>
+<script src="/static/app-screens.js"></script>
+<script src="/static/app-screens2.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

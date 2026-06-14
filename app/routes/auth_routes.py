@@ -2,7 +2,7 @@ import time
 import secrets
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from ..auth import admin_login_ok, require_company, is_logged_in, _login_redirect, revalidate_company
+from ..auth import admin_login_ok, require_company, is_logged_in, _login_redirect, revalidate_company, login_required
 from ..db import db_session
 from ..models import Company, User
 from common.connection_flows import (
@@ -19,7 +19,17 @@ bp = Blueprint("auth", __name__)
 def index():
     if session.get("is_admin"):
         return redirect(url_for("auth.dashboard"))
-    return render_template("landing.html")
+    # Premium white landing — one curated template per language (he default).
+    lang = session.get("ui_lang", "he")
+    template = {"en": "landing_en.html", "ru": "landing_ru.html"}.get(lang, "landing.html")
+    return render_template(template)
+
+
+@bp.get("/cabinet")
+@login_required
+def cabinet():
+    # New white cabinet UI (design integration). Served behind real auth.
+    return render_template("cabinet.html")
 
 @bp.get("/login")
 def login():

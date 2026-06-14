@@ -1,0 +1,164 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Posting Autopilot — Cinematic layer (phase 2)
+   Shared by index.html (he) / en.html / ru.html. Scroll-driven, not transition-
+   dependent, so it stays reliable even in throttled/background frames.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Reading progress bar ─────────────────────────────────────────────────── */
+.l-nav .brand{display:inline-flex;align-items:center;gap:9px}
+.l-nav .brand .brand-logo{width:26px;height:26px;display:block;flex-shrink:0}
+.read-progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:2000;
+  background:linear-gradient(90deg,var(--accent),#5856d6);box-shadow:0 0 12px rgba(0,113,227,.5);
+  transition:width .08s linear;pointer-events:none}
+
+/* ── Hero interactive canvas field ────────────────────────────────────────── */
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.l-hero>*{position:relative;z-index:1}
+.l-hero .hero-scroll{z-index:2}
+
+/* Letter / word reveal for the hero headline */
+.hero-h1 .w{display:inline-block;overflow:hidden;vertical-align:top}
+.hero-h1 .w>span{display:inline-block;transform:translateY(110%);opacity:0;
+  animation:wordRise .9s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes wordRise{to{transform:translateY(0);opacity:1}}
+
+/* ── Magnetic buttons / cursor tilt helpers ───────────────────────────────── */
+.magnetic{will-change:transform}
+.tilt{transform-style:preserve-3d;will-change:transform;transition:transform .35s cubic-bezier(.16,1,.3,1)}
+.tilt-glare{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.55),transparent 45%);
+  transition:opacity .3s;mix-blend-mode:soft-light}
+.tilt:hover .tilt-glare{opacity:1}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   STICKY SCROLL-STORY  (replaces the static "How it works" grid)
+   ════════════════════════════════════════════════════════════════════════════ */
+.l-story{position:relative;background:#fff}
+/* Default = static fallback (no JS / reduced motion). JS adds .story-on to enable the cinematic scene. */
+.story-track{position:relative;height:auto}
+.story-sticky{position:static;height:auto;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;overflow:hidden;padding:80px 24px;gap:26px}
+.l-story.story-on .story-track{height:420vh}            /* scroll length = 4 stages */
+.l-story.story-on .story-sticky{position:sticky;top:0;height:100vh;padding:0 24px}
+.story-sticky::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 30%,rgba(0,113,227,.06),transparent 60%);pointer-events:none}
+.story-stage{display:none}
+.l-story.story-on .story-stage{display:flex}
+
+.story-head{text-align:center;margin-bottom:18px;position:relative;z-index:3}
+.story-head .eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px}
+.story-head h2{font-size:clamp(26px,4vw,42px);font-weight:800;letter-spacing:-.03em}
+
+.story-stage{position:relative;width:100%;max-width:760px;display:flex;flex-direction:column;align-items:center;gap:22px;z-index:2}
+
+/* progress rail with 4 dots */
+.story-rail{position:relative;width:min(420px,80%);height:4px;border-radius:99px;background:var(--border-light)}
+.story-rail-fill{position:absolute;inset:0;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),#5856d6);transition:width .15s linear}
+.story-dots{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;transform:translateY(-50%);top:50%}
+.story-dots span{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--border);transition:all .3s}
+.story-dots span.done{border-color:var(--accent);background:var(--accent)}
+.story-dots span.active{border-color:var(--accent);box-shadow:0 0 0 5px rgba(0,113,227,.18);background:#fff}
+
+/* the scene canvas where the 4 visuals crossfade */
+.story-scene{position:relative;width:100%;height:min(46vh,360px)}
+.scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:translateY(28px) scale(.96);will-change:opacity,transform}
+
+/* Stage 1 — the single listing card */
+.s-ad{width:300px;max-width:86%;background:#fff;border:1px solid var(--border-light);border-radius:20px;
+  box-shadow:0 18px 50px rgba(0,0,0,.10);overflow:hidden}
+.s-ad .ad-img{height:120px;background:repeating-linear-gradient(135deg,#eef2f8,#eef2f8 12px,#e6ecf5 12px,#e6ecf5 24px);
+  display:flex;align-items:center;justify-content:center;color:#9fb0c8;font:600 12px/1 'SF Mono',monospace}
+.s-ad .ad-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.s-ad .ad-line{height:10px;border-radius:6px;background:var(--border-light)}
+.s-ad .ad-line.w70{width:70%}.s-ad .ad-line.w45{width:45%}
+.s-ad .ad-price{align-self:flex-start;background:var(--accent-light);color:var(--accent);font-weight:700;font-size:13px;padding:5px 12px;border-radius:99px}
+
+/* Stage 2 — fan-out into 50+ groups */
+.s-groups{flex-direction:column;gap:18px}
+.groups-counter{font-size:56px;font-weight:800;letter-spacing:-.03em;color:var(--accent);line-height:1}
+.groups-counter small{font-size:22px;color:var(--muted);font-weight:600}
+.groups-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:7px;max-width:520px}
+.groups-grid i{width:100%;aspect-ratio:1;border-radius:6px;background:var(--border-light);transform:scale(.6);opacity:.5;
+  transition:all .25s cubic-bezier(.16,1,.3,1)}
+.groups-grid i.on{background:linear-gradient(135deg,var(--accent),#5aa0f5);transform:scale(1);opacity:1;box-shadow:0 4px 10px rgba(0,113,227,.25)}
+
+/* Stage 3 — bot filtering chat */
+.s-bot{flex-direction:column;gap:8px;width:min(420px,92%)}
+.s-bot .b-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;font-size:13px;font-weight:600;
+  border:1px solid var(--border-light);background:#fff;box-shadow:var(--shadow);width:100%}
+.s-bot .b-row .b-ic{width:24px;height:24px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:7px}
+.s-bot .b-row.spam{color:var(--danger)}.s-bot .b-row.spam .b-ic{background:var(--danger-light);color:var(--danger)}
+.s-bot .b-row.hot{color:var(--success)}.s-bot .b-row.hot .b-ic{background:var(--success-light);color:var(--success)}
+.s-bot .b-row .b-tag{margin-inline-start:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+
+/* Stage 4 — the hot lead card */
+.s-lead{}
+.lead-card{width:330px;max-width:90%;background:#0f2a18;color:#eafff2;border-radius:20px;padding:22px 24px;
+  box-shadow:0 22px 60px rgba(15,42,24,.4);position:relative;overflow:hidden}
+.lead-card::before{content:'';position:absolute;top:-40%;right:-20%;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(74,222,128,.25),transparent 60%)}
+.lead-card .lead-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.06em;
+  background:rgba(74,222,128,.18);color:#4ade80;padding:5px 12px;border-radius:99px;margin-bottom:14px}
+.lead-card .lead-name{font-size:20px;font-weight:800;margin-bottom:4px}
+.lead-card .lead-meta{font-size:13px;color:#9fdcb6;line-height:1.6}
+.lead-card .lead-phone{margin-top:12px;font-size:16px;font-weight:700;letter-spacing:.02em}
+.lead-ping{position:absolute;top:18px;inset-inline-end:18px;width:10px;height:10px;border-radius:50%;background:#4ade80}
+.lead-ping::after{content:'';position:absolute;inset:0;border-radius:50%;background:#4ade80;animation:ping 1.6s ease-out infinite}
+@keyframes ping{0%{transform:scale(1);opacity:.7}100%{transform:scale(3.4);opacity:0}}
+
+/* caption */
+.story-caption{text-align:center;max-width:520px;min-height:96px;position:relative;z-index:3}
+.story-step-num{font-size:13px;font-weight:700;letter-spacing:.18em;color:var(--accent);margin-bottom:6px}
+.story-step-title{font-size:clamp(20px,2.6vw,26px);font-weight:800;letter-spacing:-.02em;margin-bottom:8px;
+  transition:opacity .35s,transform .35s}
+.story-step-desc{font-size:15px;color:var(--muted);line-height:1.55;transition:opacity .35s,transform .35s}
+.story-caption.swap .story-step-title,.story-caption.swap .story-step-desc{opacity:0;transform:translateY(8px)}
+
+/* fallback list (no-JS / reduced motion) — visible by default, hidden when scene is on */
+.story-fallback{margin:0 auto}
+.l-story.story-on .story-fallback{display:none}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ONBOARDING TOUR (first visit)
+   ════════════════════════════════════════════════════════════════════════════ */
+.tour-mask{position:fixed;inset:0;z-index:3000;background:rgba(15,18,24,.55);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .3s}
+.tour-mask.show{opacity:1;pointer-events:auto}
+.tour-spot{position:absolute;border-radius:14px;box-shadow:0 0 0 4px rgba(0,113,227,.9),0 0 0 9999px rgba(15,18,24,.55);
+  transition:all .4s cubic-bezier(.16,1,.3,1);pointer-events:none}
+.tour-pop{position:absolute;z-index:3001;width:300px;max-width:88vw;background:#fff;border-radius:16px;
+  padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.28);opacity:0;transform:translateY(8px) scale(.98);
+  transition:all .35s cubic-bezier(.16,1,.3,1)}
+.tour-pop.show{opacity:1;transform:translateY(0) scale(1)}
+.tour-pop .tp-step{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.tour-pop h4{font-size:17px;font-weight:700;margin:0 0 6px}
+.tour-pop p{font-size:14px;color:var(--muted);line-height:1.55;margin:0 0 16px}
+.tour-pop .tp-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tour-pop .tp-dots{display:flex;gap:6px}
+.tour-pop .tp-dots i{width:7px;height:7px;border-radius:50%;background:var(--border)}
+.tour-pop .tp-dots i.on{background:var(--accent);width:18px;border-radius:99px}
+.tour-pop .tp-actions{display:flex;gap:8px}
+.tour-pop button{font-family:inherit;border-radius:99px;font-weight:600;font-size:13px;cursor:pointer;padding:8px 16px;border:1px solid var(--border)}
+.tour-pop .tp-skip{background:none;color:var(--muted);border-color:transparent;padding:8px 10px}
+.tour-pop .tp-next{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tour-pop .tp-next:hover{background:var(--accent-hover)}
+
+/* a small launcher to replay the tour */
+.tour-launch{position:fixed;inset-inline-end:18px;bottom:18px;z-index:1500;display:inline-flex;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--border-light);box-shadow:var(--shadow-lg);border-radius:99px;
+  padding:10px 16px;font:600 13px/1 inherit;color:var(--fg);cursor:pointer;transition:transform .2s,box-shadow .2s}
+.tour-launch:hover{transform:translateY(-2px)}
+.tour-launch .tl-ic{width:18px;height:18px;color:var(--accent)}
+
+/* ── Responsive / motion ──────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .story-track{height:360vh}
+  .story-scene{height:min(40vh,300px)}
+  .groups-grid{grid-template-columns:repeat(8,1fr);max-width:340px}
+  .groups-counter{font-size:44px}
+}
+@media(prefers-reduced-motion:reduce){
+  .read-progress{display:none}
+  .lead-ping::after{animation:none}
+}
