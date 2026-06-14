@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Posting Autopilot — {{ ui("pricing_title") }}</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260613-logo">
+  <link rel="stylesheet" href="/static/app.css?v=20260614-dark">
   <style>
     .pricing-hero{text-align:center;padding:60px 20px 40px}
     .pricing-hero h1{font-size:2.4em;margin-bottom:12px}
@@ -34,7 +34,7 @@
   {% if is_rtl %}<style>body{direction:rtl;text-align:right}.plan ul li::before{content:"\2713 ";float:right;margin-left:6px}</style>{% endif %}
 </head>
 <body style="background:var(--bg)">
-  <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-light)">
+  <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:rgba(10,10,11,.8);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-light)">
     <a href="/" class="brand" style="text-decoration:none">Posting<em>Autopilot</em></a>
     <div style="display:flex;gap:8px;align-items:center">
       <div style="display:flex;gap:4px">
@@ -54,7 +54,7 @@
     <h1>{{ ui("pricing_title") }}</h1>
     <p>{{ ui("pricing_subtitle") }}</p>
     {% if billing_disabled %}
-    <p style="margin-top:14px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 16px;display:inline-block">
+    <p style="margin-top:14px;color:#b45309;background:var(--warning-light);border:1px solid #fed7aa;border-radius:12px;padding:12px 16px;display:inline-block">
       {% if ui_lang == 'he' %}החיוב העצמי עדיין לא הופעל. צריך להוסיף מפתחות Stripe לפני שאפשר לשלם באתר.{% elif ui_lang == 'ru' %}Самостоятельная оплата ещё не включена. Перед запуском нужны Stripe-ключи оператора.{% else %}Self-serve billing is not enabled yet. Stripe keys must be added before checkout can go live.{% endif %}
     </p>
     {% endif %}

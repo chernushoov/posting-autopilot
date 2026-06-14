@@ -133,7 +133,7 @@
     <form method="post" action="/connect/facebook/setup" class="stack">
       <div class="grid2">
         <div><label>Facebook App ID</label><input name="fb_app_id" value="{{ fb_app_id or '' }}" placeholder="123456789012345"></div>
-        <div><label>Facebook App Secret</label><input name="fb_app_secret" value="{{ fb_app_secret or '' }}" autocomplete="off" placeholder="abc123def456..."></div>
+        <div><label>Facebook App Secret</label><input name="fb_app_secret" autocomplete="off" placeholder="abc123def456..."></div>
       </div>
       <button class="pill" type="submit">
         {% if ui_lang == 'ru' %}Подключить Meta Pages{% elif ui_lang == 'he' %}חבר Meta Pages{% else %}Connect Meta Pages{% endif %}

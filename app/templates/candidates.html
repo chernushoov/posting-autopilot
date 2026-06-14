@@ -33,7 +33,7 @@
      style="text-decoration:none">{{ ui('cls_cold') }} · {{ counts_by_classification.cold }}</a>
   <a class="pill {% if current_classification == 'duplicate' %}active{% endif %}"
      href="/candidates/{{ base_q }}{{ sep }}classification=duplicate"
-     style="text-decoration:none;background:#f4e1d4;color:#7a4a1f">
+     style="text-decoration:none;background:var(--warning-light);color:var(--warning)">
      {{ ui('cls_duplicate') }} · {{ counts_by_classification.duplicate }}
   </a>
 </div>
@@ -46,7 +46,7 @@
     <td class="mobile-primary" data-label="{{ ui('name') }}">
       {{ c.full_name or c.tg_username or c.tg_user_id or "-" }}
       {% if c.classification == 'duplicate' %}
-      <span class="pill" style="background:#f4e1d4;color:#7a4a1f;font-size:11px;padding:2px 8px;margin-left:6px">{{ ui('cls_duplicate') }}</span>
+      <span class="pill" style="background:var(--warning-light);color:var(--warning);font-size:11px;padding:2px 8px;margin-left:6px">{{ ui('cls_duplicate') }}</span>
       {% endif %}
     </td>
     <td data-label="{{ ui('phone_label_full') }}">{{ c.phone or "-" }}</td>

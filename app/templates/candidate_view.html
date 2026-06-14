@@ -8,7 +8,7 @@
   {% endif %}
 </h1>
 {% if duplicate_of %}
-<div class="card" style="border-left:3px solid #f4e1d4;background:rgba(244,225,212,0.20);margin-bottom:14px">
+<div class="card" style="border-left:3px solid var(--warning-light);background:rgba(244,225,212,0.20);margin-bottom:14px">
   <div class="small">
     <strong>{{ ui('dup_of_label') }}:</strong>
     <a href="/candidates/{{ duplicate_of.id }}">#{{ duplicate_of.id }} {{ duplicate_of.full_name or duplicate_of.tg_username or '-' }}</a>

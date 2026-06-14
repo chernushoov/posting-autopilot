@@ -11,12 +11,12 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-  <meta name="theme-color" content="#0071e3">
+  <meta name="theme-color" content="#0A0A0B">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Autopilot">
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20260613-tabbar">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20260614-dark">
   {% if is_rtl %}
   <style>
     body { direction: rtl; text-align: right; }
@@ -39,48 +39,48 @@
 <body>
   {% set is_public_auth_page = request.path in ['/login', '/register', '/user-login'] %}
   <header class="topbar">
-    <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none"><img class="brand-logo" src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="28" height="28"><span>Posting&nbsp;<em>Autopilot</em></span></a>
+    <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none"><img class="brand-logo" src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="26" height="26"><span>Posting&nbsp;<em>Autopilot</em></span></a>
     {% if session.get('is_admin') or session.get('user_id') %}
-    <button class="hamburger" onclick="document.querySelector('.nav').classList.toggle('open')" aria-label="Menu">&#9776;</button>
     <nav class="nav">
       <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>{{ ui("nav_dashboard") }}</a>
-      <a href="/profile/" {% if request.path.startswith('/profile') or request.path.startswith('/companies') %}class="active"{% endif %}>{{ ui("company_profile") }}</a>
-      <a href="/connect/telegram" {% if '/connect/telegram' in request.path %}class="active"{% endif %}>Telegram</a>
-      <a href="/connect/facebook" {% if '/connect/facebook' in request.path %}class="active"{% endif %}>Facebook</a>
       <a href="/vacancies/" {% if request.path.startswith('/vacancies') %}class="active"{% endif %}>{{ ui("nav_vacancies") }}</a>
-      <a href="/creatives/" {% if request.path.startswith('/creatives') %}class="active"{% endif %}>{{ ui("nav_creatives") }}</a>
-      <a href="/sources/" {% if request.path.startswith('/sources') %}class="active"{% endif %}>{{ ui("nav_destinations") }}</a>
       <a href="/campaigns/" {% if request.path.startswith('/campaigns') %}class="active"{% endif %}>{{ ui("nav_campaigns") }}</a>
       <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
       <a href="/analytics/" {% if request.path.startswith('/analytics') %}class="active"{% endif %}>{{ ui("nav_analytics") }}</a>
-      <a href="/activity/" {% if request.path.startswith('/activity') %}class="active"{% endif %}>{% if ui_lang == 'he' %}הוכחה{% elif ui_lang == 'ru' %}Доказательство{% else %}Proof{% endif %}</a>
-      <a href="/experiment" {% if request.path.startswith('/experiment') %}class="active"{% endif %}>{% if ui_lang == 'he' %}ניסוי{% elif ui_lang == 'ru' %}Эксперимент{% else %}Experiment{% endif %}</a>
-      <a href="/demo/story" {% if request.path.startswith('/demo/story') %}class="active"{% endif %}>{% if ui_lang == 'he' %}סטורис{% elif ui_lang == 'ru' %}Сторис{% else %}Story{% endif %}</a>
-      <a href="/admin/autopilot" {% if request.path.startswith('/admin/autopilot') %}class="active"{% endif %}>Autopilot</a>
     </nav>
-    {% endif %}
     <div class="right">
-      <div class="lang-switcher" style="display:flex;gap:4px">
+      <button class="acct-btn" type="button" onclick="document.getElementById('acctMenu').classList.toggle('open')" aria-haspopup="true">
+        <span class="avatar">{{ (current_company_name or 'A')[0]|upper }}</span>
+        <span class="acct-name">{{ current_company_name or ui("nav_dashboard") }}</span>
+      </button>
+      <div class="menu" id="acctMenu">
+        <a href="/profile/" {% if request.path.startswith('/profile') %}class="active"{% endif %}>{{ ui("company_profile") }}</a>
+        {% if current_company_name %}<a href="/companies/">{% if ui_lang == 'he' %}החלף חברה{% elif ui_lang == 'ru' %}Сменить компанию{% else %}Switch company{% endif %}</a>{% endif %}
+        <div class="menu-label">{% if ui_lang == 'he' %}ערוצים{% elif ui_lang == 'ru' %}Каналы{% else %}Channels{% endif %}</div>
+        <a href="/connect/telegram" {% if '/connect/telegram' in request.path %}class="active"{% endif %}>Telegram</a>
+        <a href="/connect/facebook" {% if '/connect/facebook' in request.path %}class="active"{% endif %}>Facebook</a>
+        <a href="/sources/" {% if request.path.startswith('/sources') %}class="active"{% endif %}>{{ ui("nav_destinations") }}</a>
+        <a href="/creatives/" {% if request.path.startswith('/creatives') %}class="active"{% endif %}>{{ ui("nav_creatives") }}</a>
+        <div class="menu-sep"></div>
+        <div class="lang-row">
+          {% for l in supported_langs %}
+            <a class="lang {% if l == ui_lang %}active{% endif %}" href="/set-lang/{{ l }}">{{ l.upper() }}</a>
+          {% endfor %}
+        </div>
+        <div class="menu-sep"></div>
+        <a href="/logout">{{ ui("nav_logout") }}</a>
+      </div>
+    </div>
+    {% else %}
+    <div class="right">
+      <div class="lang-row">
         {% for l in supported_langs %}
-          {% if l == ui_lang %}
-            <span class="pill" style="background:var(--accent);color:#fff;border-color:var(--accent)">{{ l.upper() }}</span>
-          {% else %}
-            <a class="pill" href="/set-lang/{{ l }}">{{ l.upper() }}</a>
-          {% endif %}
+          {% if l == ui_lang %}<span class="lang active">{{ l.upper() }}</span>{% else %}<a class="lang" href="/set-lang/{{ l }}">{{ l.upper() }}</a>{% endif %}
         {% endfor %}
       </div>
-      {% if session.get('is_admin') or session.get('user_id') %}
-        {% if current_company_name %}
-          <a class="pill company-switch-pill" href="/companies/" title="{% if ui_lang == 'he' %}בחירת חברה{% elif ui_lang == 'ru' %}Выбор зарегистрированных компаний{% else %}Select company{% endif %}">
-            <span class="company-switch-label">{% if ui_lang == 'he' %}חברה{% elif ui_lang == 'ru' %}Компания{% else %}Company{% endif %}</span>
-            <strong>{{ current_company_name }}</strong>
-          </a>
-        {% endif %}
-        <a class="pill" href="/logout" style="color:var(--muted)">{{ ui("nav_logout") }}</a>
-      {% elif not is_public_auth_page %}
-        <a class="pill" href="{{ public_login_url }}" style="font-weight:500">{{ ui("sign_in") }}</a>
-      {% endif %}
+      {% if not is_public_auth_page %}<a class="pill" href="{{ public_login_url }}" style="font-weight:500">{{ ui("sign_in") }}</a>{% endif %}
     </div>
+    {% endif %}
   </header>
   <main class="container" style="padding-top:28px;padding-bottom:40px">
     {% if operator_copilot %}
@@ -155,7 +155,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <span>{{ ui("nav_analytics") }}</span>
     </a>
-    <button type="button" class="tabbar-item" aria-label="{% if ui_lang=='he' %}עוד{% elif ui_lang=='ru' %}Ещё{% else %}More{% endif %}" onclick="var n=document.querySelector('.nav');if(n){n.classList.toggle('open');}window.scrollTo({top:0,behavior:'smooth'});">
+    <button type="button" class="tabbar-item" aria-label="{% if ui_lang=='he' %}עוד{% elif ui_lang=='ru' %}Ещё{% else %}More{% endif %}" onclick="var m=document.getElementById('acctMenu');if(m){m.classList.toggle('open');}window.scrollTo({top:0,behavior:'smooth'});">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
       <span>{% if ui_lang=='he' %}עוד{% elif ui_lang=='ru' %}Ещё{% else %}More{% endif %}</span>
     </button>
