@@ -256,13 +256,18 @@ body.app{background:var(--bg);min-height:100vh;overflow-x:hidden}
   .sidebar.open{transform:none}
   .burger{display:inline-flex}
   .ob-steps{grid-template-columns:1fr}
+  .grid2,.grid3,.grid3.k3,.readiness{grid-template-columns:1fr}
+  /* CSS-grid items default to min-width:auto and refuse to shrink below their
+     content (e.g. a 4-col table) — force them to shrink so cards never overflow. */
+  .grid2>*,.grid3>*,.readiness>*,.kpi-grid>*,.leads-layout>*,.work-grid>*,.card{min-width:0}
 }
 @media(max-width:480px){
   .kpi-grid,.kpi-grid.k3{grid-template-columns:1fr}
   .work-grid{padding:18px 14px 70px}
   .workbar{padding:10px 14px}
-  /* hard-contain every block to the viewport so nothing overflows on phones */
-  .work,.work-grid,.view,.copilot{min-width:0;max-width:100%}
+  /* hard-contain every block to the viewport so nothing overflows on phones.
+     root cause was .work-grid width:100% + horizontal padding without border-box. */
+  .work,.work-grid,.view,.copilot{min-width:0;max-width:100%;box-sizing:border-box}
   .card,.kpi,.plan-card,.ready-card,.lead-detail,.q-item,.trial-banner{max-width:100%;box-sizing:border-box}
   .table-wrap,.chat,.lead-list{max-width:100%;overflow-x:auto}
 }
