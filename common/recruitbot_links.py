@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import ssl
 import urllib.error
 import urllib.request
 from functools import lru_cache
@@ -63,11 +62,12 @@ def get_recruitbot_username() -> str | None:
         return None
 
     try:
-        context = ssl._create_unverified_context()
+        # Verified TLS (default context). NEVER disable cert validation here: the bot
+        # token is embedded in the URL, so an unverified context = a MITM can steal the
+        # bot token and forge the response.
         with urllib.request.urlopen(
             f"https://api.telegram.org/bot{token}/getMe",
             timeout=10,
-            context=context,
         ) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, ValueError, OSError):
