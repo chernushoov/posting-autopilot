@@ -76,6 +76,16 @@ def checkout(plan: str):
                 "company_id": str(company_id or ""),
                 "plan": plan,
             },
+            # Carry user_id onto the SUBSCRIPTION too (not just the session) so the
+            # customer.subscription.deleted webhook can map back to our user and
+            # revoke access on cancellation.
+            subscription_data={
+                "metadata": {
+                    "user_id": str(user_id or ""),
+                    "company_id": str(company_id or ""),
+                    "plan": plan,
+                },
+            },
         )
         return redirect(checkout_session.url)
     except Exception as e:
@@ -151,8 +161,30 @@ def _handle_checkout_completed(session_data: dict):
 
 
 def _handle_subscription_cancelled(sub_data: dict):
-    """Handle subscription cancellation."""
-    logger.info(f"[billing] Subscription cancelled: {sub_data.get('id')}")
+    """Revoke access on cancellation: expire the trial so enforce_paywall redirects
+    the user to /pricing on their next request. Without this a cancelled customer
+    kept full access (the access signal is User.trial_expires_at; checkout sets it
+    to None = perpetual, so cancellation must set it back to 'now' = expired).
+    user_id rides on the subscription metadata we set at checkout."""
+    from datetime import datetime
+    metadata = sub_data.get("metadata", {}) or {}
+    user_id = metadata.get("user_id")
+    logger.info(f"[billing] Subscription cancelled: {sub_data.get('id')} user={user_id}")
+    if not user_id:
+        logger.warning("[billing] cancellation without user_id metadata — cannot revoke access")
+        return
+    db = db_session()
+    try:
+        user = db.query(User).filter(User.id == int(user_id)).first()
+        if user:
+            user.trial_expires_at = datetime.utcnow()  # immediately expired -> paywall
+            db.commit()
+            logger.info(f"[billing] Access revoked for user {user_id} after cancellation")
+    except Exception as e:
+        logger.error(f"[billing] Error revoking access on cancellation: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 
 def _handle_payment_failed(invoice_data: dict):
