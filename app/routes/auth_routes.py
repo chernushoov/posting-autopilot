@@ -355,10 +355,15 @@ def connect_telegram():
 @bp.post("/connect/telegram/send-code")
 @require_company
 def tg_send_code():
+    import re as _re
     company_id = session.get("current_company_id")
     api_id = request.form.get("api_id", "").strip()
     api_hash = request.form.get("api_hash", "").strip()
-    phone = request.form.get("phone", "").strip()
+    # Normalise the phone: strip spaces/dashes/parens so a copy-pasted number
+    # like "+972 50-123-4567" doesn't get rejected by Telegram for formatting.
+    phone = _re.sub(r"[^0-9+]", "", request.form.get("phone", "").strip())
+    if phone and not phone.startswith("+"):
+        phone = "+" + phone
 
     # Phone-only onboarding: if the user didn't supply their own developer app
     # credentials, fall back to the service's managed shared app. This removes the
@@ -393,7 +398,20 @@ def tg_send_code():
         return redirect(url_for("auth.connect_telegram", message="Code sent! Check your Telegram app."))
     except Exception as e:
         delete_connection_flow(session.pop("tg_flow_id", None))
-        return redirect(url_for("auth.connect_telegram", error=str(e)[:200]))
+        raw = str(e).lower()
+        if "phone number is invalid" in raw or "phone_number_invalid" in raw:
+            msg = ("Неверный номер телефона. Укажите его с кодом страны и без пробелов — "
+                   "например +972501234567 (Израиль) или +79991234567 (Россия).")
+        elif "flood" in raw or "too many" in raw or "wait" in raw:
+            msg = "Слишком много попыток за короткое время. Подождите пару минут и попробуйте снова."
+        elif "api_id" in raw or "api id" in raw or "api_hash" in raw:
+            msg = ("Сервис Telegram не настроен. Откройте «Дополнительно: использовать свои API-ключи» "
+                   "и введите ваши API ID и API Hash с my.telegram.org.")
+        elif "banned" in raw or "deactivated" in raw:
+            msg = "Этот номер заблокирован или деактивирован в Telegram."
+        else:
+            msg = "Не удалось отправить код: " + str(e)[:160]
+        return redirect(url_for("auth.connect_telegram", error=msg))
 
 @bp.post("/connect/telegram/verify")
 @require_company
