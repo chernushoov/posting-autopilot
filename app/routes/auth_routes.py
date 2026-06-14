@@ -1,6 +1,6 @@
 import time
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from ..auth import admin_login_ok
+from ..auth import admin_login_ok, login_required
 from ..db import db_session
 from ..models import Company, User
 from .registration import _login_user, _verify_and_upgrade_password
@@ -30,6 +30,13 @@ def index():
     if session.get("is_admin"):
         return redirect(url_for("auth.dashboard"))
     return render_template("landing.html")
+
+
+@bp.get("/cabinet")
+@login_required
+def cabinet():
+    # New cabinet UI (design integration). Phase 0: shell served behind real auth.
+    return render_template("cabinet.html")
 
 @bp.get("/login")
 def login():
