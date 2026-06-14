@@ -2,7 +2,7 @@
    Posting Autopilot — Cabinet (interior). Builds on ds.css tokens & components.
    Phase 1: sidebar IA + Operator Copilot + Dashboard / Leads / Campaigns.
    ════════════════════════════════════════════════════════════════════════════ */
-body.app{background:var(--bg);min-height:100vh}
+body.app{background:var(--bg);min-height:100vh;overflow-x:hidden}
 .ico{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;line-height:0;vertical-align:middle}
 .ico svg{width:100%;height:100%;display:block}
 .hide{display:none!important}
@@ -261,4 +261,8 @@ body.app{background:var(--bg);min-height:100vh}
   .kpi-grid,.kpi-grid.k3{grid-template-columns:1fr}
   .work-grid{padding:18px 14px 70px}
   .workbar{padding:10px 14px}
+  /* hard-contain every block to the viewport so nothing overflows on phones */
+  .work,.work-grid,.view,.copilot{min-width:0;max-width:100%}
+  .card,.kpi,.plan-card,.ready-card,.lead-detail,.q-item,.trial-banner{max-width:100%;box-sizing:border-box}
+  .table-wrap,.chat,.lead-list{max-width:100%;overflow-x:auto}
 }
