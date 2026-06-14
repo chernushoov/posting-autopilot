@@ -252,6 +252,15 @@ textarea{resize:vertical}
 .hero-ctas .btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,113,227,.35)}
 .hero-ctas .btn-ghost{background:none;border:2px solid var(--border);color:var(--fg);font-size:17px;padding:16px 36px;border-radius:999px;text-decoration:none;font-weight:600;transition:all .2s}
 .hero-ctas .btn-ghost:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.hero-apps{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:30px;position:relative}
+.hero-apps .soon-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--light);font-weight:700}
+.hero-apps .badges{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.app-badge{display:inline-flex;align-items:center;gap:9px;padding:10px 16px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--fg);text-decoration:none;opacity:.7;cursor:default;position:relative}
+.app-badge svg{width:22px;height:22px;flex:none}
+.app-badge .bt{display:flex;flex-direction:column;line-height:1.15;text-align:start}
+.app-badge .bt small{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--light)}
+.app-badge .bt b{font-size:14px;font-weight:700}
+.app-badge .soon{position:absolute;top:-8px;inset-inline-end:-8px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.04em}
 .hero-scroll{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--light);font-size:12px;font-weight:500;animation:bounce 2s ease-in-out infinite}
 .hero-scroll .arrow{width:24px;height:24px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
 @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
@@ -514,6 +523,13 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
   <div class="hero-ctas reveal stagger-3">
     <a href="/register" class="btn">14 Days Free &rarr;</a>
     <a href="#demo" class="btn-ghost">See Demo</a>
+  </div>
+  <div class="hero-apps reveal stagger-3">
+    <div class="soon-label">Apps coming soon</div>
+    <div class="badges">
+      <span class="app-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.36 1.43c.05 1.06-.34 2.09-1 2.86-.68.78-1.78 1.38-2.84 1.3-.07-1.04.39-2.12 1.04-2.84.71-.8 1.92-1.39 2.8-1.32zM20.4 17.2c-.5 1.15-.74 1.66-1.38 2.68-.9 1.42-2.17 3.2-3.74 3.2-1.4.02-1.76-.91-3.66-.9-1.9 0-2.29.91-3.69.9-1.57-.01-2.77-1.6-3.67-3.03C1.7 16.07 1.43 11.4 3.02 8.93c1.06-1.66 2.74-2.63 4.32-2.63 1.6 0 2.61.91 3.93.91 1.28 0 2.06-.91 3.91-.91 1.4 0 2.89.76 3.95 2.08-3.47 1.9-2.9 6.86 1.27 8.82z"/></svg><span class="bt"><small>Soon on</small><b>App Store</b></span><span class="soon">Soon</span></span>
+      <span class="app-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 2.5v19l16-9.5-16-9.5z"/></svg><span class="bt"><small>Soon on</small><b>Google Play</b></span><span class="soon">Soon</span></span>
+    </div>
   </div>
   <div class="hero-scroll"><div class="arrow">&darr;</div></div>
 </section>
@@ -802,7 +818,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 </section>
 
 
-<footer class="l-footer">Posting Autopilot &copy; 2026</footer>
+<footer class="l-footer">Posting Autopilot &copy; 2025 · Built by Alexey Chernushoov</footer>
 
 <!-- ═══ Scripts ═══ -->
 <script>

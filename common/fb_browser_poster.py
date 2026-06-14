@@ -54,6 +54,28 @@ COMPOSER_OPEN_TIMEOUT_MS = 25_000
 SUBMIT_TIMEOUT_MS = 45_000
 
 
+def fb_proxy_config():
+    """Playwright proxy dict from env, or None if unset.
+
+    CRITICAL anti-ban property: the one-time LOGIN capture and the recurring
+    headless POSTING must exit from the SAME IP. Logging in / posting from a bare
+    datacenter IP (Hetzner) gets the Facebook account flagged. Set a residential/
+    mobile proxy via FB_PROXY_SERVER (+ optional FB_PROXY_USERNAME/PASSWORD) and
+    BOTH the capture script and this poster will route through it. Unset = direct
+    (current behaviour, used only for local/desktop where the IP is residential)."""
+    server = os.getenv("FB_PROXY_SERVER", "").strip()
+    if not server:
+        return None
+    cfg = {"server": server}
+    user = os.getenv("FB_PROXY_USERNAME", "").strip()
+    pwd = os.getenv("FB_PROXY_PASSWORD", "").strip()
+    if user:
+        cfg["username"] = user
+    if pwd:
+        cfg["password"] = pwd
+    return cfg
+
+
 @dataclass
 class PostResult:
     ok: bool
@@ -84,14 +106,18 @@ def screenshot_path(session_name: str, queue_item_id: int, suffix: str) -> Path:
 
 
 def _new_browser_and_context(p: Playwright, session_file: Path):
-    browser = p.chromium.launch(
-        headless=True,
-        args=[
+    launch_kwargs = {
+        "headless": True,
+        "args": [
             "--disable-blink-features=AutomationControlled",
             "--no-sandbox",
             "--disable-dev-shm-usage",
         ],
-    )
+    }
+    proxy = fb_proxy_config()
+    if proxy:
+        launch_kwargs["proxy"] = proxy  # same egress IP as the login capture
+    browser = p.chromium.launch(**launch_kwargs)
     storage_state = json.loads(session_file.read_text(encoding="utf-8"))
     context = browser.new_context(
         viewport={"width": 1280, "height": 900},

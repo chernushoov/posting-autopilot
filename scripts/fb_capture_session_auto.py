@@ -47,11 +47,24 @@ def main() -> int:
     print(f"\n→ FB session capture (auto) for: {session_name}")
     print(f"→ Will save to: {session_path}")
 
+    # Same proxy as the headless poster (common/fb_browser_poster.fb_proxy_config):
+    # the login MUST exit from the same IP that will later post, or Facebook flags
+    # the account. Unset = direct (local/desktop residential IP).
+    try:
+        from common.fb_browser_poster import fb_proxy_config
+        _proxy = fb_proxy_config()
+    except Exception:
+        _proxy = None
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled", "--start-maximized"],
-        )
+        _launch = {
+            "headless": False,
+            "args": ["--disable-blink-features=AutomationControlled", "--start-maximized"],
+        }
+        if _proxy:
+            _launch["proxy"] = _proxy
+            print(f"→ routing through proxy: {_proxy.get('server')}")
+        browser = p.chromium.launch(**_launch)
         context = browser.new_context(
             viewport={"width": 1280, "height": 800},
             user_agent=(
