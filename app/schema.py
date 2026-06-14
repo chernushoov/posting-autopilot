@@ -70,7 +70,7 @@ def bootstrap_schema() -> None:
         "companies",
         {
             "tg_api_id": "VARCHAR(20)",
-            "tg_api_hash": "VARCHAR(64)",
+            "tg_api_hash": "TEXT",
             "fb_access_token": "TEXT",
             "fb_user_id": "VARCHAR(64)",
             "fb_user_name": "VARCHAR(200)",
@@ -90,6 +90,15 @@ def bootstrap_schema() -> None:
             "ai_context": "TEXT",
         },
     )
+
+    # tg_api_hash / fb_access_token now hold Fernet ciphertext (longer than the
+    # old VARCHAR(64)). Widen tg_api_hash to TEXT on existing Postgres DBs; SQLite
+    # is dynamically typed, so the ALTER is a harmless no-op there.
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE companies ALTER COLUMN tg_api_hash TYPE TEXT"))
+        except Exception:
+            pass
 
     # Ensure 'he' value exists in the language enum (Postgres)
     with engine.begin() as conn:

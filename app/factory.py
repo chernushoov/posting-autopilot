@@ -160,28 +160,43 @@ def create_app():
         upload_dir = _os.path.abspath(upload_dir)
         return send_from_directory(upload_dir, basename)
 
-    # Trial expiration check middleware
+    # ── Paywall / trial enforcement ──────────────────────────────────────────
+    # Public routes are matched EXACTLY, plus a short explicit prefix list. The
+    # previous version put "/" in a startswith() allow-list — and EVERY path
+    # starts with "/", so the paywall was silently disabled for the whole app.
+    # That is the root cause of "обойти оплату" and is fixed here.
+    PUBLIC_EXACT = {
+        "/", "/login", "/register", "/user-login", "/pricing", "/terms",
+        "/health", "/ready", "/favicon.ico",
+    }
+    PUBLIC_PREFIXES = ("/static/", "/set-lang/", "/billing/")
+
     @app.before_request
-    def check_trial_expiration():
-        from datetime import datetime
-        # Skip for public routes
-        public_paths = {"/", "/login", "/register", "/user-login", "/pricing",
-                        "/billing/", "/terms", "/set-lang/", "/static/", "/health",
-                        "/favicon.ico"}
+    def enforce_paywall():
+        # Dormant until billing is switched on: pre-launch and during owner
+        # testing everyone keeps full access (BILLING_ENABLED=false).
+        if not Config.billing_enabled():
+            return None
         path = request.path
-        if any(path.startswith(p) or path == p for p in public_paths):
+        if path in PUBLIC_EXACT or path.startswith(PUBLIC_PREFIXES):
             return None
         user_id = session.get("user_id")
         if not user_id:
-            return None  # Admin login — no trial check
+            return None  # operator/admin login has no User row — exempt by design
+        from datetime import datetime
         from .db import db_session as _db
         from .models import User
         db = _db()
-        user = db.query(User).filter(User.id == user_id).first()
-        if user and user.trial_expires_at and datetime.utcnow() > user.trial_expires_at:
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            expired = bool(
+                user and user.trial_expires_at
+                and datetime.utcnow() > user.trial_expires_at
+            )
+        finally:
             db.close()
+        if expired:
             return redirect("/pricing?trial_expired=1")
-        db.close()
         return None
 
     @app.route("/set-lang/<lang>")

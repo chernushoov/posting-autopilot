@@ -5,6 +5,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship
 
+from common.crypto import EncryptedString
+
 Base = declarative_base()
 
 class Tone(str, enum.Enum):
@@ -160,10 +162,10 @@ class Company(Base):
 
     # Telegram Client (Telethon) credentials for auto-posting
     tg_api_id = Column(String(20), nullable=True)
-    tg_api_hash = Column(String(64), nullable=True)
+    tg_api_hash = Column(EncryptedString, nullable=True)  # secret — encrypted at rest (Fernet)
 
     # Facebook OAuth
-    fb_access_token = Column(Text, nullable=True)
+    fb_access_token = Column(EncryptedString, nullable=True)  # secret — encrypted at rest (Fernet)
     fb_user_id = Column(String(64), nullable=True)
     fb_user_name = Column(String(200), nullable=True)
 

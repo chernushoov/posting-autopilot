@@ -33,14 +33,14 @@ import random
 import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from playwright.sync_api import (
-    Page,
-    Playwright,
-    sync_playwright,
-    TimeoutError as PWTimeout,
-)
+# Playwright is imported lazily inside the functions that actually drive a browser
+# (post_to_group / smoke_session) so that `import common.fb_browser_poster` stays
+# cheap and dependency-free for callers that only need the session helpers
+# (company_session_name / session_exists) — e.g. the worker and the web status route.
+if TYPE_CHECKING:  # annotations only (resolved lazily via `from __future__ import annotations`)
+    from playwright.sync_api import Page, Playwright
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SESSION_DIR = REPO_ROOT / "data" / "fb_sessions"
@@ -75,6 +75,19 @@ def session_path(session_name: str) -> Path:
 def session_exists(session_name: str) -> bool:
     p = session_path(session_name)
     return p.exists() and p.stat().st_size > 1024
+
+
+def company_session_name(company_id) -> str:
+    """Canonical per-company FB browser-session name → data/fb_sessions/company_<id>.json.
+
+    Optional ops override: FB_BROWSER_SESSION_COMPANY_<id> (e.g. to point a company at a
+    migrated legacy session file). There is deliberately NO global default — a missing
+    per-company session must fail closed, never silently fall back to another tenant's
+    captured Facebook account.
+    """
+    cid = str(company_id)
+    override = os.getenv(f"FB_BROWSER_SESSION_COMPANY_{cid}", "").strip()
+    return override or f"company_{cid}"
 
 
 def screenshot_path(session_name: str, queue_item_id: int, suffix: str) -> Path:
@@ -215,6 +228,7 @@ def post_to_group(
     returns — nothing is published. Use it to prove the automation works without
     spamming a real group.
     """
+    from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     started = time.time()
     sess = session_path(session_name)
     if not session_exists(session_name):
@@ -428,6 +442,7 @@ def smoke_session(session_name: str) -> dict:
     Cheap check: open facebook.com with the saved session, take a screenshot,
     confirm we're not on /login. Use to verify session before queueing real posts.
     """
+    from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     started = time.time()
     sess = session_path(session_name)
     if not session_exists(session_name):

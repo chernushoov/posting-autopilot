@@ -79,7 +79,7 @@
     </div>
     <div class="actions">
       <a class="apply-link" href="{{ apply_link }}" target="_blank">Open apply link →</a>
-      <button class="copy-btn" style="font-size:12px" onclick="navigator.clipboard.writeText('{{ apply_link }}')">copy apply link</button>
+      <button class="copy-btn" style="font-size:12px" onclick='navigator.clipboard.writeText({{ apply_link|tojson }})'>copy apply link</button>
     </div>
   </div>
 

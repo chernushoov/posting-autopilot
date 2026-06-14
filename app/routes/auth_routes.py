@@ -2,7 +2,7 @@ import time
 import secrets
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from ..auth import admin_login_ok
+from ..auth import admin_login_ok, require_company, is_logged_in, _login_redirect, revalidate_company
 from ..db import db_session
 from ..models import Company, User
 from common.connection_flows import (
@@ -100,8 +100,11 @@ def logout():
 
 @bp.get("/dashboard")
 def dashboard():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
+    if not is_logged_in():
+        return _login_redirect()
+    # Defense-in-depth: drop a stale/foreign current_company_id before use, but keep the
+    # empty-state dashboard for a principal who simply has no company selected yet.
+    revalidate_company()
     db = db_session()
     company_id = session.get("current_company_id")
 
@@ -207,9 +210,8 @@ def terms():
 
 
 @bp.get("/connect/telegram")
+@require_company
 def connect_telegram():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     if not company_id:
         return redirect(url_for("companies.list_companies"))
@@ -320,9 +322,8 @@ def connect_telegram():
     )
 
 @bp.post("/connect/telegram/send-code")
+@require_company
 def tg_send_code():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     api_id = request.form.get("api_id", "").strip()
     api_hash = request.form.get("api_hash", "").strip()
@@ -364,9 +365,8 @@ def tg_send_code():
         return redirect(url_for("auth.connect_telegram", error=str(e)[:200]))
 
 @bp.post("/connect/telegram/verify")
+@require_company
 def tg_verify():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     tg_flow_id = session.get("tg_flow_id")
     tg_flow = get_connection_flow(tg_flow_id, kind="telegram", company_id=company_id)
@@ -424,9 +424,8 @@ def tg_verify():
         return redirect(url_for("auth.connect_telegram", error=err_msg))
 
 @bp.post("/connect/telegram/sync")
+@require_company
 def tg_sync():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     api_id = None
     api_hash = None
@@ -461,9 +460,8 @@ def tg_sync():
         return redirect(url_for("auth.connect_telegram", error=str(e)[:200]))
 
 @bp.post("/connect/telegram/add-selected")
+@require_company
 def tg_add_selected():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     group_ids = request.form.get("group_ids", "").split(",")
     # Load from file cache
@@ -509,9 +507,8 @@ def tg_add_selected():
     return redirect(url_for("auth.connect_telegram", message=f"Added {added} destinations"))
 
 @bp.get("/connect/facebook")
+@require_company
 def connect_facebook():
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     if not company_id:
         return redirect(url_for("companies.list_companies"))
@@ -532,8 +529,9 @@ def connect_facebook():
     # powers group/Marketplace automation.
     import os as _os
     from ..models import FacebookGroup
-    _session_file = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'fb_sessions', 'floordsgn.json')
-    fb_browser_connected = _os.path.exists(_session_file)
+    from common.fb_browser_poster import company_session_name, session_exists as _fb_session_exists
+    # Per-company browser session ONLY — never reveal another tenant's connected state.
+    fb_browser_connected = _fb_session_exists(company_session_name(company_id))
     fb_group_count = db.query(FacebookGroup).filter(FacebookGroup.company_id == company_id).count() if company_id else 0
     if fb_browser_connected and fb_group_count > 0:
         fb_connected = True
@@ -591,8 +589,9 @@ def connect_facebook():
 
 
 @bp.post("/connect/facebook/browser-connect")
+@require_company
 def fb_browser_connect():
-    """Launch the one-time browser login that captures the operator's Facebook session
+    """Launch the one-time browser login that captures THIS company's Facebook session
     (the EZPost-style path that powers groups + Marketplace).
 
     This opens a *visible* browser on the machine running the app, so it only makes
@@ -600,16 +599,15 @@ def fb_browser_connect():
     server deployment never tries to spawn a browser, and so nothing launches without
     an explicit opt-in. When the gate is off we just explain how to enable it.
     """
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
-
     import os as _os
     import sys as _sys
     import subprocess
+    from common.fb_browser_poster import company_session_name, session_exists as _fb_session_exists
 
+    company_id = session.get("current_company_id")
+    session_label = company_session_name(company_id)
     repo_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
-    session_file = _os.path.join(repo_root, "data", "fb_sessions", "floordsgn.json")
-    if _os.path.exists(session_file):
+    if _fb_session_exists(session_label):
         return redirect(url_for("auth.connect_facebook", message="Facebook is already connected. Press Sync to refresh your groups."))
 
     gate = _os.getenv("FB_ALLOW_LOCAL_CAPTURE", "").strip().lower()
@@ -625,7 +623,7 @@ def fb_browser_connect():
         if not _os.path.exists(py):
             py = _sys.executable
         subprocess.Popen(
-            [py, script],
+            [py, script, session_label],
             cwd=repo_root,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -639,10 +637,9 @@ def fb_browser_connect():
 
 
 @bp.post("/connect/facebook/setup")
+@require_company
 def fb_setup():
     """Save FB App credentials and redirect to Facebook OAuth (official Pages flow)."""
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     fb_app_id = request.form.get("fb_app_id", "").strip()
     fb_app_secret = request.form.get("fb_app_secret", "").strip()
     if not fb_app_id or not fb_app_secret:
@@ -667,10 +664,9 @@ def fb_setup():
 
 
 @bp.get("/connect/facebook/callback")
+@require_company
 def fb_callback():
     """Facebook OAuth callback — exchange code for token, sync Pages."""
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     code = request.args.get("code")
     state = request.args.get("state", "")
@@ -735,10 +731,9 @@ def fb_callback():
 
 
 @bp.post("/connect/facebook/sync")
+@require_company
 def fb_sync():
     """Re-sync Facebook Pages through the official Pages API."""
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
 
     db = db_session()
@@ -762,10 +757,9 @@ def fb_sync():
     return redirect(url_for("auth.connect_facebook", error=result.get("error", "Pages sync failed")))
 
 @bp.post("/connect/facebook/add-selected-pages")
+@require_company
 def fb_add_selected_pages():
     """Add selected Facebook Pages as posting destinations."""
-    if not session.get("is_admin"):
-        return redirect(url_for("auth.login"))
     company_id = session.get("current_company_id")
     page_ids = request.form.get("page_ids", "").split(",")
 

@@ -186,8 +186,9 @@ def smoke_session_endpoint(run_id: int):
     except Exception as exc:
         return jsonify({"error": f"browser poster unavailable: {exc!r}"}), 500
 
-    import os as _os
-    session_name = _os.environ.get(f"FB_BROWSER_SESSION_COMPANY_{company_id}") or _os.environ.get("FB_BROWSER_SESSION_NAME", "floordsgn")
+    from common.fb_browser_poster import company_session_name
+    # Per-company session ONLY — status/smoke must never reflect another tenant's session.
+    session_name = company_session_name(company_id)
     if not session_exists(session_name):
         return jsonify({
             "ok": False,

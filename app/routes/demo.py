@@ -32,6 +32,7 @@ PAGE_HTML = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Demo · Hot Lead Simulator</title>
   <link rel="stylesheet" href="/static/app.css">
   <style>
@@ -89,8 +90,8 @@ PAGE_HTML = """<!doctype html>
   <script>
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     function csrf() {
-      // Demo page is intentionally minimal — Flask-WTF CSRF skipped on /api/demo/*
-      // by virtue of the demo blueprint being CSRF-exempt. Header still nice if available.
+      // CSRF token is rendered into <meta name="csrf-token"> in <head> and sent as the
+      // X-CSRF-Token header (Flask-WTF accepts it). The demo blueprint is NOT exempt.
       return csrfMeta ? csrfMeta.content : '';
     }
     function appendToast(html, isError) {

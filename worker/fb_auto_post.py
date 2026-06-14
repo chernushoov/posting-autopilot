@@ -34,12 +34,6 @@ from app.models import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SESSION_NAME = os.getenv("FB_BROWSER_SESSION_NAME", "floordsgn")
-
-
-def _resolve_session_name(company_id: int) -> str:
-    return os.getenv(f"FB_BROWSER_SESSION_COMPANY_{company_id}", DEFAULT_SESSION_NAME)
-
 
 def auto_post_queue_item(queue_item_id: int) -> dict:
     """RQ task. Posts one queue item via browser. Updates DB."""
@@ -87,12 +81,17 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
             return {"ok": False, "error": f"variant {run.post_variant_id} missing full_text"}
 
         company_id = run.company_id
-        session_name = _resolve_session_name(company_id)
 
-        from common.fb_browser_poster import post_to_group, session_exists
+        from common.fb_browser_poster import post_to_group, session_exists, company_session_name
+        # Per-company session ONLY — never fall back to another tenant's FB session.
+        session_name = company_session_name(company_id)
 
         if not session_exists(session_name):
-            err = f"FB session '{session_name}' not captured. Run scripts/fb_capture_session.py first."
+            err = (
+                f"FB session for company {company_id} not captured "
+                f"(expected data/fb_sessions/{session_name}.json). Capture it for THIS "
+                f"company before auto-posting — fail closed, no shared session."
+            )
             item.status = FacebookPostingQueueItemStatus.failed
             item.skipped_at = datetime.utcnow()
             item.skip_reason = err
