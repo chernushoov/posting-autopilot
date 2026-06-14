@@ -43,7 +43,7 @@ def cabinet():
         # Safety net: never strand the user on a 500 — fall back to the proven
         # server-rendered dashboard if the SPA bootstrap ever fails on real data.
         current_app.logger.exception("cabinet boot failed; falling back to /dashboard")
-        return redirect("/dashboard")
+        return redirect("/dashboard?legacy=1")
     finally:
         db.close()
     return render_template("cabinet.html", cabinet_boot=boot)
@@ -129,6 +129,10 @@ def logout():
 def dashboard():
     if not is_logged_in():
         return _login_redirect()
+    # The new SPA cabinet is the canonical authed home. /dashboard now redirects there;
+    # it only renders the legacy server-side dashboard as an internal fallback (?legacy=1).
+    if not request.args.get("legacy"):
+        return redirect("/cabinet")
     # Defense-in-depth: drop a stale/foreign current_company_id before use, but keep the
     # empty-state dashboard for a principal who simply has no company selected yet.
     revalidate_company()

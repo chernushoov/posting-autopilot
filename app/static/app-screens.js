@@ -125,10 +125,10 @@ function campaigns(state){
   +   '<button class="btn" data-act="new-campaign"><span class="ico" data-i="plus"></span> '+t('cmp.new')+'</button></div>'
   + '<div class="night-banner"><span class="ico" data-i="moon"></span>'+t('cmp.night')+'</div>'
   + '<div class="readiness">'
-  +   '<div class="ready-card tg"><span class="rc-ic" data-i="send"></span><div style="flex:1"><div class="rc-name">Telegram</div><div class="rc-sub">'+t('cmp.tg_sub')+'</div></div><span class="status status-ready">'+t('st.ready')+'</span></div>'
-  +   '<div class="ready-card fb"><span class="rc-ic" data-i="fb"></span><div style="flex:1"><div class="rc-name">Facebook</div><div class="rc-sub">'+t('cmp.fb_sub')+'</div></div><span class="status status-manual_action_required">'+t('st.manual')+'</span></div>'
+  +   '<div class="ready-card tg"><span class="rc-ic" data-i="send"></span><div style="flex:1"><div class="rc-name">Telegram</div><div class="rc-sub">'+D.SOURCES.filter(function(s){return s.platform==='Telegram';}).length+' · '+t('st.ready_pl')+'</div></div><span class="status status-ready">'+t('st.ready')+'</span></div>'
+  +   '<div class="ready-card fb"><span class="rc-ic" data-i="fb"></span><div style="flex:1"><div class="rc-name">Facebook</div><div class="rc-sub">'+D.SOURCES.filter(function(s){return s.platform==='Facebook';}).length+' · '+t('st.manual_pl')+'</div></div><span class="status status-manual_action_required">'+t('st.manual')+'</span></div>'
   + '</div>'
-  + '<div class="section-head"><h2>'+t('cmp.queue')+'</h2><span class="badge">'+t('cmp.tasks',{n:2})+'</span></div>'
+  + '<div class="section-head"><h2>'+t('cmp.queue')+'</h2><span class="badge">'+t('cmp.tasks',{n:D.QUEUE.length})+'</span></div>'
   + '<div class="queue" style="margin-bottom:26px">'+queue+'</div>'
   + '<div class="section-head"><h2>'+t('cmp.list')+'</h2></div>'
   + '<div class="table-wrap" style="margin-bottom:26px"><table class="table"><thead><tr><th>'+t('th.campaign')+'</th><th>'+t('th.channels')+'</th><th>'+t('th.leads')+'</th><th>'+t('th.status')+'</th><th></th></tr></thead><tbody>'+camps+'</tbody></table></div>'
@@ -266,19 +266,15 @@ function channelTg(state){
     + '<span class="grp-name">'+g.name+'</span><span class="grp-folder">'+g.folder+'</span>'
     + '<span class="grp-members">'+g.members+'</span></label>';
   }).join('');
+  var tgN=D.TG_GROUPS.length, tgConn=tgN>0, tgPct=Math.min(100,Math.round(tgN/50*100));
   return ''
   + '<div class="page-hero"><div><div class="eyebrow">'+t('tg.channel')+'</div><h1>Telegram</h1></div>'
-  +   '<span class="status status-ready" style="font-size:13px">● '+t('st.connected')+'</span></div>'
-  + '<div class="conn-steps-done">'
-  +   stepDone(t('tg.s1'),'+972 54-555-1234')
-  +   stepDone(t('tg.s2'),t('tg.s2_sub'))
-  +   stepDone(t('tg.s3'),t('tg.s3_sub'))
-  + '</div>'
-  + '<div class="actions" style="margin-top:14px"><button class="pill" data-act="tg-reconnect"><span class="ico" data-i="refresh"></span> '+t('tg.reconnect')+'</button>'
+  +   (tgConn?'<span class="status status-ready" style="font-size:13px">● '+t('st.connected')+'</span>':'<span class="status status-pending" style="font-size:13px">○ '+t('st.not_connected')+'</span>')+'</div>'
+  + '<div class="actions" style="margin-top:14px"><button class="pill" data-act="tg-reconnect"><span class="ico" data-i="refresh"></span> '+(tgConn?t('tg.reconnect'):t('tg.get_code'))+'</button>'
   +   '<span class="muted small">'+t('tg.session_note')+'</span></div>'
-  + '<div class="section-head" style="margin-top:24px"><h2>'+t('tg.groups')+'</h2><span class="badge">'+t('tg.limit')+'</span></div>'
-  + '<div class="limit-bar" style="margin-bottom:16px"><div class="limit-track"><i style="width:96%"></i></div>'
-  +   '<span class="limit-label">'+t('tg.limit_bar')+'</span><a class="pill" data-go="billing" href="#/billing">'+t('c.upgrade_limit')+'</a></div>'
+  + '<div class="section-head" style="margin-top:24px"><h2>'+t('tg.groups')+'</h2><span class="badge">'+tgN+' / 50 · Pro</span></div>'
+  + '<div class="limit-bar" style="margin-bottom:16px"><div class="limit-track"><i style="width:'+tgPct+'%"></i></div>'
+  +   '<span class="limit-label">'+tgN+' / 50</span><a class="pill" data-go="billing" href="#/billing">'+t('c.upgrade_limit')+'</a></div>'
   + '<div class="card"><div class="grp-head"><span>'+t('tg.th.group')+'</span><span>'+t('tg.th.folder')+'</span><span>'+t('tg.th.members')+'</span></div>'
   +   '<div class="grp-list">'+groups+'</div>'
   +   '<div class="actions" style="margin-top:14px"><button class="btn" data-act="tg-add">'+t('tg.add_sel')+'</button>'
@@ -340,7 +336,7 @@ function channelFb(state){
   return ''
   + '<div class="page-hero"><div><div class="eyebrow">'+t('tg.channel')+'</div><h1>Facebook</h1>'
   +   '<p class="muted">'+t('fb.sub')+'</p></div>'
-  +   '<span class="status status-pending" style="font-size:13px">○ '+t('st.not_connected')+'</span></div>'
+  +   (D.FB_SOURCES.length?'<span class="status status-ready" style="font-size:13px">● '+t('st.connected')+'</span>':'<span class="status status-pending" style="font-size:13px">○ '+t('st.not_connected')+'</span>')+'</div>'
   + '<div class="alert">'+t('fb.pilot')+'</div>'
   + '<div class="grid2" style="align-items:start;margin-top:6px">'
   +   '<div class="card"><div class="fb-opt-ic" data-i="link"></div><h3>'+t('fb.opt1')+'</h3>'
@@ -373,15 +369,15 @@ function sources(state){
   +   '<p class="muted">'+t('src.sub')+'</p></div>'
   +   '<button class="pill" data-act="src-check-all"><span class="ico" data-i="refresh"></span> '+t('c.check_all')+'</button></div>'
   + '<div class="readiness">'
-  +   '<div class="ready-card tg"><span class="rc-ic" data-i="send"></span><div style="flex:1"><div class="rc-name">'+t('src.tg_name')+'</div><div class="rc-sub">'+t('src.tg_sub')+'</div></div><span class="status status-ready">'+t('st.ready_pl')+'</span></div>'
-  +   '<div class="ready-card fb"><span class="rc-ic" data-i="fb"></span><div style="flex:1"><div class="rc-name">'+t('src.fb_name')+'</div><div class="rc-sub">'+t('src.fb_sub')+'</div></div><span class="status status-manual_action_required">'+t('st.manual_pl')+'</span></div>'
+  +   '<div class="ready-card tg"><span class="rc-ic" data-i="send"></span><div style="flex:1"><div class="rc-name">Telegram · '+D.SOURCES.filter(function(s){return s.platform==='Telegram';}).length+'</div><div class="rc-sub">'+t('src.tg_sub')+'</div></div><span class="status status-ready">'+t('st.ready_pl')+'</span></div>'
+  +   '<div class="ready-card fb"><span class="rc-ic" data-i="fb"></span><div style="flex:1"><div class="rc-name">Facebook · '+D.SOURCES.filter(function(s){return s.platform==='Facebook';}).length+'</div><div class="rc-sub">'+t('src.fb_sub')+'</div></div><span class="status status-manual_action_required">'+t('st.manual_pl')+'</span></div>'
   + '</div>'
   + '<div class="card" style="margin-bottom:22px"><h3 style="margin-top:0">'+t('src.add')+'</h3>'
   +   '<div class="src-form"><select><option>Telegram</option><option>Facebook</option></select>'
   +     '<select><option>'+t('kind.group')+'</option><option>'+t('kind.channel')+'</option><option>'+t('kind.page')+'</option></select>'
   +     '<input placeholder="'+t('src.label_ph')+'"><input placeholder="'+t('src.url_ph')+'">'
   +     '<button class="btn" data-act="src-add">'+t('c.add')+'</button></div></div>'
-  + '<div class="section-head"><h2>'+t('src.all')+'</h2><span class="badge">'+t('src.shown',{n:D.SOURCES.length})+'</span></div>'
+  + '<div class="section-head"><h2>'+t('src.all')+'</h2><span class="badge">'+D.SOURCES.length+'</span></div>'
   + '<div class="table-wrap"><table class="table"><thead><tr><th>'+t('src.th.name')+'</th><th>'+t('src.th.platform')+'</th><th>'+t('src.th.kind')+'</th><th>'+t('src.th.mode')+'</th><th>'+t('src.th.ready')+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 

@@ -7,198 +7,170 @@
   <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='app-icon.svg') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon-180.png') }}">
-  <meta property="og:image" content="{{ url_for('static', filename='icon-512.png') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
-  <link rel="shortcut icon" href="/favicon.ico">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Autopilot">
-  <link rel="stylesheet" href="{{ url_for('static', filename='ds.css') }}?v=20260614-white">
-  {% if is_rtl %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='ds.css') }}?v=20260614-cab2">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20260614-cab2">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app2.css') }}?v=20260614-cab2">
   <style>
-    body { direction: rtl; text-align: right; }
-    .topbar { flex-direction: row-reverse; }
-    .nav { flex-direction: row-reverse; }
-    .right { flex-direction: row-reverse; }
-    .row { flex-direction: row-reverse; }
-    .grid2, .grid3, .setup-grid { direction: rtl; }
-    .actions { text-align: left; }
-    table th, table td { text-align: right; }
-    .lang-switcher { direction: ltr; }
-    .setup-step { flex-direction: row-reverse; }
-    .connect-step { flex-direction: row-reverse; }
-    .page-hero { flex-direction: row-reverse; }
-    .section-head { flex-direction: row-reverse; }
-    .info-list { text-align: right; }
-  </style>
-  {% endif %}
-  <style>
-  /* White layout components — ds.css covers generic classes; these are the
-     header/menu/tabbar/copilot pieces ds.css doesn't define, styled in white. */
-  .right{position:relative}
-  .brand-logo{border-radius:6px;vertical-align:middle}
-  .acct-btn{display:flex;align-items:center;gap:8px;background:var(--bg-white);border:1px solid var(--border);border-radius:999px;padding:5px 14px 5px 5px;cursor:pointer;color:var(--fg);font:inherit;font-weight:600;font-size:13px}
-  .acct-btn:hover{border-color:var(--accent)}
-  .avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
-  .acct-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .menu{display:none;position:absolute;top:48px;right:0;background:var(--bg-white);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px;min-width:230px;z-index:200;flex-direction:column;gap:2px}
-  .menu.open{display:flex}
-  .menu a{padding:9px 12px;border-radius:8px;color:var(--fg);font-size:14px;text-decoration:none}
-  .menu a:hover{background:var(--accent-light);color:var(--accent)}
-  .menu a.active{color:var(--accent);font-weight:600}
-  .menu-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--light);padding:8px 12px 2px}
-  .menu-sep{height:1px;background:var(--border-light);margin:6px 4px}
-  .lang-row{display:flex;gap:4px;padding:6px 8px}
+  /* Legacy server pages rendered inside the new cabinet shell (one consistent
+     design — no old layout anywhere). Natural document scroll; sticky sidebar. */
+  .lmain{padding:26px 24px 90px;max-width:1180px;margin:0 auto;width:100%}
+  .sb-link.active{background:var(--accent-light);color:var(--accent)}
+  .sb-link svg{width:18px;height:18px;flex-shrink:0}
+  .sb-back{margin-bottom:6px}
+  .scrim2{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:35;display:none}
+  .scrim2.show{display:block}
+  /* public (login/register/terms) — simple centered chrome */
+  .pubbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border-light);background:var(--bg-white)}
+  .pubmain{max-width:760px;margin:0 auto;padding:30px 20px 80px}
+  .wlangs{display:flex;flex-direction:row;gap:4px}
   .lang{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--border);text-decoration:none}
   .lang.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .copilot-panel{background:var(--card);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px 22px;margin-bottom:24px;box-shadow:var(--shadow)}
-  .copilot-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
-  .copilot-title{font-size:18px;margin:2px 0}
-  .copilot-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-  .copilot-action-form{margin:0}
-  .copilot-grid{display:flex;flex-direction:column;gap:12px;margin-top:14px}
-  .copilot-block{background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:12px 14px}
-  .copilot-list{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.5}
-  .copilot-list-warn{color:var(--warning)}
-  .tabbar{display:none}
-  @media(max-width:720px){
-    .nav{display:none}
-    .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg-white);border-top:1px solid var(--border);justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:150}
-    .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:none;padding:4px}
-    .tabbar-item svg{width:22px;height:22px}
-    .tabbar-item.active{color:var(--accent)}
-    main.container{padding-bottom:80px!important}
+  @media(max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:248px;transform:translateX(-100%);transition:transform .25s;z-index:40}
+    .sidebar.open{transform:none}
+    [dir="rtl"] .sidebar{left:auto;right:0;transform:translateX(100%)}
+    [dir="rtl"] .sidebar.open{transform:none}
+    .burger{display:inline-flex!important}
   }
+  @media(min-width:861px){ .burger{display:none} }
   </style>
+  {% if is_rtl %}
+  <style>
+    table th, table td { text-align: right; }
+    .row { flex-direction: row-reverse; }
+    .grid2, .grid3, .setup-grid { direction: rtl; }
+  </style>
+  {% endif %}
 </head>
-<body>
-  {% set is_public_auth_page = request.path in ['/login', '/register', '/user-login'] %}
-  <header class="topbar">
-    <a href="{% if session.get('is_admin') or session.get('user_id') %}/dashboard{% else %}/{% endif %}" class="brand" style="text-decoration:none"><img class="brand-logo" src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="26" height="26"><span>Posting&nbsp;<em>Autopilot</em></span></a>
-    {% if session.get('is_admin') or session.get('user_id') %}
-    <nav class="nav">
-      <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>{{ ui("nav_dashboard") }}</a>
-      <a href="/vacancies/" {% if request.path.startswith('/vacancies') %}class="active"{% endif %}>{{ ui("nav_vacancies") }}</a>
-      <a href="/campaigns/" {% if request.path.startswith('/campaigns') %}class="active"{% endif %}>{{ ui("nav_campaigns") }}</a>
-      <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
-      <a href="/analytics/" {% if request.path.startswith('/analytics') %}class="active"{% endif %}>{{ ui("nav_analytics") }}</a>
+{% set authed = session.get('is_admin') or session.get('user_id') %}
+{% set p = request.path %}
+{% set active = 'campaigns' if p.startswith('/campaigns') else ('ads' if (p.startswith('/vacancies') or p.startswith('/creatives')) else ('leads' if p.startswith('/candidates') else ('channel-tg' if '/connect/telegram' in p else ('channel-fb' if '/connect/facebook' in p else ('sources' if p.startswith('/sources') else ('analytics' if p.startswith('/analytics') else ('billing' if p.startswith('/pricing') else ('company' if (p.startswith('/profile') or p.startswith('/companies')) else '')))))))) %}
+<body class="app{% if is_rtl %} rtl{% endif %}">
+{% if authed %}
+<div class="shell">
+  <aside class="sidebar" id="lsidebar">
+    <a class="sb-brand" href="/cabinet" style="text-decoration:none;color:inherit"><img src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="26" height="26">Posting<em>Autopilot</em></a>
+    <a class="sb-company" href="/companies/" style="text-decoration:none">
+      <span class="cmp-logo">{{ (current_company_name or 'A')[0]|upper }}</span>
+      <span style="flex:1;min-width:0;text-align:start">
+        <span class="cmp-name">{{ current_company_name or ('Компания' if ui_lang=='ru' else ('חברה' if ui_lang=='he' else 'Company')) }}</span>
+        <span class="cmp-sub">Pro</span>
+      </span>
+    </a>
+    <nav id="lsbnav">
+      <div class="sb-group">
+        <div class="sb-group-label">{% if ui_lang=='he' %}לידים{% elif ui_lang=='en' %}Leads{% else %}Лиды{% endif %}</div>
+        <a class="sb-link {% if active=='leads' %}active{% endif %}" href="/cabinet#/leads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>{% if ui_lang=='he' %}לידים{% elif ui_lang=='en' %}Leads{% else %}Лиды{% endif %}</a>
+        <a class="sb-link" href="/cabinet#/dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>{% if ui_lang=='he' %}לוח בקרה{% elif ui_lang=='en' %}Dashboard{% else %}Дашборд{% endif %}</a>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">{% if ui_lang=='he' %}פרסום{% elif ui_lang=='en' %}Posting{% else %}Постинг{% endif %}</div>
+        <a class="sb-link {% if active=='campaigns' %}active{% endif %}" href="/campaigns/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22 22 0 0 1-4 2z"/></svg>{% if ui_lang=='he' %}קמפיינים{% elif ui_lang=='en' %}Campaigns{% else %}Кампании{% endif %}</a>
+        <a class="sb-link {% if active=='ads' %}active{% endif %}" href="/vacancies/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>{% if ui_lang=='he' %}מודעות{% elif ui_lang=='en' %}Listings{% else %}Объявления{% endif %}</a>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">{% if ui_lang=='he' %}ערוצים{% elif ui_lang=='en' %}Channels{% else %}Каналы{% endif %}</div>
+        <a class="sb-link {% if active=='channel-tg' %}active{% endif %}" href="/connect/telegram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>Telegram</a>
+        <a class="sb-link {% if active=='channel-fb' %}active{% endif %}" href="/connect/facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>Facebook</a>
+        <a class="sb-link {% if active=='sources' %}active{% endif %}" href="/sources/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>{% if ui_lang=='he' %}יעדים{% elif ui_lang=='en' %}Destinations{% else %}Назначения{% endif %}</a>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">{% if ui_lang=='he' %}הגדרה{% elif ui_lang=='en' %}Setup{% else %}Настройка{% endif %}</div>
+        <a class="sb-link" href="/cabinet#/bot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="2.5"/><path d="M12 5.5V9"/><circle cx="12" cy="4" r="1.5"/><circle cx="9" cy="14" r="1.1"/><circle cx="15" cy="14" r="1.1"/></svg>{% if ui_lang=='he' %}בוט AI{% elif ui_lang=='en' %}AI bot{% else %}AI-бот{% endif %}</a>
+        <a class="sb-link {% if active=='analytics' %}active{% endif %}" href="/analytics/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 5-5"/></svg>{% if ui_lang=='he' %}אנליטיקה{% elif ui_lang=='en' %}Analytics{% else %}Аналитика{% endif %}</a>
+        <a class="sb-link {% if active=='company' %}active{% endif %}" href="/profile/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg>{% if ui_lang=='he' %}חברה וצוות{% elif ui_lang=='en' %}Company{% else %}Компания{% endif %}</a>
+        <a class="sb-link {% if active=='billing' %}active{% endif %}" href="/pricing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>{% if ui_lang=='he' %}חיוב{% elif ui_lang=='en' %}Billing{% else %}Биллинг{% endif %}</a>
+      </div>
     </nav>
-    <div class="right">
-      <button class="acct-btn" type="button" onclick="document.getElementById('acctMenu').classList.toggle('open')" aria-haspopup="true">
-        <span class="avatar">{{ (current_company_name or 'A')[0]|upper }}</span>
-        <span class="acct-name">{{ current_company_name or ui("nav_dashboard") }}</span>
-      </button>
-      <div class="menu" id="acctMenu">
-        <a href="/profile/" {% if request.path.startswith('/profile') %}class="active"{% endif %}>{{ ui("company_profile") }}</a>
-        {% if current_company_name %}<a href="/companies/">{% if ui_lang == 'he' %}החלף חברה{% elif ui_lang == 'ru' %}Сменить компанию{% else %}Switch company{% endif %}</a>{% endif %}
-        <div class="menu-label">{% if ui_lang == 'he' %}ערוצים{% elif ui_lang == 'ru' %}Каналы{% else %}Channels{% endif %}</div>
-        <a href="/connect/telegram" {% if '/connect/telegram' in request.path %}class="active"{% endif %}>Telegram</a>
-        <a href="/connect/facebook" {% if '/connect/facebook' in request.path %}class="active"{% endif %}>Facebook</a>
-        <a href="/sources/" {% if request.path.startswith('/sources') %}class="active"{% endif %}>{{ ui("nav_destinations") }}</a>
-        <a href="/creatives/" {% if request.path.startswith('/creatives') %}class="active"{% endif %}>{{ ui("nav_creatives") }}</a>
-        <div class="menu-sep"></div>
-        <div class="lang-row">
-          {% for l in supported_langs %}
-            <a class="lang {% if l == ui_lang %}active{% endif %}" href="/set-lang/{{ l }}">{{ l.upper() }}</a>
+    <div class="sb-foot">
+      <a class="sb-link sb-back" href="/cabinet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>{% if ui_lang=='he' %}חזרה לקבינט{% elif ui_lang=='en' %}Back to cabinet{% else %}В кабинет{% endif %}</a>
+      <a class="sb-link" href="/logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>{{ ui("nav_logout") }}</a>
+    </div>
+  </aside>
+
+  <div class="work">
+    <header class="workbar">
+      <button class="burger" id="lburger" type="button" aria-label="menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <div class="wb-title">{{ title or current_company_name or '' }}</div>
+      <div class="spacer"></div>
+      <div class="wlangs">
+        {% for l in supported_langs %}
+          <a class="lang {% if l == ui_lang %}active{% endif %}" href="/set-lang/{{ l }}">{{ l.upper() }}</a>
+        {% endfor %}
+      </div>
+    </header>
+    <div class="lmain">
+      {% if operator_copilot %}
+      <section class="card" style="margin-bottom:22px;border-color:var(--accent-light)">
+        <div class="row" style="align-items:flex-start">
+          <div>
+            <div class="eyebrow">{{ operator_copilot.title }}</div>
+            <h2 style="margin:2px 0">{{ operator_copilot.page_label }}</h2>
+            <p class="muted">{{ operator_copilot.summary }}</p>
+          </div>
+          <span class="status status-{{ operator_copilot.state_tone }}">{{ operator_copilot.state_label }}</span>
+        </div>
+        {% if operator_copilot.actions %}
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+          {% for action in operator_copilot.actions %}
+            {% if action.method == 'POST' %}
+            <form method="post" action="{{ action.href }}" style="margin:0" {% if action.confirm %}onsubmit="return confirm({{ action.confirm|tojson }})"{% endif %}>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</button>
+            </form>
+            {% else %}
+            <a href="{{ action.href }}" class="{{ 'btn' if action.primary else 'pill' }}" {% if action.confirm %}onclick="return confirm({{ action.confirm|tojson }})"{% endif %}>{{ action.label }}</a>
+            {% endif %}
           {% endfor %}
         </div>
-        <div class="menu-sep"></div>
-        <a href="/logout">{{ ui("nav_logout") }}</a>
-      </div>
-    </div>
-    {% else %}
-    <div class="right">
-      <div class="lang-row">
-        {% for l in supported_langs %}
-          {% if l == ui_lang %}<span class="lang active">{{ l.upper() }}</span>{% else %}<a class="lang" href="/set-lang/{{ l }}">{{ l.upper() }}</a>{% endif %}
-        {% endfor %}
-      </div>
-      {% if not is_public_auth_page %}<a class="pill" href="{{ public_login_url }}" style="font-weight:500">{{ ui("sign_in") }}</a>{% endif %}
-    </div>
-    {% endif %}
-  </header>
-  <main class="container" style="padding-top:28px;padding-bottom:40px">
-    {% if operator_copilot %}
-    <section class="copilot-panel">
-      <div class="copilot-header">
-        <div>
-          <div class="eyebrow">{{ operator_copilot.title }}</div>
-          <h2 class="copilot-title">{{ operator_copilot.page_label }}</h2>
-          <p class="muted">{{ operator_copilot.summary }}</p>
-        </div>
-        <span class="status status-{{ operator_copilot.state_tone }}">{{ operator_copilot.state_label }}</span>
-      </div>
-
-      {% if operator_copilot.actions %}
-      <div class="copilot-actions">
-        {% for action in operator_copilot.actions %}
-          {% if action.method == 'POST' %}
-          <form method="post" action="{{ action.href }}" class="copilot-action-form" {% if action.confirm %}onsubmit="return confirm({{ action.confirm|tojson }})"{% endif %}>
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="{{ 'btn' if action.primary else 'pill' }}">{{ action.label }}</button>
-          </form>
-          {% else %}
-          <a href="{{ action.href }}" class="{{ 'btn' if action.primary else 'pill' }}" {% if action.confirm %}onclick="return confirm({{ action.confirm|tojson }})"{% endif %}>{{ action.label }}</a>
-          {% endif %}
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <div class="copilot-grid">
-        {% if operator_copilot.facts %}
-        <details class="copilot-block copilot-facts">
-          <summary class="small muted" style="cursor:pointer;list-style:none">{{ operator_copilot.context_label }}</summary>
-          <ul class="copilot-list">
-            {% for fact in operator_copilot.facts %}
-            <li>{{ fact }}</li>
-            {% endfor %}
-          </ul>
-        </details>
         {% endif %}
         {% if operator_copilot.warnings %}
-        <div class="copilot-block">
-          <div class="small muted">{{ operator_copilot.warnings_label }}</div>
-          <ul class="copilot-list copilot-list-warn">
-            {% for warning in operator_copilot.warnings %}
-            <li>{{ warning }}</li>
-            {% endfor %}
-          </ul>
-        </div>
+        <ul class="copilot-list copilot-list-warn" style="margin-top:10px">
+          {% for warning in operator_copilot.warnings %}<li>{{ warning }}</li>{% endfor %}
+        </ul>
         {% endif %}
-      </div>
-    </section>
-    {% endif %}
-    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
-    {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
-    {% block content %}{% endblock %}
-  </main>
-  {% if session.get('is_admin') or session.get('user_id') %}
-  <nav class="tabbar" aria-label="Primary navigation">
-    <a href="/dashboard" class="tabbar-item{% if request.path == '/dashboard' %} active{% endif %}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>{{ ui("nav_dashboard") }}</span>
-    </a>
-    <a href="/campaigns/" class="tabbar-item{% if request.path.startswith('/campaigns') %} active{% endif %}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      <span>{{ ui("nav_campaigns") }}</span>
-    </a>
-    <a href="/candidates/" class="tabbar-item{% if request.path.startswith('/candidates') %} active{% endif %}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span>{{ ui("nav_candidates") }}</span>
-    </a>
-    <a href="/analytics/" class="tabbar-item{% if request.path.startswith('/analytics') %} active{% endif %}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      <span>{{ ui("nav_analytics") }}</span>
-    </a>
-    <button type="button" class="tabbar-item" aria-label="{% if ui_lang=='he' %}עוד{% elif ui_lang=='ru' %}Ещё{% else %}More{% endif %}" onclick="var m=document.getElementById('acctMenu');if(m){m.classList.toggle('open');}window.scrollTo({top:0,behavior:'smooth'});">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
-      <span>{% if ui_lang=='he' %}עוד{% elif ui_lang=='ru' %}Ещё{% else %}More{% endif %}</span>
-    </button>
-  </nav>
-  {% endif %}
-  {% block scripts %}{% endblock %}
+      </section>
+      {% endif %}
+      {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+      {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+<div class="scrim2" id="lscrim"></div>
+<script>
+(function(){
+  var b=document.getElementById('lburger'), s=document.getElementById('lsidebar'), sc=document.getElementById('lscrim');
+  function close(){ if(s)s.classList.remove('open'); if(sc)sc.classList.remove('show'); }
+  if(b) b.addEventListener('click',function(){ if(s)s.classList.toggle('open'); if(sc)sc.classList.toggle('show'); });
+  if(sc) sc.addEventListener('click',close);
+})();
+</script>
+{% else %}
+<header class="pubbar">
+  <a href="/" class="brand" style="text-decoration:none"><img src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="24" height="24" style="vertical-align:middle">&nbsp;Posting&nbsp;<em>Autopilot</em></a>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="wlangs">
+      {% for l in supported_langs %}
+        {% if l == ui_lang %}<span class="lang active">{{ l.upper() }}</span>{% else %}<a class="lang" href="/set-lang/{{ l }}">{{ l.upper() }}</a>{% endif %}
+      {% endfor %}
+    </div>
+    {% if request.path not in ['/login', '/register', '/user-login'] %}<a class="pill" href="{{ public_login_url }}">{{ ui("sign_in") }}</a>{% endif %}
+  </div>
+</header>
+<main class="pubmain">
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+  {{ self.content() }}
+</main>
+{% endif %}
+{% block scripts %}{% endblock %}
 </body>
 </html>
