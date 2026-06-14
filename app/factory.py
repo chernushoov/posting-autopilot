@@ -72,6 +72,15 @@ def create_app():
     except ImportError:
         pass  # flask-wtf not installed — skip CSRF
 
+    # Web analytics ids -> templates (_analytics.html). Empty = analytics off.
+    @app.context_processor
+    def inject_analytics():
+        import os
+        return {
+            "cf_analytics_token": os.getenv("CF_ANALYTICS_TOKEN", "").strip(),
+            "clarity_id": os.getenv("CLARITY_ID", "").strip(),
+        }
+
     register_routes(app)
 
     # Liveness/health endpoint — must be reachable without auth or trial gating.

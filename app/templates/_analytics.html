@@ -1,0 +1,13 @@
+{# Web analytics — renders ONLY when the env ids are set (off by default).
+   Cloudflare Web Analytics (cookieless traffic/sources) + Microsoft Clarity
+   (heatmaps + session recordings). Ids injected by factory.inject_analytics
+   from CF_ANALYTICS_TOKEN / CLARITY_ID. CSP for these domains is allow-listed
+   in the Caddyfile security_headers snippet. #}
+{% if cf_analytics_token %}
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ cf_analytics_token }}"}'></script>
+{% endif %}
+{% if clarity_id %}
+<script type="text/javascript">
+(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","{{ clarity_id }}");
+</script>
+{% endif %}
