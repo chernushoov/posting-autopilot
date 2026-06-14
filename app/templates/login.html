@@ -4,10 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ ui("login_title") }} — Posting Autopilot</title>
-<link rel="stylesheet" href="/static/app.css?v=20260614-dark">
+<link rel="stylesheet" href="/static/ds.css?v=20260614-white">
 <link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/favicon-180.png">
-<meta name="theme-color" content="#0A0A0B">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  .login-logo{width:56px;height:56px;margin-bottom:14px}
+  .login-brand{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px;color:var(--fg)}
+  .login-brand em{font-style:normal;color:var(--accent)}
+  .login-title{color:var(--muted);font-size:14px;margin:0 0 20px}
+  .lang-switcher .pill{cursor:pointer}
+  .login-card form label{display:block;font-size:13px;font-weight:600;color:var(--fg);margin-bottom:6px}
+  .login-card form input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;background:var(--bg-white);color:var(--fg)}
+  .login-card form input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+  .login-card form .btn{width:100%;justify-content:center;margin-top:4px}
+</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Autopilot">
 {% if is_rtl %}
