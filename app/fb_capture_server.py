@@ -104,6 +104,38 @@ def _kill(pid, sig=signal.SIGTERM) -> None:
         pass
 
 
+def _sweep_orphans() -> None:
+    """Authoritative cleanup: SIGKILL any capture-signature process regardless of
+    tracked pids. Guards against a stale/forked pid ever leaving an Xvfb / x11vnc /
+    websockify running on the web container. Scoped tightly to our fixed single-slot
+    display + ports so it can never touch the headless poster's chromium (different
+    container) or anything unrelated. Killing Xvfb drops the display, so any orphan
+    capture chromium dies with it. Dependency-free (no ps/pkill in the slim image)."""
+    try:
+        entries = os.listdir("/proc")
+    except OSError:
+        return
+    for d in entries:
+        if not d.isdigit():
+            continue
+        try:
+            cl = open("/proc/%s/cmdline" % d, "rb").read().replace(b"\x00", b" ").decode("utf-8", "ignore")
+        except Exception:
+            continue
+        if not cl or "storepasswd" in cl:
+            continue
+        sig = (
+            ("Xvfb" in cl and DISPLAY in cl)
+            or ("x11vnc" in cl and str(VNC_PORT) in cl)
+            or ("websockify" in cl and str(WS_PORT) in cl)
+        )
+        if sig:
+            try:
+                os.kill(int(d), signal.SIGKILL)
+            except (OSError, ValueError):
+                pass
+
+
 def _teardown(state: dict | None) -> None:
     """Kill all capture processes and clear the slot. Killing Xvfb last drops the
     display, which makes any leftover chromium exit too. Best-effort, idempotent."""
@@ -125,6 +157,9 @@ def _teardown(state: dict | None) -> None:
                 os.remove(pwd_file)
             except OSError:
                 pass
+    # Belt-and-suspenders: kill anything matching our capture signature even if a
+    # tracked pid was stale. Never leave a browser/VNC running on the server.
+    _sweep_orphans()
     try:
         STATE_PATH.unlink()
     except OSError:
