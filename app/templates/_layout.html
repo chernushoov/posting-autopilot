@@ -11,12 +11,12 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-  <meta name="theme-color" content="#0A0A0B">
+  <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Autopilot">
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20260614-dark">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ds.css') }}?v=20260614-white">
   {% if is_rtl %}
   <style>
     body { direction: rtl; text-align: right; }
@@ -35,6 +35,44 @@
     .info-list { text-align: right; }
   </style>
   {% endif %}
+  <style>
+  /* White layout components — ds.css covers generic classes; these are the
+     header/menu/tabbar/copilot pieces ds.css doesn't define, styled in white. */
+  .right{position:relative}
+  .brand-logo{border-radius:6px;vertical-align:middle}
+  .acct-btn{display:flex;align-items:center;gap:8px;background:var(--bg-white);border:1px solid var(--border);border-radius:999px;padding:5px 14px 5px 5px;cursor:pointer;color:var(--fg);font:inherit;font-weight:600;font-size:13px}
+  .acct-btn:hover{border-color:var(--accent)}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+  .acct-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .menu{display:none;position:absolute;top:48px;right:0;background:var(--bg-white);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px;min-width:230px;z-index:200;flex-direction:column;gap:2px}
+  .menu.open{display:flex}
+  .menu a{padding:9px 12px;border-radius:8px;color:var(--fg);font-size:14px;text-decoration:none}
+  .menu a:hover{background:var(--accent-light);color:var(--accent)}
+  .menu a.active{color:var(--accent);font-weight:600}
+  .menu-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--light);padding:8px 12px 2px}
+  .menu-sep{height:1px;background:var(--border-light);margin:6px 4px}
+  .lang-row{display:flex;gap:4px;padding:6px 8px}
+  .lang{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--border);text-decoration:none}
+  .lang.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .copilot-panel{background:var(--card);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px 22px;margin-bottom:24px;box-shadow:var(--shadow)}
+  .copilot-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+  .copilot-title{font-size:18px;margin:2px 0}
+  .copilot-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .copilot-action-form{margin:0}
+  .copilot-grid{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .copilot-block{background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:12px 14px}
+  .copilot-list{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.5}
+  .copilot-list-warn{color:var(--warning)}
+  .tabbar{display:none}
+  @media(max-width:720px){
+    .nav{display:none}
+    .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg-white);border-top:1px solid var(--border);justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:150}
+    .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:none;padding:4px}
+    .tabbar-item svg{width:22px;height:22px}
+    .tabbar-item.active{color:var(--accent)}
+    main.container{padding-bottom:80px!important}
+  }
+  </style>
 </head>
 <body>
   {% set is_public_auth_page = request.path in ['/login', '/register', '/user-login'] %}

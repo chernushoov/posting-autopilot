@@ -4,10 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ ui("login_title") }} — Posting Autopilot</title>
-<link rel="stylesheet" href="/static/app.css?v=20260614-dark">
+<link rel="stylesheet" href="/static/ds.css?v=20260614-white">
 <link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/favicon-180.png">
-<meta name="theme-color" content="#0A0A0B">
+<meta name="theme-color" content="#ffffff">
+<style>
+  .login-logo{width:56px;height:56px;margin:0 auto 14px;display:block}
+  .login-brand{font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--fg);margin-bottom:4px}
+  .login-brand em{font-style:normal;color:var(--accent)}
+  .login-title{color:var(--muted);font-size:15px;margin:0 0 22px}
+</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Autopilot">
 {% if is_rtl %}
