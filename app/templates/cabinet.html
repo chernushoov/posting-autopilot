@@ -39,7 +39,7 @@ window.PA_LANG = {{ (ui_lang or 'ru')|tojson }};
 <div class="shell hide" id="shell">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <div class="sb-brand"><img src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="26" height="26">Posting<em>Autopilot</em></div>
+    <div class="sb-brand" data-go="dashboard" style="cursor:pointer"><img src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="26" height="26">Posting<em>Autopilot</em></div>
     <button class="sb-company" id="cmpBtn">
       <span class="cmp-logo" id="cmpLogo">К</span>
       <span style="flex:1;min-width:0;text-align:left">

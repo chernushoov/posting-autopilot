@@ -140,7 +140,7 @@ function company(state){
 
 /* ── БИЛЛИНГ ──────────────────────────────────────────────────────────────── */
 function billing(state){
-  var T=D.TRIAL, expired=!!state.trialExpired;
+  var T=D.TRIAL, expired=!!(T && T.expired);
   var plans=D.PLANS.map(function(p){
     var feats=p.feats.map(function(f){return '<li><span class="ico" data-i="checkbare"></span>'+f+'</li>';}).join('');
     var cta=p.current
@@ -166,7 +166,7 @@ function billing(state){
   return ''
   + '<div class="page-hero"><div><div class="eyebrow">'+t('bl.eyebrow')+'</div><h1>'+t('title.billing')+'</h1>'
   +   '<p class="muted">'+t('bl.sub')+'</p></div>'
-  +   '<button class="pill" data-act="trial-toggle">'+(expired?t('bl.back_trial'):t('bl.show_expired'))+'</button></div>'
+  +   '</div>'
   + banner
   + '<div class="plans-grid">'+plans+'</div>'
   + '<div class="billing-foot">'

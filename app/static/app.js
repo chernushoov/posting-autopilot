@@ -11,7 +11,7 @@ var $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
 var KEY={auth:'pa_app_auth',company:'pa_app_company'};
 function get(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function set(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-var state={filter:'hot', lead:1, company:(window.PA_BOOT&&window.PA_BOOT.current_company)||get(KEY.company)||'dirot', screen:'leads',
+var state={filter:'hot', lead:1, company:(window.PA_BOOT&&window.PA_BOOT.current_company)||get(KEY.company)||'dirot', screen:'dashboard',
   adView:'list', adStep:1, adId:'a1', tgView:'connected', tgStep:1, trialExpired:false};
 
 var ALL=Object.keys(D.SCREENS);
@@ -80,7 +80,7 @@ window.addEventListener('hashchange',function(){route();});
 function route(){
   var h=(location.hash||'').replace('#/','');
   if(!get(KEY.auth)&&!window.PA_BOOT){ showLogin(); return; }
-  show(h||'leads');
+  show(h||'dashboard');
 }
 
 /* ── Leads interactions ──────────────────────────────────────────────────── */
@@ -123,7 +123,7 @@ function paintDetail(){
 }
 
 /* ── Auth ────────────────────────────────────────────────────────────────── */
-function login(){ set(KEY.auth,'1'); go('leads'); show('leads'); }
+function login(){ set(KEY.auth,'1'); go('dashboard'); show('dashboard'); }
 var _tgL=$('#tgLogin'); if(_tgL) _tgL.addEventListener('click',login);
 var _emF=$('#emailForm'); if(_emF) _emF.addEventListener('submit',function(e){e.preventDefault();login();});
 $('#logoutBtn').addEventListener('click',function(){
@@ -187,10 +187,11 @@ function handleAct(a, el){
      tenant-secured Flask pages instead of mock toasts. The pretty SPA stays the
      hub; the real create/connect/run/billing flows live on their own pages. */
   if(window.PA_BOOT){
-    var NAV={ 'new-campaign':'/campaigns/new',
+    var NAV={ 'new-campaign':'/campaigns/new', 'run':'/campaigns/', 'pause':'/campaigns/', 'refresh':'/campaigns/',
       'new-ad':'/vacancies/new', 'edit-ad':'/vacancies/new', 'tg-reconnect':'/connect/telegram', 'tg-add':'/connect/telegram',
       'tg-resync':'/connect/telegram', 'fb-oauth':'/connect/facebook', 'fb-urls':'/connect/facebook',
-      'bot-save':'/profile/', 'company-save':'/profile/', 'company-logo':'/profile/', 'team-add':'/profile/',
+      'src-add':'/sources/', 'src-test':'/sources/', 'src-check-all':'/sources/',
+      'bot-save':'/profile/', 'company-save':'/profile/', 'company-logo':'/profile/', 'team-add':'/profile/', 'open-switcher':'/companies/',
       'plan-upgrade':'/pricing', 'plan-manage':'/pricing', 'pay-method':'/pricing', 'invoices':'/pricing' };
     if(a==='wa'||a==='tg'){
       var L=D.LEADS.filter(function(x){return x.id===state.lead;})[0];

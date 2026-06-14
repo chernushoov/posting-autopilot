@@ -184,12 +184,13 @@ def create_app():
             return None
         if request.args.get("legacy"):
             return None
+        # Only the pure read-only duplicates the SPA renders better (the old
+        # /analytics had broken dark bars + mixed langs; /candidates list = SPA
+        # leads). /sources, /campaigns, /vacancies keep their real CRUD pages
+        # (clean tables/forms in the new shell) — reached from SPA action buttons.
         _dups = {
             "/analytics": "analytics", "/analytics/": "analytics",
             "/candidates": "leads", "/candidates/": "leads",
-            "/sources": "sources", "/sources/": "sources",
-            "/campaigns": "campaigns", "/campaigns/": "campaigns",
-            "/vacancies": "ads", "/vacancies/": "ads",
         }
         screen = _dups.get(request.path)
         if screen:
