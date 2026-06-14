@@ -29,7 +29,10 @@ def _normalize_telegram_code(value: str) -> str:
 def index():
     if session.get("is_admin"):
         return redirect(url_for("auth.dashboard"))
-    return render_template("landing.html")
+    # Premium landing — one curated template per language (he default).
+    lang = session.get("ui_lang", "he")
+    template = {"en": "landing_en.html", "ru": "landing_ru.html"}.get(lang, "landing.html")
+    return render_template(template)
 
 @bp.get("/login")
 def login():

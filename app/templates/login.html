@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ ui("login_title") }} — Posting Autopilot</title>
+<link rel="icon" type="image/svg+xml" href="/static/app-icon.svg">
+<link rel="apple-touch-icon" href="/static/favicon-180.png">
 <link rel="stylesheet" href="/static/app.css">
+<style>.login-card .brand{display:inline-flex;align-items:center;gap:8px;justify-content:center}.login-card .brand img{width:28px;height:28px}</style>
 {% if is_rtl %}
 <style>body{direction:rtl;text-align:right}.login-card form{text-align:right}</style>
 {% endif %}
@@ -12,7 +15,7 @@
 <body>
 <div class="login-shell">
   <div class="login-card">
-    <div class="brand" style="font-size:24px;margin-bottom:4px">Posting<em>Autopilot</em></div>
+    <div class="brand" style="font-size:24px;margin-bottom:4px"><img src="/static/logo-mark.svg" alt="" width="28" height="28">Posting<em>Autopilot</em></div>
     <p class="muted" style="font-size:14px">Sign in with your work email. Admin login still works here.</p>
     <div class="lang-switcher" style="display:flex;gap:4px;justify-content:center;margin-bottom:20px">
       {% for l in (supported_langs or ['en','ru','he']) %}

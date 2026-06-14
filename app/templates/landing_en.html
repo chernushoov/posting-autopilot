@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en" >
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Posting Autopilot — פרסום אוטומטי + בוט AI ללידים חמים</title>
-<meta name="description" content="מודעה אחת → 50+ קבוצות טלגרם ופייסבוק. בוט AI עונה, מסנן ואוסף טלפונים. אתם מקבלים רק לידים חמים.">
-<meta property="og:title" content="Posting Autopilot — פרסום אוטומטי + בוט AI ללידים חמים">
-<meta property="og:description" content="מודעה אחת → 50+ קבוצות טלגרם ופייסבוק. בוט AI עונה, מסנן ואוסף טלפונים. אתם מקבלים רק לידים חמים.">
+<title>Posting Autopilot — Auto-posting + AI bot for hot leads</title>
+<meta name="description" content="Post once → 50+ Telegram & Facebook groups. An AI bot answers, filters and collects phone numbers. You only get hot leads.">
+<meta property="og:title" content="Posting Autopilot — Auto-posting + AI bot for hot leads">
+<meta property="og:description" content="Post once → 50+ Telegram & Facebook groups. An AI bot answers, filters and collects phone numbers. You only get hot leads.">
 <meta property="og:type" content="website">
-<meta property="og:locale" content="he">
+<meta property="og:locale" content="en">
 <style>
 /* ── Posting Autopilot — Premium White Design System ──────────────────────── */
 :root{
@@ -313,7 +313,7 @@ textarea{resize:vertical}
 .steps-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:900px;margin:0 auto}
 .step-card{background:var(--card);border:1px solid var(--border-light);border-radius:20px;padding:36px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:all .3s}
 .step-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--accent)}
-.step-num{position:absolute;top:-12px;left:20px;font-size:80px;font-weight:900;color:rgba(0,113,227,.06);line-height:1;pointer-events:none}
+.step-num{position:absolute;top:-12px;right:20px;font-size:80px;font-weight:900;color:rgba(0,113,227,.06);line-height:1;pointer-events:none}
 .step-icon{font-size:40px;margin-bottom:16px}
 .step-card h3{font-size:20px;font-weight:700;margin-bottom:8px}
 .step-card p{color:var(--muted);font-size:15px;line-height:1.6}
@@ -419,12 +419,6 @@ textarea{resize:vertical}
 
 /* ── RTL ─────────────────────────────────────────────────────────────────── */
 
-body{direction:rtl;text-align:right}
-.bot-layout{direction:rtl}
-.bot-msg.from-user{align-self:flex-start;border-bottom-left-radius:4px;border-bottom-right-radius:14px}
-.bot-msg.from-bot{align-self:flex-end;border-bottom-right-radius:4px;border-bottom-left-radius:14px}
-.compare-grid{direction:rtl}
-
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media(max-width:768px){
@@ -496,32 +490,30 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
   <button class="l-burger" id="l-burger" aria-label="Menu" aria-expanded="false" onclick="var l=document.getElementById('l-links');var o=l.classList.toggle('open');this.setAttribute('aria-expanded',o)">&#9776;</button>
   <div class="l-nav-links" id="l-links">
     <div class="lang-dots">
-      <a href="/set-lang/en" data-lang="en">EN</a>
+      <span class="active-lang">EN</span>
       <a href="/set-lang/ru" data-lang="ru">RU</a>
-      <span class="active-lang">HE</span>
+      <a href="/set-lang/he" data-lang="he">HE</a>
     </div>
-    <a href="#how">איך זה עובד</a>
-    <a href="#pricing">מחירים</a>
-    <a href="/login">כניסה</a>
-    <a href="/register" class="btn" style="border-radius:999px">התחל בחינם</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/login">Sign in</a>
+    <a href="/register" class="btn" style="border-radius:999px">Start Free</a>
   </div>
 </nav>
 
 
 <!-- ═══ HERO ═══ -->
 <section class="l-hero">
-  <div class="hero-eyebrow reveal">פלטפורמת פרסום + AI</div>
+  <div class="hero-eyebrow reveal">Posting + AI Platform</div>
   <h1 class="hero-h1 reveal stagger-1">
-    פרסם פעם אחת.<br>ה<span class="accent">בוט</span> מטפל בכל השאר.
-    
+    Post once.<br>The <span class="accent">bot</span> handles the rest.
   </h1>
   <p class="hero-sub reveal stagger-2">
-    מודעה אחת &rarr; 50+ קבוצות טלגרם ופייסבוק &rarr; בוט AI עונה, מסנן, אוסף טלפונים &rarr; אתה מקבל רק לידים חמים.
-    
+    One listing &rarr; 50+ Telegram & Facebook groups &rarr; AI bot answers, filters, collects phones &rarr; you only get hot leads.
   </p>
   <div class="hero-ctas reveal stagger-3">
-    <a href="/register" class="btn">14 ימים חינם &rarr;</a>
-    <a href="#demo" class="btn-ghost">ראה דמו</a>
+    <a href="/register" class="btn">14 Days Free &rarr;</a>
+    <a href="#demo" class="btn-ghost">See Demo</a>
   </div>
   <div class="hero-scroll"><div class="arrow">&darr;</div></div>
 </section>
@@ -530,10 +522,10 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ PROOF BAR ═══ -->
 <section class="l-proof">
   <div class="proof-inner">
-    <div class="proof-item reveal stagger-1"><div class="proof-num"><span class="accent">50</span>+</div><div class="proof-label">קבוצות בפרסום אחד</div></div>
-    <div class="proof-item reveal stagger-2"><div class="proof-num"><span class="accent">3</span></div><div class="proof-label">שפות: עברית, רוסית, אנגלית</div></div>
-    <div class="proof-item reveal stagger-3"><div class="proof-num"><span class="accent">70</span>%</div><div class="proof-label">פחות זמן על סינון</div></div>
-    <div class="proof-item reveal stagger-4"><div class="proof-num"><span class="accent">0</span></div><div class="proof-label">ספאם. עיכובים אקראיים.</div></div>
+    <div class="proof-item reveal stagger-1"><div class="proof-num"><span class="accent">50</span>+</div><div class="proof-label">groups per campaign</div></div>
+    <div class="proof-item reveal stagger-2"><div class="proof-num"><span class="accent">3</span></div><div class="proof-label">languages: HE, RU, EN</div></div>
+    <div class="proof-item reveal stagger-3"><div class="proof-num"><span class="accent">70</span>%</div><div class="proof-label">less time screening</div></div>
+    <div class="proof-item reveal stagger-4"><div class="proof-num"><span class="accent">0</span></div><div class="proof-label">spam. Random delays.</div></div>
   </div>
 </section>
 
@@ -564,9 +556,9 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ BOT DEMO (ENHANCED) ═══ -->
 <section class="l-bot" id="demo">
   <div class="section-label">
-    <div class="eyebrow reveal">הבוט בפעולה</div>
-    <h2 class="reveal stagger-1">הוא מנהל את השיחה. אתה סוגר עסקאות.</h2>
-    <p class="reveal stagger-2">הבוט מזהה שפה אוטומטית, עונה מה-FAQ, שואל שאלות סינון ואוסף טלפון.</p>
+    <div class="eyebrow reveal">Bot in action</div>
+    <h2 class="reveal stagger-1">It runs the conversation. You close deals.</h2>
+    <p class="reveal stagger-2">Bot detects language, answers from FAQ, asks screening questions, collects phone.</p>
   </div>
   <div class="bot-layout">
     <div class="bot-phone reveal-left">
@@ -579,12 +571,12 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
       </div>
     </div>
     <div class="bot-features reveal-right">
-      <div class="bot-feature reveal stagger-1"><span class="bf-icon"><i class="ico" data-i="globe"></i></span><span class="bf-text">3 שפות</span></div>
-      <div class="bot-feature reveal stagger-2"><span class="bf-icon"><i class="ico" data-i="phone"></i></span><span class="bf-text">איסוף טלפון</span></div>
-      <div class="bot-feature reveal stagger-3"><span class="bf-icon"><i class="ico" data-i="flame"></i></span><span class="bf-text">סיווג HOT/COLD</span></div>
-      <div class="bot-feature reveal stagger-4"><span class="bf-icon"><i class="ico" data-i="bell"></i></span><span class="bf-text">התראות מיידיות</span></div>
-      <div class="bot-feature reveal stagger-5"><span class="bf-icon"><i class="ico" data-i="lightbulb"></i></span><span class="bf-text">FAQ חכם</span></div>
-      <div class="bot-feature reveal stagger-1"><span class="bf-icon"><i class="ico" data-i="chart"></i></span><span class="bf-text">אנליטיקה</span></div>
+      <div class="bot-feature reveal stagger-1"><span class="bf-icon"><i class="ico" data-i="globe"></i></span><span class="bf-text">3 Languages</span></div>
+      <div class="bot-feature reveal stagger-2"><span class="bf-icon"><i class="ico" data-i="phone"></i></span><span class="bf-text">Phone collection</span></div>
+      <div class="bot-feature reveal stagger-3"><span class="bf-icon"><i class="ico" data-i="flame"></i></span><span class="bf-text">HOT/COLD classification</span></div>
+      <div class="bot-feature reveal stagger-4"><span class="bf-icon"><i class="ico" data-i="bell"></i></span><span class="bf-text">Instant notifications</span></div>
+      <div class="bot-feature reveal stagger-5"><span class="bf-icon"><i class="ico" data-i="lightbulb"></i></span><span class="bf-text">Smart FAQ</span></div>
+      <div class="bot-feature reveal stagger-1"><span class="bf-icon"><i class="ico" data-i="chart"></i></span><span class="bf-text">Analytics</span></div>
     </div>
   </div>
 </section>
@@ -593,29 +585,29 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ PAIN BLOCK ═══ -->
 <section class="l-pain">
   <div class="section-label">
-    <div class="eyebrow reveal">הבעיה</div>
-    <h2 class="reveal stagger-1">כמה אתם מפסידים עכשיו?</h2>
+    <div class="eyebrow reveal">The Problem</div>
+    <h2 class="reveal stagger-1">How much are you losing right now?</h2>
   </div>
   <div class="pain-grid">
     <div class="pain-stat reveal stagger-1">
       <div class="pain-icon"><i class="ico" data-i="clock"></i></div>
-      <div class="pain-num red" data-count="3.5" data-suffix="ש">0</div>
-      <div class="pain-label">שעות ביום על פרסום ידני</div>
+      <div class="pain-num red" data-count="3.5" data-suffix="h">0</div>
+      <div class="pain-label">hours/day on manual posting</div>
     </div>
     <div class="pain-stat reveal stagger-2">
       <div class="pain-icon"><i class="ico" data-i="ban"></i></div>
       <div class="pain-num red" data-count="80" data-suffix="%">0</div>
-      <div class="pain-label">הודעות ספאם</div>
+      <div class="pain-label">spam messages</div>
     </div>
     <div class="pain-stat reveal stagger-3">
       <div class="pain-icon"><i class="ico" data-i="heartcrack"></i></div>
       <div class="pain-num amber" data-count="40" data-suffix="%">0</div>
-      <div class="pain-label">לידים חמים שאבדו</div>
+      <div class="pain-label">hot leads lost</div>
     </div>
     <div class="pain-stat reveal stagger-4">
       <div class="pain-icon"><i class="ico" data-i="wallet"></i></div>
       <div class="pain-num red" data-count="12000" data-prefix="&#8362;" data-suffix="">0</div>
-      <div class="pain-label">משכורת עובד ידני / חודש</div>
+      <div class="pain-label">manual worker salary / month</div>
     </div>
   </div>
 </section>
@@ -624,26 +616,26 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ CALCULATOR ═══ -->
 <section class="l-calc">
   <div class="section-label">
-    <div class="eyebrow reveal">מחשבון</div>
-    <h2 class="reveal stagger-1">כמה זה עולה לכם?</h2>
+    <div class="eyebrow reveal">Calculator</div>
+    <h2 class="reveal stagger-1">How much is it costing you?</h2>
   </div>
   <div class="calc-card reveal stagger-2">
     <div class="calc-row">
-      <label>שעות ביום על פרסום <span id="calc-hours-val">3</span></label>
+      <label>Hours/day posting <span id="calc-hours-val">3</span></label>
       <input type="range" id="calc-hours" min="1" max="8" value="3" step="0.5">
     </div>
     <div class="calc-row">
-      <label>&#8362;/שעה של הזמן שלכם <span id="calc-rate-val">80</span></label>
+      <label>&#8362;/hour of your time <span id="calc-rate-val">80</span></label>
       <input type="range" id="calc-rate" min="30" max="200" value="80" step="10">
     </div>
     <div class="calc-results">
       <div class="calc-result">
         <div class="calc-result-num" id="calc-monthly">&#8362;5,280</div>
-        <div class="calc-result-label">עלות חודשית שלכם</div>
+        <div class="calc-result-label">Your monthly cost</div>
       </div>
       <div class="calc-payback">
-        <div class="calc-payback-num" id="calc-payback">1.7 ימים</div>
-        <div class="calc-payback-label">החזר השקעה על 299&#8362;</div>
+        <div class="calc-payback-num" id="calc-payback">1.7 days</div>
+        <div class="calc-payback-label">Payback on 299&#8362; plan</div>
       </div>
     </div>
   </div>
@@ -653,30 +645,30 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ BEFORE / AFTER ═══ -->
 <section class="l-compare">
   <div class="section-label">
-    <div class="eyebrow reveal">לפני ואחרי</div>
-    <h2 class="reveal stagger-1">תראו את ההבדל</h2>
+    <div class="eyebrow reveal">Before & After</div>
+    <h2 class="reveal stagger-1">See the difference</h2>
   </div>
   <div class="compare-grid">
     <div class="compare-card before reveal-left">
-      <div class="compare-header">עכשיו</div>
+      <div class="compare-header">Now</div>
       <div class="compare-steps">
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="clock"></i></span><span class="cs-time">45 ד</span><span>קמים, פותחים 30 קבוצות</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="clipboard"></i></span><span class="cs-time">60 ד</span><span>העתק-הדבק לכל קבוצה</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="message"></i></span><span class="cs-time">90 ד</span><span>עונים ל-50+ הודעות</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="zap"></i></span><span class="cs-time">80%</span><span>ספאם — זמן מבוזבז</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="frown"></i></span><span class="cs-time">&mdash;&#8362;&#8362;&#8362;</span><span>שכחתם ליד חם — נעלם</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="refresh"></i></span><span class="cs-time">&infin;</span><span>חוזרים על זה מחר</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="clock"></i></span><span class="cs-time">45 min</span><span>Wake up, open 30 groups</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="clipboard"></i></span><span class="cs-time">60 min</span><span>Copy-paste to each group</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="message"></i></span><span class="cs-time">90 min</span><span>Answer 50+ messages</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="zap"></i></span><span class="cs-time">80%</span><span>Spam — wasted time</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="frown"></i></span><span class="cs-time">&mdash;&#8362;&#8362;&#8362;</span><span>Forgot hot lead — gone</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="refresh"></i></span><span class="cs-time">&infin;</span><span>Repeat tomorrow</span></div>
       </div>
     </div>
     <div class="compare-card after reveal-right">
-      <div class="compare-header">עם האוטופילוט</div>
+      <div class="compare-header">With Autopilot</div>
       <div class="compare-steps">
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="pencil"></i></span><span class="cs-time">5 ד</span><span>יוצרים מודעה פעם אחת</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="rocket"></i></span><span class="cs-time">אוטו</span><span>אוטופילוט מפרסם ב-50+ קבוצות</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="bot"></i></span><span class="cs-time">אוטו</span><span>בוט עונה, מסנן, מסווג</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="phone"></i></span><span class="cs-time">אוטו</span><span>אוסף טלפון אוטומטית</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="bell"></i></span><span class="cs-time">מיד</span><span>מקבלים: שם + טלפון + וואטסאפ</span></div>
-        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="check"></i></span><span class="cs-time">5 ד</span><span>מתקשרים רק למוכנים</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="pencil"></i></span><span class="cs-time">5 min</span><span>Create listing once</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="rocket"></i></span><span class="cs-time">auto</span><span>Autopilot posts to 50+ groups</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="bot"></i></span><span class="cs-time">auto</span><span>Bot answers, filters, qualifies</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="phone"></i></span><span class="cs-time">auto</span><span>Collects phone automatically</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="bell"></i></span><span class="cs-time">instant</span><span>You get: name + phone + WhatsApp</span></div>
+        <div class="compare-step"><span class="cs-icon"><i class="ico" data-i="check"></i></span><span class="cs-time">5 min</span><span>Call only ready ones</span></div>
       </div>
     </div>
   </div>
@@ -686,29 +678,29 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ ROI ═══ -->
 <section class="l-roi">
   <div class="section-label">
-    <div class="eyebrow reveal">תוצאות</div>
-    <h2 class="reveal stagger-1">מה אתם מקבלים</h2>
+    <div class="eyebrow reveal">Results</div>
+    <h2 class="reveal stagger-1">What you get</h2>
   </div>
   <div class="roi-grid">
     <div class="roi-card reveal stagger-1">
-      <div class="roi-num">3ש</div>
-      <div class="roi-label">חיסכון יומי</div>
-      <div class="roi-detail">45 דקות במקום 3.5 שעות</div>
+      <div class="roi-num">3h</div>
+      <div class="roi-label">saved daily</div>
+      <div class="roi-detail">45min instead of 3.5hrs</div>
     </div>
     <div class="roi-card reveal stagger-2">
       <div class="roi-num">70%</div>
-      <div class="roi-label">פחות ספאם</div>
-      <div class="roi-detail">בוט מסנן אוטומטית</div>
+      <div class="roi-label">less spam</div>
+      <div class="roi-detail">bot filters automatically</div>
     </div>
     <div class="roi-card reveal stagger-3">
       <div class="roi-num">&#8362;8K</div>
-      <div class="roi-label">חיסכון חודשי</div>
-      <div class="roi-detail">מחליף עובד ידני</div>
+      <div class="roi-label">monthly savings</div>
+      <div class="roi-detail">replaces manual worker</div>
     </div>
     <div class="roi-card reveal stagger-4">
       <div class="roi-num">5x</div>
-      <div class="roi-label">יותר חשיפה</div>
-      <div class="roi-detail">50+ קבוצות במקום 10</div>
+      <div class="roi-label">more reach</div>
+      <div class="roi-detail">50+ groups vs 10</div>
     </div>
   </div>
 </section>
@@ -717,37 +709,37 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ USE CASES ═══ -->
 <section class="l-cases">
   <div class="section-label">
-    <div class="eyebrow reveal">תחומים</div>
-    <h2 class="reveal stagger-1">כל עסק. כל כאב.</h2>
+    <div class="eyebrow reveal">Use Cases</div>
+    <h2 class="reveal stagger-1">Any business. Any pain.</h2>
   </div>
   <div class="cases-grid">
     <div class="case-card reveal stagger-1">
       <div class="case-icon"><i class="ico" data-i="users"></i></div>
-      <h3>גיוס עובדים</h3>
-      <div class="case-pain"><strong>הכאב</strong>HR מבזבז 4 שעות ביום על סינון ראשוני</div>
-      <div class="case-solution"><strong>הפתרון</strong>בוט מבצע ראיון ראשוני אוטומטי</div>
-      <div class="case-result">15 קו"ח מסוננים/יום במקום 3</div>
+      <h3>Recruiting</h3>
+      <div class="case-pain"><strong>Pain</strong>HR spends 4h/day on initial screening</div>
+      <div class="case-solution"><strong>Solution</strong>Bot runs first interview automatically</div>
+      <div class="case-result">15 qualified CVs/day instead of 3</div>
     </div>
     <div class="case-card reveal stagger-2">
       <div class="case-icon"><i class="ico" data-i="home"></i></div>
-      <h3>נדל"ן</h3>
-      <div class="case-pain"><strong>הכאב</strong>סוכן מפרסם ב-40 קבוצות ידנית</div>
-      <div class="case-solution"><strong>הפתרון</strong>אוטופוסט + בוט אוסף תקציב וטלפון</div>
-      <div class="case-result">8 צפיות חמות/שבוע במקום 2</div>
+      <h3>Real Estate</h3>
+      <div class="case-pain"><strong>Pain</strong>Agent posts to 40 groups manually</div>
+      <div class="case-solution"><strong>Solution</strong>Autopost + bot collects budget & phone</div>
+      <div class="case-result">8 hot viewings/week instead of 2</div>
     </div>
     <div class="case-card reveal stagger-3">
       <div class="case-icon"><i class="ico" data-i="car"></i></div>
-      <h3>מכירת רכב</h3>
-      <div class="case-pain"><strong>הכאב</strong>מודעה אחת = 100 שאלות "מה המחיר?"</div>
-      <div class="case-solution"><strong>הפתרון</strong>בוט עונה FAQ, מסנן רציניים</div>
-      <div class="case-result">3 קונים אמיתיים במקום 100 צ'אטים</div>
+      <h3>Car Sales</h3>
+      <div class="case-pain"><strong>Pain</strong>1 listing = 100 "what price?" questions</div>
+      <div class="case-solution"><strong>Solution</strong>Bot answers FAQ, filters serious buyers</div>
+      <div class="case-result">3 real buyers instead of 100 chats</div>
     </div>
     <div class="case-card reveal stagger-4">
       <div class="case-icon"><i class="ico" data-i="wrench"></i></div>
-      <h3>שירותים</h3>
-      <div class="case-pain"><strong>הכאב</strong>שרברב לא יכול לענות בזמן עבודה</div>
-      <div class="case-solution"><strong>הפתרון</strong>בוט מקבל פניות 24/7</div>
-      <div class="case-result">אף לקוח לא אבד</div>
+      <h3>Services</h3>
+      <div class="case-pain"><strong>Pain</strong>Plumber can't answer between calls</div>
+      <div class="case-solution"><strong>Solution</strong>Bot takes requests 24/7</div>
+      <div class="case-result">No client lost</div>
     </div>
   </div>
 </section>
@@ -756,43 +748,43 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <!-- ═══ PRICING ═══ -->
 <section class="l-pricing" id="pricing">
   <div class="section-label">
-    <div class="eyebrow reveal">תוכניות</div>
-    <h2 class="reveal stagger-1">פשוט. שקוף. בלי הפתעות.</h2>
+    <div class="eyebrow reveal">Plans</div>
+    <h2 class="reveal stagger-1">Simple. Transparent. No surprises.</h2>
   </div>
   <div class="price-cards">
     <div class="price-card reveal stagger-1">
-      <div class="price-name">סטארטר</div>
-      <div class="price-amount">299&#8362; <span>/חודש</span></div>
+      <div class="price-name">Starter</div>
+      <div class="price-amount">299&#8362; <span>/mo</span></div>
       <ul class="price-list">
-        <li>1 מודעה</li>
-        <li>10 קבוצות</li>
-        <li>בוט AI</li>
-        <li>3 שפות</li>
+        <li>1 listing</li>
+        <li>10 groups</li>
+        <li>AI bot</li>
+        <li>3 languages</li>
       </ul>
-      <a href="/register" class="price-cta outline">נסה בחינם</a>
+      <a href="/register" class="price-cta outline">Try Free</a>
     </div>
     <div class="price-card pop reveal stagger-2">
-      <div class="price-badge">הפופולרי</div>
-      <div class="price-name">פרו</div>
-      <div class="price-amount">899&#8362; <span>/חודש</span></div>
+      <div class="price-badge">Most Popular</div>
+      <div class="price-name">Pro</div>
+      <div class="price-amount">899&#8362; <span>/mo</span></div>
       <ul class="price-list">
-        <li>5 מודעות</li>
-        <li>50 קבוצות</li>
-        <li>אנליטיקה</li>
-        <li>תמיכה בעדיפות</li>
+        <li>5 listings</li>
+        <li>50 groups</li>
+        <li>Analytics</li>
+        <li>Priority support</li>
       </ul>
-      <a href="/register" class="price-cta primary">התחל עכשיו</a>
+      <a href="/register" class="price-cta primary">Start Now</a>
     </div>
     <div class="price-card reveal stagger-3">
-      <div class="price-name">סוכנות</div>
-      <div class="price-amount">1999&#8362; <span>/חודש</span></div>
+      <div class="price-name">Agency</div>
+      <div class="price-amount">1999&#8362; <span>/mo</span></div>
       <ul class="price-list">
-        <li>ללא הגבלה</li>
+        <li>Unlimited</li>
         <li>API</li>
-        <li>ריבוי חברות</li>
-        <li>מנהל אישי</li>
+        <li>Multi-company</li>
+        <li>Dedicated manager</li>
       </ul>
-      <a href="/register" class="price-cta outline">צור קשר</a>
+      <a href="/register" class="price-cta outline">Contact Us</a>
     </div>
   </div>
 </section>
@@ -800,12 +792,12 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 
 <!-- ═══ FINAL CTA ═══ -->
 <section class="l-final">
-  <h2 class="final-h2 reveal">מוכן להפסיק לבזבז זמן?</h2>
-  <p class="final-sub reveal stagger-1">14 ימי ניסיון חינם. ללא כרטיס אשראי. הגדרה ב-5 דקות.</p>
-  <a href="/register" class="btn final-btn reveal stagger-2">הרשם עכשיו</a>
+  <h2 class="final-h2 reveal">Ready to stop wasting time?</h2>
+  <p class="final-sub reveal stagger-1">14-day free trial. No credit card. Setup in 5 minutes.</p>
+  <a href="/register" class="btn final-btn reveal stagger-2">Sign Up Now</a>
   <div class="final-links reveal stagger-3">
-    <a href="#pricing">מחירים</a>
-    <a href="/terms">תנאי שימוש</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/terms">Terms</a>
   </div>
 </section>
 
@@ -864,38 +856,34 @@ var calcHoursVal = document.getElementById('calc-hours-val');
 var calcRateVal = document.getElementById('calc-rate-val');
 var calcMonthly = document.getElementById('calc-monthly');
 var calcPayback = document.getElementById('calc-payback');
-var lang = 'he';
+var lang = 'en';
 var daysWord = lang === 'he' ? '\u05D9\u05DE\u05D9\u05DD' : lang === 'ru' ? '\u0434\u043D\u0435\u0439' : 'days';
-var PRICE = 299;
 
 function updateCalc() {
-  if (!calcHours) return;
   var h = parseFloat(calcHours.value);
   var r = parseFloat(calcRate.value);
   calcHoursVal.textContent = h;
   calcRateVal.textContent = r;
   var monthly = Math.round(h * r * 22);   // labour cost / month (22 working days)
   var perDay = h * r;                      // cost of one working day
-  var payback = perDay > 0 ? (PRICE / perDay).toFixed(1) : '---';
+  var payback = perDay > 0 ? (299 / perDay).toFixed(1) : '---';
   calcMonthly.textContent = '\u20AA' + monthly.toLocaleString();
   calcPayback.textContent = payback + ' ' + daysWord;
 }
-if (calcHours) {
-  calcHours.addEventListener('input', updateCalc);
-  calcRate.addEventListener('input', updateCalc);
-  updateCalc();
-}
+calcHours.addEventListener('input', updateCalc);
+calcRate.addEventListener('input', updateCalc);
+updateCalc();
 
 // ── Bot demo: sequential chat with typing animation ──
 var botMsgs = [
-  {who:'bot',text:'\u05E9\u05DC\u05D5\u05DD! \u05D0\u05E0\u05D9 \u05D4\u05D1\u05D5\u05D8 \u05E9\u05DC \u05D3\u05D9\u05E8\u05D5\u05EA TLV. \u05DE\u05D7\u05E4\u05E9\u05D9\u05DD \u05D3\u05D9\u05E8\u05D4?'},
-  {who:'user',text:'\u05DB\u05DF, 3 \u05D7\u05D3\u05E8\u05D9\u05DD \u05D1\u05D0\u05D6\u05D5\u05E8 \u05E4\u05DC\u05D5\u05E8\u05E0\u05D8\u05D9\u05DF'},
-  {who:'bot',text:'\u05DE\u05E2\u05D5\u05DC\u05D4! \u05DE\u05D4 \u05D4\u05EA\u05E7\u05E6\u05D9\u05D1 \u05E9\u05DC\u05DB\u05DD?'},
-  {who:'user',text:'\u05E2\u05D3 6000 \u05E9\u05F4\u05D7'},
-  {who:'bot',text:'\u05D9\u05E9 \u05DC\u05E0\u05D5 3 \u05D3\u05D9\u05E8\u05D5\u05EA \u05DE\u05EA\u05D0\u05D9\u05DE\u05D5\u05EA! \u05EA\u05D5\u05DB\u05DC\u05D5 \u05DC\u05E9\u05DC\u05D5\u05D7 \u05DE\u05E1\u05E4\u05E8 \u05D8\u05DC\u05E4\u05D5\u05DF?'},
+  {who:'bot',text:'Hi! I am the Dirot TLV bot. Looking for an apartment?'},
+  {who:'user',text:'Yes, 3 rooms in the Florentin area'},
+  {who:'bot',text:'Great! What is your budget?'},
+  {who:'user',text:'Up to 6000₪'},
+  {who:'bot',text:'We found 3 matching apartments! Can you share a phone number?'},
   {who:'user',text:'054-555-1234'},
-  {who:'bot',text:'\u05EA\u05D5\u05D3\u05D4 \u05E8\u05D1\u05D4! \u05D4\u05E2\u05D1\u05E8\u05EA\u05D9 \u05D0\u05EA \u05D4\u05E4\u05E8\u05D8\u05D9\u05DD \u05E9\u05DC\u05DB\u05DD \u05DC\u05E1\u05D5\u05DB\u05DF.'},
-  {who:'alert',text:'\u2713 \u05DC\u05D9\u05D3 \u05D7\u05DD (HOT)\n\u05E9\u05DD: User TG\n3 \u05D7\u05D3\u05E8\u05D9\u05DD \u00B7 \u05E4\u05DC\u05D5\u05E8\u05E0\u05D8\u05D9\u05DF \u00B7 6000\u20AA\n\u05D8\u05DC\u05E4\u05D5\u05DF: 054-555-1234'}
+  {who:'bot',text:'Thank you! I have passed your details to the agent.'},
+  {who:'alert',text:'✓ HOT lead\nName: User TG\n3 rooms · Florentin · 6000₪\nPhone: 054-555-1234'}
 ];
 
 var chatContainer = document.getElementById('bot-chat-demo');
