@@ -297,8 +297,105 @@ var SCREENS={
    warn:[{tone:'warn',text:'Триал истекает через 11 дней — затем автопостинг на паузе.'}],action:{label:'Перейти на Pro',go:'billing',ico:'card'}}}
 };
 
-return {ICONS:ICONS,svg:svg,injectIcons:injectIcons,COMPANIES:COMPANIES,LEADS:LEADS,COUNTS:COUNTS,
+/* ── REAL DATA OVERRIDE ──────────────────────────────────────────────────────
+   When the Flask cabinet route injected window.PA_BOOT (live, tenant-scoped
+   data), replace the mock fixtures IN PLACE before anything reads them, so the
+   design renders the real company instead of "Dirot TLV". Arrays are mutated
+   (length=0 + push) to keep the references captured by _extractRu()/PUB. */
+if(window.PA_BOOT){ var _B=window.PA_BOOT;
+  var _swap=function(arr,rows){ if(!rows) return; arr.length=0; rows.forEach(function(r){arr.push(r);}); };
+  _swap(COMPANIES,_B.companies); _swap(LEADS,_B.leads); _swap(CAMPAIGNS,_B.campaigns);
+  _swap(ATTEMPTS,_B.attempts); _swap(QUEUE,_B.queue); _swap(ADS,_B.ads);
+  _swap(TG_GROUPS,_B.tg_groups); _swap(FB_SOURCES,_B.fb_sources); _swap(SOURCES,_B.sources);
+  _swap(FUNNEL,_B.funnel); _swap(ONBOARD,_B.onboard); _swap(TEAM,_B.team); _swap(PLANS,_B.plans);
+  if(_B.counts){ for(var _k in _B.counts) COUNTS[_k]=_B.counts[_k]; }
+  if(_B.bot){ for(var _k2 in _B.bot) BOT[_k2]=_B.bot[_k2]; }
+  if(_B.trial){ for(var _k3 in _B.trial) TRIAL[_k3]=_B.trial[_k3]; }
+  if(typeof _B.ad_limit==='number') AD_LIMIT=_B.ad_limit;
+  if(_B.analytics){ ANALYTICS.kpi=_B.analytics.kpi||[]; ANALYTICS.funnel=_B.analytics.funnel||[];
+    ANALYTICS.langs=_B.analytics.langs||[]; ANALYTICS.days=_B.analytics.days||[];
+    ANALYTICS.ops=_B.analytics.ops||[]; ANALYTICS.ads=_B.analytics.ads||[]; }
+  if(_B.screens){ Object.keys(_B.screens).forEach(function(k){
+    if(SCREENS[k]&&_B.screens[k]&&_B.screens[k].cp) SCREENS[k].cp=_B.screens[k].cp; }); }
+}
+
+/* ── i18n content overlay (RU is inline source; EN/HE come from PA_LOC) ───── */
+var _WHO={}; LEADS.forEach(function(L){ _WHO[L.id]=L.chat.map(function(c){return c[0];}); });
+function _extractRu(){
+  var leads={}; LEADS.forEach(function(L){ leads[L.id]={name:L.name,summary:L.summary,ad:L.ad,chat:L.chat.map(function(c){return c[1];})}; });
+  var ads={}; ADS.forEach(function(a){ ads[a.id]={title:a.title,vertLabel:a.vertLabel,city:a.city,price:a.price,preview:a.preview}; });
+  var cp={}; Object.keys(SCREENS).forEach(function(k){ var c=SCREENS[k].cp; if(!c) return;
+    cp[k]={summary:c.summary,facts:(c.facts||[]).map(function(f){return {label:f.label,val:f.val};}),
+      warn:(c.warn||[]).map(function(w){return {text:w.text};}),action:c.action?{label:c.action.label}:null}; });
+  return {
+    companies:COMPANIES.map(function(c){return {name:c.name,type:c.type};}),
+    leads:leads,
+    campaigns:CAMPAIGNS.map(function(c){return {name:c.name,ad:c.ad,channels:c.channels,statusLabel:c.statusLabel};}),
+    attempts:ATTEMPTS.map(function(a){return {group:a.group,label:a.label};}),
+    queue:QUEUE.map(function(q){return {title:q.title,sub:q.sub};}),
+    ads:ads,
+    tg_groups:TG_GROUPS.map(function(g){return {name:g.name,folder:g.folder};}),
+    fb_sources:FB_SOURCES.map(function(s){return {name:s.name,mode:s.mode};}),
+    sources:SOURCES.map(function(s){return {name:s.name,kind:s.kind,mode:s.mode};}),
+    funnel:FUNNEL.map(function(f){return {label:f.label};}),
+    onboard:ONBOARD.map(function(s){return {t:s.t};}),
+    bot:{positive:BOT.positive,negative:BOT.negative,greet:BOT.greet,reject:BOT.reject,success:BOT.success},
+    bot_demo:BOT_DEMO.map(function(d){return {kw:d.kw.slice(),a:d.a};}),
+    bot_default:BOT_DEFAULT_REPLY,
+    analytics:{kpi:ANALYTICS.kpi.map(function(k){return {label:k.label,sub:k.sub};}),
+      funnel:ANALYTICS.funnel.map(function(f){return {label:f.label};}),
+      langs:ANALYTICS.langs.map(function(l){return {label:l.label};}),
+      days:ANALYTICS.days.map(function(d){return {d:d.d};}),
+      ops:ANALYTICS.ops.map(function(o){return {label:o.label};}),
+      ads:ANALYTICS.ads.map(function(a){return {title:a.title};})},
+    team:TEAM.map(function(m){return {name:m.name,role:m.role};}),
+    plans:PLANS.map(function(p){return {tagline:p.tagline,feats:p.feats.slice()};}),
+    cp:cp
+  };
+}
+var _RU=_extractRu();
+function applyLang(lang){
+  var P=(lang==='en'||lang==='he')?(window.PA_LOC&&window.PA_LOC[lang]):_RU;
+  if(window.PA_BOOT) P=_RU;   /* real data present: localise chrome via t(), never swap real rows to mock */
+  if(!P) P=_RU;
+  COMPANIES.forEach(function(c,i){ var d=P.companies[i]; if(d){c.name=d.name;c.type=d.type;} });
+  LEADS.forEach(function(L){ var d=P.leads[L.id]; if(!d) return; L.name=d.name;L.summary=d.summary;L.ad=d.ad;
+    L.chat=d.chat.map(function(txt,i){ return [_WHO[L.id][i],txt]; }); });
+  CAMPAIGNS.forEach(function(c,i){ var d=P.campaigns[i]; if(d){c.name=d.name;c.ad=d.ad;c.channels=d.channels;c.statusLabel=d.statusLabel;} });
+  ATTEMPTS.forEach(function(a,i){ var d=P.attempts[i]; if(d){a.group=d.group;a.label=d.label;} });
+  QUEUE.forEach(function(q,i){ var d=P.queue[i]; if(d){q.title=d.title;q.sub=d.sub;} });
+  ADS.forEach(function(a){ var d=P.ads[a.id]; if(d){a.title=d.title;a.vertLabel=d.vertLabel;a.city=d.city;a.price=d.price;a.preview=d.preview;} });
+  TG_GROUPS.forEach(function(g,i){ var d=P.tg_groups[i]; if(d){g.name=d.name;g.folder=d.folder;} });
+  FB_SOURCES.forEach(function(s,i){ var d=P.fb_sources[i]; if(d){s.name=d.name;s.mode=d.mode;} });
+  SOURCES.forEach(function(s,i){ var d=P.sources[i]; if(d){s.name=d.name;s.kind=d.kind;s.mode=d.mode;} });
+  FUNNEL.forEach(function(f,i){ if(P.funnel[i]) f.label=P.funnel[i].label; });
+  ONBOARD.forEach(function(s,i){ if(P.onboard[i]) s.t=P.onboard[i].t; });
+  BOT.positive=P.bot.positive;BOT.negative=P.bot.negative;BOT.greet=P.bot.greet;BOT.reject=P.bot.reject;BOT.success=P.bot.success;
+  BOT_DEMO.forEach(function(d,i){ var s=P.bot_demo[i]; if(s){d.kw=s.kw.slice();d.a=s.a;} });
+  PUB.BOT_DEFAULT_REPLY=P.bot_default;
+  ANALYTICS.kpi.forEach(function(k,i){ var d=P.analytics.kpi[i]; if(d){k.label=d.label;k.sub=d.sub;} });
+  ANALYTICS.funnel.forEach(function(f,i){ if(P.analytics.funnel[i]) f.label=P.analytics.funnel[i].label; });
+  ANALYTICS.langs.forEach(function(l,i){ if(P.analytics.langs[i]) l.label=P.analytics.langs[i].label; });
+  ANALYTICS.days.forEach(function(x,i){ if(P.analytics.days[i]) x.d=P.analytics.days[i].d; });
+  ANALYTICS.ops.forEach(function(o,i){ if(P.analytics.ops[i]) o.label=P.analytics.ops[i].label; });
+  ANALYTICS.ads.forEach(function(a,i){ if(P.analytics.ads[i]) a.title=P.analytics.ads[i].title; });
+  TEAM.forEach(function(m,i){ var d=P.team[i]; if(d){m.name=d.name;m.role=d.role;} });
+  PLANS.forEach(function(p,i){ var d=P.plans[i]; if(d){p.tagline=d.tagline;p.feats=d.feats.slice();} });
+  var T=(window.PA_I18N?window.PA_I18N.t:function(k){return k;});
+  Object.keys(SCREENS).forEach(function(k){
+    SCREENS[k].title=T('title.'+k);
+    var c=SCREENS[k].cp,d=P.cp[k]; if(!c||!d) return;
+    c.summary=d.summary;
+    (c.facts||[]).forEach(function(f,i){ if(d.facts[i]){f.label=d.facts[i].label;f.val=d.facts[i].val;} });
+    (c.warn||[]).forEach(function(w,i){ if(d.warn[i]) w.text=d.warn[i].text; });
+    if(c.action&&d.action) c.action.label=d.action.label;
+  });
+}
+
+var PUB={ICONS:ICONS,svg:svg,injectIcons:injectIcons,COMPANIES:COMPANIES,LEADS:LEADS,COUNTS:COUNTS,
   CAMPAIGNS:CAMPAIGNS,ATTEMPTS:ATTEMPTS,QUEUE:QUEUE,FUNNEL:FUNNEL,ONBOARD:ONBOARD,SCREENS:SCREENS,
   ADS:ADS,AD_LIMIT:AD_LIMIT,TG_GROUPS:TG_GROUPS,FB_SOURCES:FB_SOURCES,SOURCES:SOURCES,
-  BOT:BOT,BOT_DEMO:BOT_DEMO,BOT_DEFAULT_REPLY:BOT_DEFAULT_REPLY,ANALYTICS:ANALYTICS,TEAM:TEAM,PLANS:PLANS,TRIAL:TRIAL};
+  BOT:BOT,BOT_DEMO:BOT_DEMO,BOT_DEFAULT_REPLY:BOT_DEFAULT_REPLY,ANALYTICS:ANALYTICS,TEAM:TEAM,PLANS:PLANS,TRIAL:TRIAL,
+  applyLang:applyLang};
+return PUB;
 })();

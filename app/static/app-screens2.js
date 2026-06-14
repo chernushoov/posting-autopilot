@@ -1,64 +1,61 @@
 /* ════════════════════════════════════════════════════════════════════════════
-   Posting Autopilot — Cabinet SCREEN templates · Phase 3
-   AI-бот · Аналитика · Компания и команда · Биллинг   (return HTML strings)
+   Posting Autopilot — SCREEN templates · Phase 3 · i18n
+   AI-бот · Аналитика · Компания и команда · Биллинг
    ════════════════════════════════════════════════════════════════════════════ */
 window.PAScreens2 = (function(){
 "use strict";
 var D = window.PA;
+function t(k,v){ return window.PA_I18N.t(k,v); }
 
 function kpi(ic,label,val,sub,flat){
   return '<div class="kpi"><div class="k-top"><span class="k-ic" data-i="'+ic+'"></span><span class="k-label">'+label+'</span></div>'
   + '<div class="k-val">'+val+'</div><div class="k-sub'+(flat?' flat':'')+'">'+sub+'</div></div>';
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   AI-БОТ — тон, язык, промты, шаблоны, тест
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ── AI-БОТ ───────────────────────────────────────────────────────────────── */
 function bot(state){
   var B=D.BOT;
-  var tones=[['professional','Профессиональный'],['friendly','Дружелюбный'],['strict','Строгий']];
-  var toneBtns=tones.map(function(t){
-    return '<button class="seg-opt'+(B.tone===t[0]?' active':'')+'" data-bot-tone="'+t[0]+'">'+t[1]+'</button>';
+  var tones=[['professional',t('bot.t.pro')],['friendly',t('bot.t.friendly')],['strict',t('bot.t.strict')]];
+  var toneBtns=tones.map(function(x){
+    return '<button class="seg-opt'+(B.tone===x[0]?' active':'')+'" data-bot-tone="'+x[0]+'">'+x[1]+'</button>';
   }).join('');
-  var langs=[['auto','Авто (язык клиента)'],['ru','Русский'],['he','עברית'],['en','English']];
+  var langs=[['auto',t('bot.la.auto')],['ru',t('bot.la.ru')],['he',t('bot.la.he')],['en',t('bot.la.en')]];
   var langOpts=langs.map(function(l){return '<option value="'+l[0]+'"'+(B.lang===l[0]?' selected':'')+'>'+l[1]+'</option>';}).join('');
   return ''
-  + '<div class="page-hero"><div><div class="eyebrow">Настройка</div><h1>AI-бот</h1>'
-  +   '<p class="muted">Бот общается с откликами, отсеивает спам и помечает горячих лидов.</p></div>'
-  +   '<button class="btn" data-act="bot-save"><span class="ico" data-i="check"></span> Сохранить</button></div>'
+  + '<div class="page-hero"><div><div class="eyebrow">'+t('bot.eyebrow')+'</div><h1>'+t('title.bot')+'</h1>'
+  +   '<p class="muted">'+t('bot.sub')+'</p></div>'
+  +   '<button class="btn" data-act="bot-save"><span class="ico" data-i="check"></span> '+t('c.save')+'</button></div>'
   + '<div class="bot-layout">'
   +   '<div class="stack">'
-  +     '<div class="card"><h3 style="margin-top:0">Поведение</h3>'
-  +       '<div class="wz-field"><label>Тон общения</label><div class="seg-pills">'+toneBtns+'</div></div>'
-  +       '<div class="wz-field"><label>Язык ответов</label><select data-bot-lang>'+langOpts+'</select>'
-  +         '<div class="small muted" style="margin-top:6px">В режиме «Авто» бот отвечает на языке клиента — RU / HE / EN.</div></div></div>'
-  +     '<div class="card"><h3 style="margin-top:0">Критерии классификации</h3>'
-  +       '<div class="wz-field"><label><span class="dot-hot"></span> Когда лид «горячий» (позитивный промт)</label>'
+  +     '<div class="card"><h3 style="margin-top:0">'+t('bot.behavior')+'</h3>'
+  +       '<div class="wz-field"><label>'+t('bot.tone')+'</label><div class="seg-pills">'+toneBtns+'</div></div>'
+  +       '<div class="wz-field"><label>'+t('bot.lang')+'</label><select data-bot-lang>'+langOpts+'</select>'
+  +         '<div class="small muted" style="margin-top:6px">'+t('bot.lang_h')+'</div></div></div>'
+  +     '<div class="card"><h3 style="margin-top:0">'+t('bot.crit')+'</h3>'
+  +       '<div class="wz-field"><label><span class="dot-hot"></span> '+t('bot.pos')+'</label>'
   +         '<textarea rows="3">'+B.positive+'</textarea></div>'
-  +       '<div class="wz-field"><label><span class="dot-cold"></span> Когда лид «холодный» (негативный промт)</label>'
+  +       '<div class="wz-field"><label><span class="dot-cold"></span> '+t('bot.neg')+'</label>'
   +         '<textarea rows="3">'+B.negative+'</textarea></div></div>'
-  +     '<div class="card"><h3 style="margin-top:0">Шаблоны сообщений</h3>'
-  +       '<div class="wz-field"><label>Приветствие</label><textarea rows="2">'+B.greet+'</textarea></div>'
-  +       '<div class="wz-field"><label>Отказ</label><textarea rows="2">'+B.reject+'</textarea></div>'
-  +       '<div class="wz-field"><label>Успех (контакт получен)</label><textarea rows="2">'+B.success+'</textarea></div></div>'
+  +     '<div class="card"><h3 style="margin-top:0">'+t('bot.tpl')+'</h3>'
+  +       '<div class="wz-field"><label>'+t('bot.greet')+'</label><textarea rows="2">'+B.greet+'</textarea></div>'
+  +       '<div class="wz-field"><label>'+t('bot.reject')+'</label><textarea rows="2">'+B.reject+'</textarea></div>'
+  +       '<div class="wz-field"><label>'+t('bot.success')+'</label><textarea rows="2">'+B.success+'</textarea></div></div>'
   +   '</div>'
   +   '<div class="bot-test card">'
-  +     '<div class="section-head"><h3 style="margin:0">Тест бота</h3><span class="badge">демо</span></div>'
-  +     '<p class="small muted" style="margin:0 0 4px">Напишите как кандидат — бот ответит и покажет класс.</p>'
+  +     '<div class="section-head"><h3 style="margin:0">'+t('bot.test')+'</h3><span class="badge">'+t('c.demo')+'</span></div>'
+  +     '<p class="small muted" style="margin:0 0 4px">'+t('bot.test_h')+'</p>'
   +     '<div class="chat bot-chat" id="botChat">'
   +       '<div class="msg me"><div class="bubble">'+B.greet+'</div></div>'
   +     '</div>'
-  +     '<div class="bot-input"><input id="botInput" placeholder="до 6000₪, телефон 054…"><button class="btn" data-act="bot-send"><span class="ico" data-i="send"></span></button></div>'
+  +     '<div class="bot-input"><input id="botInput" placeholder="'+t('bot.input_ph')+'"><button class="btn" data-act="bot-send"><span class="ico" data-i="send"></span></button></div>'
   +     '<div class="bot-suggest">'
-  +       '<button class="mini-chip" data-bot-fill="Ищу 3-комнатную, бюджет 6000₪, телефон 054-555-1234">Горячий пример</button>'
-  +       '<button class="mini-chip" data-bot-fill="Просто смотрю цены">Холодный пример</button></div>'
+  +       '<button class="mini-chip" data-bot-fill="'+t('bot.fill_hot')+'">'+t('bot.ex_hot')+'</button>'
+  +       '<button class="mini-chip" data-bot-fill="'+t('bot.fill_cold')+'">'+t('bot.ex_cold')+'</button></div>'
   +   '</div>'
   + '</div>';
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   АНАЛИТИКА — KPI, воронка, языки, операции, эффективность, 7 дней
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ── АНАЛИТИКА ────────────────────────────────────────────────────────────── */
 function analytics(state){
   var A=D.ANALYTICS;
   var kpis=A.kpi.map(function(k){return kpi(k.ic,k.label,k.val,k.sub,!k.up);}).join('');
@@ -83,102 +80,98 @@ function analytics(state){
     + '<td style="width:130px"><div class="mini-track"><i style="width:'+a.pct+'%"></i></div></td></tr>';
   }).join('');
   return ''
-  + '<div class="page-hero"><div><div class="eyebrow">Обзор</div><h1>Аналитика</h1>'
-  +   '<p class="muted">Воронка, конверсия и эффективность объявлений за период.</p></div>'
-  +   '<div class="actions"><select class="period-sel"><option>7 дней</option><option>30 дней</option><option>Всё время</option></select>'
-  +     '<button class="pill" data-act="export"><span class="ico" data-i="download"></span> Экспорт</button></div></div>'
+  + '<div class="page-hero"><div><div class="eyebrow">'+t('an.eyebrow')+'</div><h1>'+t('title.analytics')+'</h1>'
+  +   '<p class="muted">'+t('an.sub')+'</p></div>'
+  +   '<div class="actions"><select class="period-sel"><option>'+t('an.p.7')+'</option><option>'+t('an.p.30')+'</option><option>'+t('an.p.all')+'</option></select>'
+  +     '<button class="pill" data-act="export"><span class="ico" data-i="download"></span> '+t('c.export')+'</button></div></div>'
   + '<div class="kpi-grid">'+kpis+'</div>'
   + '<div class="grid2" style="align-items:start">'
-  +   '<div class="card"><div class="section-head"><h3 style="margin:0">Воронка конверсии</h3><span class="badge">7 дней</span></div><div class="funnel">'+funnel+'</div></div>'
-  +   '<div class="card"><div class="section-head"><h3 style="margin:0">Разбивка по языкам</h3></div><div class="lang-list">'+langs+'</div></div>'
+  +   '<div class="card"><div class="section-head"><h3 style="margin:0">'+t('an.funnel')+'</h3><span class="badge">'+t('an.p.7')+'</span></div><div class="funnel">'+funnel+'</div></div>'
+  +   '<div class="card"><div class="section-head"><h3 style="margin:0">'+t('an.langs')+'</h3></div><div class="lang-list">'+langs+'</div></div>'
   + '</div>'
-  + '<div class="card" style="margin-top:18px"><div class="section-head"><h3 style="margin:0">Активность за 7 дней</h3><span class="badge">публикаций / день</span></div>'
+  + '<div class="card" style="margin-top:18px"><div class="section-head"><h3 style="margin:0">'+t('an.activity')+'</h3><span class="badge">'+t('an.per_day')+'</span></div>'
   +   '<div class="bar-chart">'+bars+'</div></div>'
   + '<div class="grid2" style="align-items:start;margin-top:18px">'
-  +   '<div class="card"><div class="section-head"><h3 style="margin:0">Сводка операций</h3></div><div class="op-list">'+ops+'</div></div>'
-  +   '<div class="card"><div class="section-head"><h3 style="margin:0">Эффективность объявлений</h3></div>'
-  +     '<div class="table-wrap"><table class="table table-flat"><thead><tr><th>Объявление</th><th>Лиды</th><th>Конв.</th><th></th></tr></thead><tbody>'+adRows+'</tbody></table></div></div>'
+  +   '<div class="card"><div class="section-head"><h3 style="margin:0">'+t('an.ops')+'</h3></div><div class="op-list">'+ops+'</div></div>'
+  +   '<div class="card"><div class="section-head"><h3 style="margin:0">'+t('an.ad_eff')+'</h3></div>'
+  +     '<div class="table-wrap"><table class="table table-flat"><thead><tr><th>'+t('an.th.ad')+'</th><th>'+t('an.th.leads')+'</th><th>'+t('an.th.conv')+'</th><th></th></tr></thead><tbody>'+adRows+'</tbody></table></div></div>'
   + '</div>';
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   КОМПАНИЯ И КОМАНДА
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ── КОМПАНИЯ И КОМАНДА ───────────────────────────────────────────────────── */
 function company(state){
   var c=D.COMPANIES.filter(function(x){return x.id===state.company;})[0]||D.COMPANIES[0];
   var team=D.TEAM.map(function(m){
     var canManage=!m.you;
     return '<tr'+(m.active?'':' class="row-off"')+'><td><div class="tm-cell"><span class="tm-ava">'+m.name.charAt(0)+'</span>'
-    + '<div><div class="tm-name">'+m.name+(m.you?' <span class="tm-badge">вы</span>':'')+'</div><div class="small muted">'+m.email+'</div></div></div></td>'
-    + '<td><span class="role-chip'+(m.role==='Владелец'?' owner':'')+'">'+m.role+'</span></td>'
-    + '<td>'+(m.active?'<span class="status status-ready">Активен</span>':'<span class="status status-pending">Отключён</span>')+'</td>'
+    + '<div><div class="tm-name">'+m.name+(m.you?' <span class="tm-badge">'+t('co.you')+'</span>':'')+'</div><div class="small muted">'+m.email+'</div></div></div></td>'
+    + '<td><span class="role-chip'+(m.you?' owner':'')+'">'+m.role+'</span></td>'
+    + '<td>'+(m.active?'<span class="status status-ready">'+t('st.active_m')+'</span>':'<span class="status status-pending">'+t('st.off')+'</span>')+'</td>'
     + '<td style="text-align:right">'+(canManage
-        ? '<button class="pill'+(m.active?' danger':'')+'" data-act="team-toggle">'+(m.active?'Деактивировать':'Включить')+'</button>'
+        ? '<button class="pill'+(m.active?' danger':'')+'" data-act="team-toggle">'+(m.active?t('co.deactivate'):t('co.activate'))+'</button>'
         : '<span class="small muted">—</span>')+'</td></tr>';
   }).join('');
   return ''
-  + '<div class="page-hero"><div><div class="eyebrow">Настройка</div><h1>Компания и команда</h1>'
-  +   '<p class="muted">Профиль компании, маршрутизация горячих лидов и доступы команды.</p></div>'
-  +   '<button class="btn" data-act="company-save"><span class="ico" data-i="check"></span> Сохранить</button></div>'
+  + '<div class="page-hero"><div><div class="eyebrow">'+t('co.eyebrow')+'</div><h1>'+t('title.company')+'</h1>'
+  +   '<p class="muted">'+t('co.sub')+'</p></div>'
+  +   '<button class="btn" data-act="company-save"><span class="ico" data-i="check"></span> '+t('c.save')+'</button></div>'
   + '<div class="grid2" style="align-items:start">'
-  +   '<div class="card"><h3 style="margin-top:0">Профиль компании</h3>'
+  +   '<div class="card"><h3 style="margin-top:0">'+t('co.profile')+'</h3>'
   +     '<div class="company-id"><span class="cmp-logo-lg">'+c.logo+'</span>'
-  +       '<button class="pill" data-act="company-logo"><span class="ico" data-i="edit"></span> Логотип</button></div>'
-  +     '<div class="wz-field"><label>Название</label><input value="'+c.name+'"></div>'
-  +     '<div class="grid2"><div class="wz-field"><label>Вертикаль</label><select><option>Недвижимость</option><option>Наём</option><option>Авто</option><option>Услуги</option></select></div>'
-  +       '<div class="wz-field"><label>Город</label><input value="Тель-Авив"></div></div>'
-  +     '<div class="wz-field"><label>Телефон компании</label><input value="+972 54-555-1234"></div></div>'
-  +   '<div class="card"><h3 style="margin-top:0">Куда слать горячих лидов</h3>'
-  +     '<p class="small muted" style="margin:-4px 0 6px">Как только бот находит горячего лида — мгновенное уведомление сюда.</p>'
-  +     '<div class="route-row ok"><span class="ico" data-i="send"></span><div style="flex:1"><div class="wz-field" style="margin:0"><label>Telegram chat id</label><input value="-1001884220117"></div></div><span class="status status-ready">Задан</span></div>'
-  +     '<div class="route-row warn"><span class="ico" data-i="mail"></span><div style="flex:1"><div class="wz-field" style="margin:0"><label>Email (резерв)</label><input placeholder="hot@company.com — не указан"></div></div><span class="status status-pending">Нет</span></div>'
-  +     '<div class="tg-status-row"><span class="ico" data-i="check"></span>Telegram-бот уведомлений подключён · @PostingAutopilotBot</div></div>'
+  +       '<button class="pill" data-act="company-logo"><span class="ico" data-i="edit"></span> '+t('co.logo')+'</button></div>'
+  +     '<div class="wz-field"><label>'+t('co.name')+'</label><input value="'+c.name+'"></div>'
+  +     '<div class="grid2"><div class="wz-field"><label>'+t('co.vertical')+'</label><select><option>'+t('vert.home')+'</option><option>'+t('vert.users')+'</option><option>'+t('vert.car')+'</option><option>'+t('vert.wrench')+'</option></select></div>'
+  +       '<div class="wz-field"><label>'+t('co.city')+'</label><input value="'+(D.ADS[0]?D.ADS[0].city:'')+'"></div></div>'
+  +     '<div class="wz-field"><label>'+t('co.phone')+'</label><input value="+972 54-555-1234"></div></div>'
+  +   '<div class="card"><h3 style="margin-top:0">'+t('co.route')+'</h3>'
+  +     '<p class="small muted" style="margin:-4px 0 6px">'+t('co.route_p')+'</p>'
+  +     '<div class="route-row ok"><span class="ico" data-i="send"></span><div style="flex:1"><div class="wz-field" style="margin:0"><label>'+t('co.tg_id')+'</label><input value="-1001884220117"></div></div><span class="status status-ready">'+t('co.set')+'</span></div>'
+  +     '<div class="route-row warn"><span class="ico" data-i="mail"></span><div style="flex:1"><div class="wz-field" style="margin:0"><label>'+t('co.email')+'</label><input placeholder="'+t('co.email_ph')+'"></div></div><span class="status status-pending">'+t('co.none')+'</span></div>'
+  +     '<div class="tg-status-row"><span class="ico" data-i="check"></span>'+t('co.tg_status')+'</div></div>'
   + '</div>'
-  + '<div class="section-head" style="margin-top:24px"><h2>Команда</h2>'
-  +   '<button class="btn" data-act="team-add"><span class="ico" data-i="plus"></span> Добавить участника</button></div>'
-  + '<div class="owner-note"><span class="ico" data-i="lock"></span>Управлять участниками и ролями может только владелец аккаунта.</div>'
-  + '<div class="table-wrap"><table class="table"><thead><tr><th>Участник</th><th>Роль</th><th>Статус</th><th></th></tr></thead><tbody>'+team+'</tbody></table></div>'
-  + '<div class="section-head" style="margin-top:24px"><h2>Компании</h2></div>'
-  + '<div class="cmp-switch-note"><div><strong>Активна:</strong> '+c.name+' · '+c.type+'</div>'
-  +   '<button class="pill" data-act="open-switcher"><span class="ico" data-i="building"></span> Переключить компанию</button></div>';
+  + '<div class="section-head" style="margin-top:24px"><h2>'+t('co.team')+'</h2>'
+  +   '<button class="btn" data-act="team-add"><span class="ico" data-i="plus"></span> '+t('co.add_member')+'</button></div>'
+  + '<div class="owner-note"><span class="ico" data-i="lock"></span>'+t('co.owner_note')+'</div>'
+  + '<div class="table-wrap"><table class="table"><thead><tr><th>'+t('co.th.member')+'</th><th>'+t('co.th.role')+'</th><th>'+t('co.th.status')+'</th><th></th></tr></thead><tbody>'+team+'</tbody></table></div>'
+  + '<div class="section-head" style="margin-top:24px"><h2>'+t('co.companies')+'</h2></div>'
+  + '<div class="cmp-switch-note"><div><strong>'+t('co.active')+'</strong> '+c.name+' · '+c.type+'</div>'
+  +   '<button class="pill" data-act="open-switcher"><span class="ico" data-i="building"></span> '+t('co.switch')+'</button></div>';
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   БИЛЛИНГ — тарифы, триал, апгрейд, истёкший триал
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ── БИЛЛИНГ ──────────────────────────────────────────────────────────────── */
 function billing(state){
   var T=D.TRIAL, expired=!!state.trialExpired;
   var plans=D.PLANS.map(function(p){
     var feats=p.feats.map(function(f){return '<li><span class="ico" data-i="checkbare"></span>'+f+'</li>';}).join('');
     var cta=p.current
-      ? '<button class="btn-outline plan-cta" data-act="plan-manage">Текущий тариф</button>'
-      : '<button class="btn plan-cta" data-act="plan-upgrade" data-plan="'+p.id+'">Перейти на '+p.name+'</button>';
+      ? '<button class="btn-outline plan-cta" data-act="plan-manage">'+t('bl.current')+'</button>'
+      : '<button class="btn plan-cta" data-act="plan-upgrade" data-plan="'+p.id+'">'+t('bl.go_to',{plan:p.name})+'</button>';
     return '<div class="plan-card'+(p.featured?' featured':'')+(p.current?' current':'')+'">'
-    + (p.featured?'<div class="plan-tag">Популярный</div>':'')
+    + (p.featured?'<div class="plan-tag">'+t('bl.popular')+'</div>':'')
     + '<div class="plan-name">'+p.name+'</div>'
-    + '<div class="plan-price">'+p.price+'<span>/мес</span></div>'
+    + '<div class="plan-price">'+p.price+'<span>'+t('bl.per')+'</span></div>'
     + '<div class="plan-tagline">'+p.tagline+'</div>'
     + '<ul class="plan-feats">'+feats+'</ul>'
     + cta+'</div>';
   }).join('');
   var banner = expired
     ? '<div class="trial-banner expired"><div class="tb-ic" data-i="lock"></div>'
-      + '<div class="tb-body"><div class="tb-title">Пробный период истёк</div>'
-      + '<div class="tb-sub">Автопостинг на паузе, лиды и аналитика только для чтения. Выберите тариф, чтобы возобновить работу.</div></div>'
-      + '<button class="btn" data-act="plan-upgrade" data-plan="pro">Возобновить · Pro</button></div>'
+      + '<div class="tb-body"><div class="tb-title">'+t('bl.exp_title')+'</div>'
+      + '<div class="tb-sub">'+t('bl.exp_sub')+'</div></div>'
+      + '<button class="btn" data-act="plan-upgrade" data-plan="pro">'+t('bl.resume')+'</button></div>'
     : '<div class="trial-banner"><div class="tb-ic" data-i="clock"></div>'
-      + '<div class="tb-body"><div class="tb-title">Пробный период '+T.plan+' · осталось '+T.days+' дней</div>'
-      + '<div class="tb-sub">После окончания автопостинг встанет на паузу. Перейдите на платный тариф заранее.</div></div>'
-      + '<button class="btn" data-act="plan-upgrade" data-plan="pro">Активировать сейчас</button></div>';
+      + '<div class="tb-body"><div class="tb-title">'+t('bl.trial_title',{plan:T.plan,n:T.days})+'</div>'
+      + '<div class="tb-sub">'+t('bl.trial_sub')+'</div></div>'
+      + '<button class="btn" data-act="plan-upgrade" data-plan="pro">'+t('bl.activate')+'</button></div>';
   return ''
-  + '<div class="page-hero"><div><div class="eyebrow">Настройка</div><h1>Биллинг и тарифы</h1>'
-  +   '<p class="muted">Тариф определяет лимиты объявлений, каналов и доступ к аналитике.</p></div>'
-  +   '<button class="pill" data-act="trial-toggle">'+(expired?'← Вернуть триал':'Показать «триал истёк»')+'</button></div>'
+  + '<div class="page-hero"><div><div class="eyebrow">'+t('bl.eyebrow')+'</div><h1>'+t('title.billing')+'</h1>'
+  +   '<p class="muted">'+t('bl.sub')+'</p></div>'
+  +   '<button class="pill" data-act="trial-toggle">'+(expired?t('bl.back_trial'):t('bl.show_expired'))+'</button></div>'
   + banner
   + '<div class="plans-grid">'+plans+'</div>'
   + '<div class="billing-foot">'
-  +   '<div class="bf-item"><span class="ico" data-i="card"></span><div><div class="bf-t">Способ оплаты</div><div class="small muted">Visa •••• 4242 · через Stripe</div></div><button class="pill" data-act="pay-method">Изменить</button></div>'
-  +   '<div class="bf-item"><span class="ico" data-i="doc"></span><div><div class="bf-t">Счета и история</div><div class="small muted">Чеки приходят на email после оплаты</div></div><button class="pill" data-act="invoices">Открыть</button></div>'
+  +   '<div class="bf-item"><span class="ico" data-i="card"></span><div><div class="bf-t">'+t('bl.pay')+'</div><div class="small muted">'+t('bl.pay_s')+'</div></div><button class="pill" data-act="pay-method">'+t('c.edit')+'</button></div>'
+  +   '<div class="bf-item"><span class="ico" data-i="doc"></span><div><div class="bf-t">'+t('bl.invoices')+'</div><div class="small muted">'+t('bl.invoices_s')+'</div></div><button class="pill" data-act="invoices">'+t('bl.open')+'</button></div>'
   + '</div>';
 }
 

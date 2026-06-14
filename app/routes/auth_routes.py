@@ -1,10 +1,11 @@
 import time
 import secrets
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, current_app
 from ..auth import admin_login_ok, require_company, is_logged_in, _login_redirect, revalidate_company, login_required
 from ..db import db_session
 from ..models import Company, User
+from ..cabinet_data import build_cabinet_boot
 from common.connection_flows import (
     create_connection_flow,
     delete_connection_flow,
@@ -18,7 +19,7 @@ bp = Blueprint("auth", __name__)
 @bp.get("/")
 def index():
     if session.get("is_admin"):
-        return redirect(url_for("auth.dashboard"))
+        return redirect(url_for("auth.cabinet"))
     # Premium white landing — one curated template per language (he default).
     lang = session.get("ui_lang", "he")
     template = {"en": "landing_en.html", "ru": "landing_ru.html"}.get(lang, "landing.html")
@@ -28,13 +29,29 @@ def index():
 @bp.get("/cabinet")
 @login_required
 def cabinet():
-    # New white cabinet UI (design integration). Served behind real auth.
-    return render_template("cabinet.html")
+    # New white SPA cabinet (claude.ai/design) served behind real auth, fed with
+    # live, tenant-scoped data. Defense-in-depth: drop a stale/foreign company first.
+    revalidate_company()
+    db = db_session()
+    try:
+        owner_id = session.get("owner_id")
+        company_id = session.get("current_company_id")
+        uid = session.get("user_id")
+        user = db.query(User).get(uid) if uid is not None else None
+        boot = build_cabinet_boot(db, owner_id, company_id, user)
+    except Exception:
+        # Safety net: never strand the user on a 500 — fall back to the proven
+        # server-rendered dashboard if the SPA bootstrap ever fails on real data.
+        current_app.logger.exception("cabinet boot failed; falling back to /dashboard")
+        return redirect("/dashboard")
+    finally:
+        db.close()
+    return render_template("cabinet.html", cabinet_boot=boot)
 
 @bp.get("/login")
 def login():
     if session.get("is_admin"):
-        return redirect(url_for("auth.dashboard"))
+        return redirect(url_for("auth.cabinet"))
     return render_template("login.html")
 
 def _check_rate_limit() -> bool:
@@ -82,7 +99,7 @@ def login_post():
         if len(companies) == 1:
             session["current_company_id"] = companies[0].id
         db.close()
-        return redirect(url_for("auth.dashboard"))
+        return redirect(url_for("auth.cabinet"))
 
     db = db_session()
     user = db.query(User).filter(User.email == login.lower(), User.is_active == True).first()
@@ -99,7 +116,7 @@ def login_post():
             db.commit()
         _log_in_owner_session(user.email, company_id=user.company_id, user_id=user.id)
         db.close()
-        return redirect(url_for("auth.dashboard"))
+        return redirect(url_for("auth.cabinet"))
     db.close()
     return render_template("login.html", error="Invalid login or password.")
 

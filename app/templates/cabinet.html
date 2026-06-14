@@ -1,33 +1,36 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ ui_lang or 'ru' }}"{% if ui_lang == 'he' %} dir="rtl"{% endif %}>
 <head>
-<script>try{localStorage.setItem("pa_app_auth","1");}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Posting Autopilot — Кабинет</title>
-<link rel="icon" type="image/svg+xml" href="/static/app-icon.svg">
-<link rel="stylesheet" href="/static/ds.css">
-<link rel="stylesheet" href="/static/cabinet.css">
-<link rel="stylesheet" href="/static/app2.css">
+<title>Posting Autopilot — {{ ui("nav_dashboard") if ui is defined else 'Кабинет' }}</title>
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='app-icon.svg') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon-180.png') }}">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Autopilot">
+<link rel="stylesheet" href="{{ url_for('static', filename='ds.css') }}?v=20260614-cab">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20260614-cab">
+<link rel="stylesheet" href="{{ url_for('static', filename='app2.css') }}?v=20260614-cab">
+<script>
+/* Authenticated server-side (Flask @login_required) — pre-auth the SPA shell so
+   its standalone demo login screen never shows for a real, logged-in user. */
+try{localStorage.setItem("pa_app_auth","1");}catch(e){}
+/* Live, tenant-scoped data + the operator's chosen language, injected by Flask. */
+window.PA_BOOT = {{ cabinet_boot|tojson }};
+window.PA_LANG = {{ (ui_lang or 'ru')|tojson }};
+</script>
 </head>
-<body class="app">
+<body class="app{% if ui_lang == 'he' %} rtl{% endif %}">
 
-<!-- ═══════════════ LOGIN ═══════════════ -->
+<!-- ═══════════════ LOGIN (never shown for real users — pre-authed above) ═══ -->
 <section class="app-screen" id="screen-login" data-screen-label="Login">
   <div class="login-shell">
     <div class="login-card">
-      <div class="brand-mark"><img class="brand-mark-icon" src="/static/app-icon.svg" alt="" width="60" height="60"><span>Posting<em>Autopilot</em></span></div>
-      <p class="muted">Войдите, чтобы управлять постингом и лидами</p>
-      <button class="btn-tg" id="tgLogin"><span class="ico" data-i="send"></span>Войти через Telegram</button>
-      <div class="auth-divider">или по email</div>
-      <form id="emailForm">
-        <div class="stack tight">
-          <div><label>Email</label><input type="email" placeholder="you@company.com" value="demo@posting-autopilot.com" required></div>
-          <div><label>Пароль</label><input type="password" placeholder="••••••••" value="demo1234" required></div>
-        </div>
-        <button class="btn" type="submit">Войти</button>
-      </form>
-      <div class="auth-switch">Нет аккаунта? <a id="signupLink" href="#/login">Создать за 5 минут →</a></div>
+      <div class="brand-mark"><img class="brand-mark-icon" src="{{ url_for('static', filename='app-icon.svg') }}" alt="" width="60" height="60"><span>Posting<em>Autopilot</em></span></div>
+      <p class="muted" data-t="auth.tagline">Войдите, чтобы управлять постингом и лидами</p>
+      <a class="btn" href="{{ public_login_url if public_login_url is defined else '/login' }}" data-t="auth.signin">Войти</a>
     </div>
   </div>
 </section>
@@ -36,45 +39,45 @@
 <div class="shell hide" id="shell">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <div class="sb-brand"><img src="/static/logo-mark.svg" alt="" width="26" height="26">Posting<em>Autopilot</em></div>
+    <div class="sb-brand"><img src="{{ url_for('static', filename='logo-mark.svg') }}" alt="" width="26" height="26">Posting<em>Autopilot</em></div>
     <button class="sb-company" id="cmpBtn">
-      <span class="cmp-logo" id="cmpLogo">Д</span>
+      <span class="cmp-logo" id="cmpLogo">К</span>
       <span style="flex:1;min-width:0;text-align:left">
-        <span class="cmp-name" id="cmpName">Dirot TLV</span>
-        <span class="cmp-sub">Недвижимость · Pro</span>
+        <span class="cmp-name" id="cmpName">—</span>
+        <span class="cmp-sub">Pro</span>
       </span>
       <span class="ico" data-i="chevron"></span>
     </button>
 
     <nav id="sbnav">
       <div class="sb-group">
-        <div class="sb-group-label">Лиды</div>
-        <div class="sb-link" data-go="leads"><span class="ico" data-i="flame"></span>Лиды<span class="sb-count" id="navLeadCount">7</span></div>
-        <div class="sb-link" data-go="dashboard"><span class="ico" data-i="grid"></span>Дашборд</div>
+        <div class="sb-group-label" data-t="grp.leads">Лиды</div>
+        <div class="sb-link" data-go="leads"><span class="ico" data-i="flame"></span><span data-t="nav.leads">Лиды</span><span class="sb-count" id="navLeadCount">0</span></div>
+        <div class="sb-link" data-go="dashboard"><span class="ico" data-i="grid"></span><span data-t="nav.dashboard">Дашборд</span></div>
       </div>
       <div class="sb-group">
-        <div class="sb-group-label">Постинг</div>
-        <div class="sb-link" data-go="campaigns"><span class="ico" data-i="rocket"></span>Кампании<span class="sb-dot" id="navCampDot"></span></div>
-        <div class="sb-link" data-go="ads"><span class="ico" data-i="doc"></span>Объявления</div>
+        <div class="sb-group-label" data-t="grp.posting">Постинг</div>
+        <div class="sb-link" data-go="campaigns"><span class="ico" data-i="rocket"></span><span data-t="nav.campaigns">Кампании</span><span class="sb-dot" id="navCampDot"></span></div>
+        <div class="sb-link" data-go="ads"><span class="ico" data-i="doc"></span><span data-t="nav.ads">Объявления</span></div>
       </div>
       <div class="sb-group">
-        <div class="sb-group-label">Каналы</div>
-        <div class="sb-link" data-go="channel-tg"><span class="ico" data-i="send"></span>Telegram</div>
-        <div class="sb-link" data-go="channel-fb"><span class="ico" data-i="fb"></span>Facebook</div>
-        <div class="sb-link" data-go="sources"><span class="ico" data-i="target"></span>Назначения</div>
+        <div class="sb-group-label" data-t="grp.channels">Каналы</div>
+        <div class="sb-link" data-go="channel-tg"><span class="ico" data-i="send"></span><span data-t="nav.tg">Telegram</span></div>
+        <div class="sb-link" data-go="channel-fb"><span class="ico" data-i="fb"></span><span data-t="nav.fb">Facebook</span></div>
+        <div class="sb-link" data-go="sources"><span class="ico" data-i="target"></span><span data-t="nav.sources">Назначения</span></div>
       </div>
       <div class="sb-group">
-        <div class="sb-group-label">Настройка</div>
-        <div class="sb-link" data-go="bot"><span class="ico" data-i="bot"></span>AI-бот</div>
-        <div class="sb-link" data-go="analytics"><span class="ico" data-i="chart"></span>Аналитика</div>
-        <div class="sb-link" data-go="company"><span class="ico" data-i="users"></span>Компания и команда</div>
-        <div class="sb-link" data-go="billing"><span class="ico" data-i="card"></span>Биллинг</div>
+        <div class="sb-group-label" data-t="grp.setup">Настройка</div>
+        <div class="sb-link" data-go="bot"><span class="ico" data-i="bot"></span><span data-t="nav.bot">AI-бот</span></div>
+        <div class="sb-link" data-go="analytics"><span class="ico" data-i="chart"></span><span data-t="nav.analytics">Аналитика</span></div>
+        <div class="sb-link" data-go="company"><span class="ico" data-i="users"></span><span data-t="nav.company">Компания и команда</span></div>
+        <div class="sb-link" data-go="billing"><span class="ico" data-i="card"></span><span data-t="nav.billing">Биллинг</span></div>
       </div>
     </nav>
 
     <div class="sb-foot">
-      <div class="trial-chip"><span class="ico" data-i="clock"></span>Триал · осталось 11 дней</div>
-      <div class="sb-link" id="logoutBtn"><span class="ico" data-i="logout"></span>Выйти</div>
+      <div class="trial-chip"><span class="ico" data-i="clock"></span><span id="trialChipText">Триал</span></div>
+      <div class="sb-link" id="logoutBtn"><span class="ico" data-i="logout"></span><span data-t="foot.logout">Выйти</span></div>
     </div>
   </aside>
 
@@ -82,14 +85,14 @@
   <div class="work">
     <header class="workbar">
       <button class="burger" id="burger"><span class="ico" data-i="menu"></span></button>
-      <div class="wb-title" id="wbTitle">Лиды</div>
+      <div class="wb-title" id="wbTitle">—</div>
       <div class="spacer"></div>
       <div class="lang-switch" id="langSwitch">
-        <button class="active" data-lang="ru">RU</button>
+        <button data-lang="ru">RU</button>
         <button data-lang="en">EN</button>
         <button data-lang="he">HE</button>
       </div>
-      <div class="avatar" id="avatar" title="Аккаунт">ПА</div>
+      <div class="avatar" id="avatar" title="Аккаунт">PA</div>
     </header>
 
     <div class="work-grid">
@@ -103,9 +106,11 @@
 <div class="scrim" id="scrim"></div>
 <div class="cmp-pop" id="cmpPop"></div>
 
-<script src="/static/app-data.js"></script>
-<script src="/static/app-screens.js"></script>
-<script src="/static/app-screens2.js"></script>
-<script src="/static/app.js"></script>
+<script src="{{ url_for('static', filename='i18n.js') }}?v=20260614-cab"></script>
+<script src="{{ url_for('static', filename='app-locales.js') }}?v=20260614-cab"></script>
+<script src="{{ url_for('static', filename='app-data.js') }}?v=20260614-cab"></script>
+<script src="{{ url_for('static', filename='app-screens.js') }}?v=20260614-cab"></script>
+<script src="{{ url_for('static', filename='app-screens2.js') }}?v=20260614-cab"></script>
+<script src="{{ url_for('static', filename='app.js') }}?v=20260614-cab"></script>
 </body>
 </html>

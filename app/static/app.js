@@ -3,7 +3,7 @@
    ════════════════════════════════════════════════════════════════════════════ */
 (function(){
 "use strict";
-var D=window.PA, S=window.PAScreens, S2=window.PAScreens2;
+var D=window.PA, S=window.PAScreens, S2=window.PAScreens2, I=window.PA_I18N;
 var $=function(s,r){return (r||document).querySelector(s);};
 var $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
 
@@ -11,7 +11,7 @@ var $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
 var KEY={auth:'pa_app_auth',company:'pa_app_company'};
 function get(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function set(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-var state={filter:'hot', lead:1, company:get(KEY.company)||'dirot', screen:'leads',
+var state={filter:'hot', lead:1, company:(window.PA_BOOT&&window.PA_BOOT.current_company)||get(KEY.company)||'dirot', screen:'leads',
   adView:'list', adStep:1, adId:'a1', tgView:'connected', tgStep:1, trialExpired:false};
 
 var ALL=Object.keys(D.SCREENS);
@@ -30,7 +30,6 @@ function renderView(name){
   else if(name==='analytics'){ view.innerHTML=S2.analytics(state); }
   else if(name==='company'){ view.innerHTML=S2.company(state); }
   else if(name==='billing'){ view.innerHTML=S2.billing(state); }
-  else if(meta.phase){ view.innerHTML=S.phase(name,meta); }
   D.injectIcons(view);
   renderCopilot(name, meta);
 }
@@ -39,11 +38,7 @@ function rerender(){ renderView(state.screen); }
 /* ── Operator Copilot ────────────────────────────────────────────────────── */
 function renderCopilot(name, meta){
   var cp=$('#copilot');
-  var c = meta.cp;
-  if(!c){ // phase screens get a generic helper
-    c={tone:'setup',summary:'Этот раздел появится в следующей фазе. Сейчас доступны Лиды, Дашборд и Кампании — на них завязан ежедневный сценарий.',
-       facts:[],warn:[{tone:'warn',text:'Раздел «'+meta.title+'» ещё в разработке.'}],action:{label:'К лидам',go:'leads',ico:'flame'}};
-  }
+  var c = meta.cp || {tone:'setup',summary:'',facts:[],warn:[],action:null};
   var facts=(c.facts||[]).map(function(f){
     return '<div class="cp-fact '+(f.tone||'')+'"><span class="ico" data-i="'+f.ic+'"></span>'+f.label+'<span class="cf-val">'+f.val+'</span></div>';
   }).join('');
@@ -53,9 +48,9 @@ function renderCopilot(name, meta){
   cp.className='copilot tone-'+(c.tone||'setup');
   cp.innerHTML=''
    + '<div class="cp-head"><span class="cp-spark" data-i="spark"></span>'
-   +   '<div class="cp-title">Operator Copilot<span class="cp-sub">'+meta.title+'</span></div></div>'
+   +   '<div class="cp-title">'+I.t('cp.title')+'<span class="cp-sub">'+meta.title+'</span></div></div>'
    + '<div class="cp-summary">'+c.summary+'</div>'
-   + (facts?'<div class="cp-divider"></div><div class="cp-section-label">Сейчас</div><div class="cp-facts">'+facts+'</div>':'')
+   + (facts?'<div class="cp-divider"></div><div class="cp-section-label">'+I.t('cp.now')+'</div><div class="cp-facts">'+facts+'</div>':'')
    + (warns?warns:'')
    + (c.action?'<button class="btn cp-action" data-go="'+c.action.go+'"><span class="ico" data-i="'+c.action.ico+'"></span>'+c.action.label+'</button>':'');
   D.injectIcons(cp);
@@ -64,7 +59,7 @@ function renderCopilot(name, meta){
 /* ── Routing ─────────────────────────────────────────────────────────────── */
 function show(name){
   if(ALL.indexOf(name)<0) name='leads';
-  if(!get(KEY.auth)){ showLogin(); return; }
+  if(!get(KEY.auth)&&!window.PA_BOOT){ showLogin(); return; }
   $('#screen-login').classList.remove('active');
   $('#shell').classList.remove('hide');
   $$('#sbnav .sb-link').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-go')===name);});
@@ -84,7 +79,7 @@ function go(name){ if(location.hash!=='#/'+name) location.hash='#/'+name; else s
 window.addEventListener('hashchange',function(){route();});
 function route(){
   var h=(location.hash||'').replace('#/','');
-  if(!get(KEY.auth)){ showLogin(); return; }
+  if(!get(KEY.auth)&&!window.PA_BOOT){ showLogin(); return; }
   show(h||'leads');
 }
 
@@ -129,10 +124,12 @@ function paintDetail(){
 
 /* ── Auth ────────────────────────────────────────────────────────────────── */
 function login(){ set(KEY.auth,'1'); go('leads'); show('leads'); }
-$('#tgLogin').addEventListener('click',login);
-$('#emailForm').addEventListener('submit',function(e){e.preventDefault();login();});
+var _tgL=$('#tgLogin'); if(_tgL) _tgL.addEventListener('click',login);
+var _emF=$('#emailForm'); if(_emF) _emF.addEventListener('submit',function(e){e.preventDefault();login();});
 $('#logoutBtn').addEventListener('click',function(){
-  if(confirm('Выйти из аккаунта?')){ try{localStorage.removeItem(KEY.auth);}catch(e){} location.hash=''; showLogin(); }
+  if(confirm(I.t('auth.logout_q'))){ try{localStorage.removeItem(KEY.auth);}catch(e){}
+    if(window.PA_BOOT){ window.location='/logout'; return; }
+    location.hash=''; showLogin(); }
 });
 $('#avatar').addEventListener('click',function(){go('company');});
 
@@ -149,14 +146,15 @@ $('#cmpBtn').addEventListener('click',function(e){
     return '<div class="cmp-opt '+(c.id===state.company?'active':'')+'" data-cmp="'+c.id+'">'
     + '<span class="cmp-logo">'+c.logo+'</span><div style="flex:1"><div style="font-weight:600;font-size:13px">'+c.name+'</div><div class="small muted">'+c.type+'</div></div>'
     + (c.id===state.company?'<span class="ico" data-i="check" style="color:var(--accent);font-size:16px"></span>':'')+'</div>';
-  }).join('')+'<div class="cmp-opt cmp-add" data-cmp="__new"><span class="ico" data-i="plus"></span> Добавить компанию</div>';
+  }).join('')+'<div class="cmp-opt cmp-add" data-cmp="__new"><span class="ico" data-i="plus"></span> '+I.t('add.company')+'</div>';
   var r=$('#cmpBtn').getBoundingClientRect();
   pop.style.left=r.left+'px'; pop.style.top=(r.bottom+6)+'px';
   pop.classList.add('show'); $('#scrim').classList.add('show'); D.injectIcons(pop);
   $$('#cmpPop .cmp-opt').forEach(function(o){
     o.addEventListener('click',function(){
       var id=o.getAttribute('data-cmp');
-      if(id==='__new'){ alert('Создание новой компании — Фаза 3.'); }
+      if(window.PA_BOOT){ window.location = (id==='__new') ? '/profile/' : '/companies/'; closePop(); return; }
+      if(id==='__new'){ toast(I.t('t.new_company')); }
       else { state.company=id; set(KEY.company,id); paintCompany(); route(); }
       closePop();
     });
@@ -170,13 +168,9 @@ function closeSidebar(){ $('#sidebar').classList.remove('open'); if(!$('#cmpPop'
 $('#burger').addEventListener('click',openSidebar);
 $('#scrim').addEventListener('click',function(){closeSidebar();closePop();});
 
-/* ── Language (cabinet is RU in phase 1) ─────────────────────────────────── */
+/* ── Language switch (RU · EN · HE + RTL) ────────────────────────────────── */
 $$('#langSwitch button').forEach(function(b){
-  b.addEventListener('click',function(){
-    $$('#langSwitch button').forEach(function(x){x.classList.remove('active');});
-    b.classList.add('active');
-    if(b.getAttribute('data-lang')!=='ru') alert('Мультиязычный кабинет (EN/HE + RTL) — следующая фаза. Сейчас интерфейс на RU.');
-  });
+  b.addEventListener('click',function(){ setLanguage(b.getAttribute('data-lang')); });
 });
 
 /* ── Global delegated clicks ─────────────────────────────────────────────── */
@@ -189,6 +183,23 @@ document.addEventListener('click',function(e){
   var ad=e.target.closest('[data-ad]'); if(ad){ state.adView='detail'; state.adId=ad.getAttribute('data-ad'); rerender(); window.scrollTo(0,0); return; }
 });
 function handleAct(a, el){
+  /* REAL BACKEND: when running on the live cabinet, route actions to the working,
+     tenant-secured Flask pages instead of mock toasts. The pretty SPA stays the
+     hub; the real create/connect/run/billing flows live on their own pages. */
+  if(window.PA_BOOT){
+    var NAV={ 'export':'/candidates/', 'new-campaign':'/campaigns/', 'run':'/campaigns/', 'pause':'/campaigns/',
+      'new-ad':'/vacancies/', 'edit-ad':'/vacancies/', 'tg-reconnect':'/connect/telegram', 'tg-add':'/connect/telegram',
+      'tg-resync':'/connect/telegram', 'fb-oauth':'/connect/facebook', 'fb-urls':'/connect/facebook',
+      'src-add':'/sources/', 'src-check-all':'/sources/', 'src-test':'/sources/',
+      'bot-save':'/profile/', 'company-save':'/profile/', 'company-logo':'/profile/', 'team-add':'/profile/',
+      'plan-upgrade':'/pricing', 'plan-manage':'/pricing', 'pay-method':'/pricing', 'invoices':'/pricing' };
+    if(a==='wa'||a==='tg'){
+      var L=D.LEADS.filter(function(x){return x.id===state.lead;})[0];
+      if(a==='wa'){ var ph=L&&L.phone?L.phone.replace(/[^0-9]/g,''):''; if(ph){ window.open('https://wa.me/'+(ph.charAt(0)==='0'?'972'+ph.slice(1):ph),'_blank'); } return; }
+      var un=L&&L.user?L.user.replace(/^@/,''):''; if(un){ window.open('https://t.me/'+un,'_blank'); } return;
+    }
+    if(NAV[a]){ window.location=NAV[a]; return; }
+  }
   switch(a){
     /* leads */
     case 'export': toast('Экспортирую в CSV…'); break;
@@ -279,7 +290,9 @@ function toggleTeam(el){
 
 document.addEventListener('change',function(e){
   var sel=e.target.closest('[data-act="lead-status"]');
-  if(sel){ var L=D.LEADS.filter(function(x){return x.id===state.lead;})[0];
+  if(sel){
+    if(window.PA_BOOT){ if(state.lead) window.location='/candidates/'+state.lead; return; }
+    var L=D.LEADS.filter(function(x){return x.id===state.lead;})[0];
     toast('Статус лида'+(L?' «'+L.name+'»':'')+' обновлён: '+sel.options[sel.selectedIndex].text); }
 });
 
@@ -291,9 +304,22 @@ function toast(msg){
   clearTimeout(toastEl._t); toastEl._t=setTimeout(function(){toastEl.style.opacity='0';toastEl.style.transform='translateX(-50%) translateY(20px)';},2200);
 }
 
+/* ── i18n glue (server-driven default + static chrome labels) ─────────────── */
+function applyStaticI18n(){
+  $$('[data-t]').forEach(function(el){ el.textContent=I.t(el.getAttribute('data-t')); });
+  var tc=$('#trialChipText'); if(tc){ var dd=(D.TRIAL&&D.TRIAL.days); tc.textContent=(dd!=null)?I.t('foot.trial',{n:dd}):((D.TRIAL&&D.TRIAL.plan)||'Pro'); }
+}
+function setLanguage(l){
+  I.setLang(l); D.applyLang(l);
+  $$('#langSwitch button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-lang')===l); });
+  applyStaticI18n(); paintCompany();
+  var _n=document.getElementById('navLeadCount'); if(_n) _n.textContent=D.COUNTS.hot;
+  if(get(KEY.auth)) show(state.screen);
+}
+
 /* ── Boot ────────────────────────────────────────────────────────────────── */
 D.injectIcons(document);
-var _navc=document.getElementById('navLeadCount'); if(_navc) _navc.textContent=D.COUNTS.hot;
-paintCompany();
+var _bootLang=(window.PA_LANG&&['ru','en','he'].indexOf(window.PA_LANG)>=0)?window.PA_LANG:I.detect();
+setLanguage(_bootLang);
 route();
 })();
