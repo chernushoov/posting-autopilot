@@ -18,16 +18,19 @@ THEME_LABEL_KEY = {
 }
 
 # (vertical, [lowercased substrings]) — order = match priority. Hebrew has no case.
+# Jobs first so a job post that mentions a car/apartment ("drivers wanted") wins.
+# Generic sale words (למכירה / продажа) are intentionally NOT here — they apply to
+# every vertical and would mislabel "used car for sale" as real estate.
 _KEYWORDS = [
-    ("home", [
-        'נדל"ן', "נדל״ן", "נדלן", "דירה", "דירות", "להשכרה", "למכירה", "נכס", "שכירות", "דיור", "סאבלט",
-        "недвиж", "квартир", "аренд", "жиль", "снять", "сдат", "комнат", "ипотек", "сабленд",
-        "real estate", "apartment", " rent", "property", "housing", "sublet", "realty", "for rent",
-    ]),
     ("users", [
-        "דרושים", "דרוש", "עבוד", "משרה", "משרות", "גיוס", "קריירה", "ג'וב", "ג׳וב",
+        "דרושים", "דרוש", "עבוד", "עובד", "משרה", "משרות", "גיוס", "קריירה", "ג'וב", "ג׳וב",
         "ваканс", "работ", "сотрудник", "требуется", "подработ", "персонал", "найм", "карьер", "резюме",
         "job", "vacanc", "hiring", "recruit", "career", " work", "staff", "employ",
+    ]),
+    ("home", [
+        'נדל"ן', "נדל״ן", "נדלן", "דירה", "דירות", "להשכרה", "נכס", "שכירות", "דיור", "סאבלט",
+        "недвиж", "квартир", "аренд", "жиль", "снять", "сдат", "комнат", "ипотек", "сабленд",
+        "real estate", "apartment", " rent", "property", "housing", "sublet", "realty", "for rent",
     ]),
     ("car", [
         "רכב", "אוטו", "מכונית", "גלגלים", "טרייד",
