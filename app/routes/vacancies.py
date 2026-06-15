@@ -14,6 +14,56 @@ from common.recruitbot_links import build_recruitbot_apply_link
 bp = Blueprint("vacancies", __name__, url_prefix="/vacancies")
 logger = logging.getLogger(__name__)
 
+ALLOWED_IMAGE_EXT = {"jpg", "jpeg", "png", "webp", "gif"}
+MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8MB per file
+
+
+def _looks_like_image(head: bytes, ext: str) -> bool:
+    """Validate by content, not just extension. imghdr covers jpeg/png/gif; webp is
+    sniffed manually (RIFF....WEBP) since older imghdr builds miss it."""
+    import imghdr
+    kind = imghdr.what(None, head)
+    if kind in ("jpeg", "png", "gif", "webp"):
+        return True
+    if ext == "webp" and head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return True
+    return False
+
+
+def _save_uploaded_images(files, upload_dir) -> list[str]:
+    """Save only real images with an allowed extension, under the size cap, using a
+    server-generated random filename (never trust the client filename). Rejects
+    SVG/HTML/scripts (stored-XSS vector) and unbounded blobs (disk exhaustion)."""
+    import os as _os
+    import uuid as _uuid
+    saved: list[str] = []
+    for img in files:
+        if not img or not img.filename:
+            continue
+        ext = img.filename.rsplit(".", 1)[-1].lower() if "." in img.filename else ""
+        if ext not in ALLOWED_IMAGE_EXT:
+            logger.warning("[upload] rejected '%s' — extension not allowed", img.filename)
+            continue
+        try:
+            img.stream.seek(0, 2)
+            size = img.stream.tell()
+            img.stream.seek(0)
+        except Exception:
+            size = 0
+        if size <= 0 or size > MAX_IMAGE_BYTES:
+            logger.warning("[upload] rejected '%s' — size %s out of bounds", img.filename, size)
+            continue
+        head = img.stream.read(512)
+        img.stream.seek(0)
+        if not _looks_like_image(head, ext):
+            logger.warning("[upload] rejected '%s' — content is not a valid image", img.filename)
+            continue
+        norm_ext = "jpg" if ext == "jpeg" else ext
+        save_path = _os.path.join(upload_dir, f"{_uuid.uuid4().hex}.{norm_ext}")
+        img.save(save_path)
+        saved.append(save_path)
+    return saved
+
 
 def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[str, str]:
     title = form.get("final_post_title", "").strip() or form.get("title", "").strip()
@@ -282,19 +332,12 @@ def edit_vacancy_post(vacancy_id: int):
     upload_dir = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'uploads')
     _os.makedirs(upload_dir, exist_ok=True)
 
-    new_paths: list[str] = []
     files = request.files.getlist('images') if 'images' in request.files else []
     if 'image' in request.files:
         single = request.files.get('image')
         if single and single.filename:
             files.append(single)
-    for img in files:
-        if not img or not img.filename:
-            continue
-        safe_name = f"{int(_time.time() * 1000)}_{img.filename.replace(' ', '_')}"
-        save_path = _os.path.join(upload_dir, safe_name)
-        img.save(save_path)
-        new_paths.append(save_path)
+    new_paths: list[str] = _save_uploaded_images(files, upload_dir)
 
     # Replace mode for edit: if operator checks "replace_photos" we discard the
     # old set; default is append so adding 2 more photos to a 5-photo listing
@@ -383,19 +426,12 @@ def new_vacancy_post():
     import os as _os, time as _time
     upload_dir = _os.path.join(_os.path.dirname(__file__), '..', '..', 'data', 'uploads')
     _os.makedirs(upload_dir, exist_ok=True)
-    saved_paths: list[str] = []
     files = request.files.getlist('images') if 'images' in request.files else []
     if 'image' in request.files:
         single = request.files.get('image')
         if single and single.filename:
             files.append(single)
-    for img in files:
-        if not img or not img.filename:
-            continue
-        safe_name = f"{int(_time.time() * 1000)}_{img.filename.replace(' ', '_')}"
-        save_path = _os.path.join(upload_dir, safe_name)
-        img.save(save_path)
-        saved_paths.append(save_path)
+    saved_paths: list[str] = _save_uploaded_images(files, upload_dir)
     image_path = saved_paths[0] if saved_paths else None
     images_json_value = json.dumps(saved_paths, ensure_ascii=False) if saved_paths else None
 

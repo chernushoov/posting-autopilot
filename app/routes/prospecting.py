@@ -1,8 +1,10 @@
 """Prospecting routes — Google Maps scraping + cold email outreach."""
 
 import os
+import re
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, session
+from flask import Blueprint, render_template, request, redirect, session, url_for, current_app
+from itsdangerous import URLSafeSerializer, BadSignature
 from ..auth import require_company
 from ..db import db_session
 from ..models import Prospect, OutreachAttempt, ProspectStatus, OutreachStatus
@@ -10,6 +12,40 @@ from ..models import Prospect, OutreachAttempt, ProspectStatus, OutreachStatus
 bp = Blueprint("prospecting", __name__, url_prefix="/prospecting")
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "prospecting", "templates")
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _valid_email(email: str) -> bool:
+    return bool(email and _EMAIL_RE.match(email) and len(email) <= 300)
+
+
+def _unsub_serializer() -> URLSafeSerializer:
+    # Signed with the app secret; salt scopes the token to unsubscribe only.
+    return URLSafeSerializer(current_app.config["SECRET_KEY"], salt="prospect-unsubscribe")
+
+
+def _unsubscribe_url(prospect_id: int) -> str:
+    token = _unsub_serializer().dumps(prospect_id)
+    return url_for("prospecting.unsubscribe", token=token, _external=True)
+
+
+@bp.route("/unsubscribe/<token>")
+def unsubscribe(token: str):
+    """Public, no-auth one-click unsubscribe (required by CAN-SPAM / GDPR)."""
+    try:
+        prospect_id = _unsub_serializer().loads(token)
+    except BadSignature:
+        return "Invalid unsubscribe link.", 400
+    db = db_session()
+    try:
+        prospect = db.query(Prospect).filter(Prospect.id == prospect_id).first()
+        if prospect:
+            prospect.status = ProspectStatus.unsubscribed
+            db.commit()
+    finally:
+        db.close()
+    return "You have been unsubscribed and will not receive further emails.", 200
 
 
 @bp.route("/")
@@ -116,9 +152,21 @@ def send_email(prospect_id):
         db.close()
         return redirect("/prospecting/?error=no_email")
 
-    # Check not already contacted
+    # Never email a scraped address that isn't even a valid email (it's used
+    # verbatim as the SMTP recipient).
+    if not _valid_email(prospect.email.strip()):
+        db.close()
+        return redirect("/prospecting/?error=invalid_email")
+
+    # Respect opt-outs — never email an unsubscribed prospect.
+    if prospect.status == ProspectStatus.unsubscribed:
+        db.close()
+        return redirect("/prospecting/?error=unsubscribed")
+
+    # Check not already contacted (scoped to this prospect's tenant)
     existing = db.query(OutreachAttempt).filter(
         OutreachAttempt.prospect_id == prospect_id,
+        OutreachAttempt.company_id == cid,
         OutreachAttempt.status == OutreachStatus.sent,
     ).first()
     if existing:
@@ -145,6 +193,7 @@ def send_email(prospect_id):
         subject=subject,
         html_body=html_body,
         company_name=prospect.name,
+        unsubscribe_url=_unsubscribe_url(prospect.id),
     )
 
     attempt = OutreachAttempt(
@@ -176,11 +225,16 @@ def add_manual():
     db = db_session()
     cid = session["current_company_id"]
 
+    email = request.form.get("email", "").strip() or None
+    if email and not _valid_email(email):
+        db.close()
+        return redirect("/prospecting/?error=invalid_email")
+
     prospect = Prospect(
         company_id=cid,
         name=request.form.get("name", "").strip(),
         phone=request.form.get("phone", "").strip() or None,
-        email=request.form.get("email", "").strip() or None,
+        email=email,
         website=request.form.get("website", "").strip() or None,
         city=request.form.get("city", "").strip() or None,
         category=request.form.get("category", "").strip() or None,
@@ -211,6 +265,11 @@ def bulk_scrape():
     """Scrape construction companies across all major Israeli cities."""
     cid = session["current_company_id"]
     cities = request.form.getlist("cities") or ISRAEL_CITIES[:5]
+    # Bound the work per request so a single submit can't spin up an unbounded
+    # number of 60s scrapes (resource exhaustion on the shared VPS).
+    MAX_CITIES = 10
+    if len(cities) > MAX_CITIES:
+        cities = cities[:MAX_CITIES]
     query_template = request.form.get("query", "construction companies {city}")
 
     total_added = 0
@@ -219,7 +278,9 @@ def bulk_scrape():
         try:
             from prospecting.scraper import scrape_google_maps
             businesses = scrape_google_maps(query, timeout=60)
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("[bulk_scrape] scrape failed for '%s': %s", query, exc)
             continue
 
         from prospecting.email_extractor import extract_emails_from_website
@@ -233,6 +294,7 @@ def bulk_scrape():
                 continue
 
             emails = extract_emails_from_website(biz.website) if biz.website else []
+            scraped_email = next((e for e in emails if _valid_email(e.strip())), None)
             prospect = Prospect(
                 company_id=cid,
                 name=biz.name,
@@ -240,7 +302,7 @@ def bulk_scrape():
                 address=biz.address,
                 phone=biz.phone,
                 website=biz.website,
-                email=emails[0] if emails else None,
+                email=scraped_email,
                 rating=str(biz.rating) if biz.rating else None,
                 review_count=biz.review_count,
                 city=city,

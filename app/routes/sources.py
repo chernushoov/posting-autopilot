@@ -205,13 +205,19 @@ def test_source(source_id: int):
         return redirect(url_for("sources.list_sources", error="Confirm live send before testing a destination."))
 
     db = db_session()
+    # Read the fields we need WHILE the session is open (don't touch a detached
+    # instance after close — that can re-query on a closed session or see stale state).
     source = scoped(db, Source).filter(Source.id == source_id).first()
-    db.close()
     if not source:
+        db.close()
         return redirect(url_for("sources.list_sources", error="Destination not found."))
-    if (source.platform or "telegram") == "facebook":
+    platform = source.platform or "telegram"
+    last_check_ok = source.last_check_ok
+    db.close()
+
+    if platform == "facebook":
         return redirect(url_for("sources.list_sources", error="Facebook destinations use assisted/manual posting in pilot mode. Use Pilot Runs to prepare the post and log the manual result."))
-    if not source.last_check_ok:
+    if not last_check_ok:
         return redirect(url_for("sources.list_sources", error="Run Check first and confirm the destination looks ready before sending a live test message."))
 
     enqueue_test_message(source_id, "Test message from Posting Autopilot")

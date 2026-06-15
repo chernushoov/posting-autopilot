@@ -1,3 +1,4 @@
+import os
 from flask import Flask, session, request, redirect
 from .config import Config
 from .operator_copilot import build_operator_copilot
@@ -21,8 +22,10 @@ def create_app():
     app.config["SECRET_KEY"] = Config.FLASK_SECRET_KEY
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    # Hard cap on request body size (multi-photo uploads + form). Prevents a single
+    # request from exhausting disk/memory on the shared VPS. Override via env.
+    app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_CONTENT_LENGTH_BYTES", str(32 * 1024 * 1024)))
     # Only set Secure flag when not running locally (HTTPS required for Secure cookies)
-    import os
     app.config["SESSION_COOKIE_SECURE"] = os.getenv("FORCE_HTTPS", "") == "1"
 
     # CSRF protection via flask-wtf

@@ -16,12 +16,31 @@ SMTP_HOST = os.environ.get("OUTREACH_SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("OUTREACH_SMTP_PORT", "587"))
 SEND_DELAY_SECONDS = int(os.environ.get("OUTREACH_SEND_DELAY", "30"))
 FROM_NAME = os.environ.get("OUTREACH_FROM_NAME", "Recruit Autopilot")
+# CAN-SPAM / Israeli Anti-Spam (Amendment 40) require a physical postal address and
+# clear sender identity in every commercial message. Configure via env before sending.
+PHYSICAL_ADDRESS = os.environ.get("OUTREACH_PHYSICAL_ADDRESS", "")
+SENDER_IDENTITY = os.environ.get("OUTREACH_SENDER_IDENTITY", FROM_NAME)
 
 
 @dataclass
 class SendResult:
     success: bool
     error: str = ""
+
+
+def _compliance_footer(unsubscribe_url: str) -> str:
+    """Mandatory commercial-email footer: advertisement marker, sender identity,
+    physical address, and a working unsubscribe link."""
+    addr = PHYSICAL_ADDRESS or "[physical address not configured]"
+    return (
+        '<hr style="margin-top:30px;border:none;border-top:1px solid #ddd">'
+        '<p style="font-size:11px;color:#999;line-height:1.5">'
+        f'This is an advertisement from {SENDER_IDENTITY}.<br>'
+        f'{addr}<br>'
+        'You received this because your business is publicly listed. '
+        f'<a href="{unsubscribe_url}">Unsubscribe</a> to stop receiving these emails.'
+        '</p>'
+    )
 
 
 def send_outreach_email(
@@ -38,17 +57,17 @@ def send_outreach_email(
     if not SMTP_USER or not SMTP_PASSWORD:
         return SendResult(success=False, error="SMTP credentials not configured")
 
+    # Refuse to send a cold/commercial email without an unsubscribe link — it would
+    # violate CAN-SPAM / GDPR / Israeli Anti-Spam law. Callers must supply one.
+    if not unsubscribe_url:
+        return SendResult(success=False, error="refusing to send: missing unsubscribe link (legal compliance)")
+
     # Personalize template
     subject = subject.replace("{{COMPANY_NAME}}", company_name)
     html_body = html_body.replace("{{COMPANY_NAME}}", company_name)
 
-    # Add unsubscribe footer
-    if unsubscribe_url:
-        html_body += (
-            f'<hr style="margin-top:30px;border:none;border-top:1px solid #ddd">'
-            f'<p style="font-size:11px;color:#999">'
-            f'<a href="{unsubscribe_url}">Unsubscribe</a></p>'
-        )
+    # Mandatory compliance footer (advertisement marker + address + unsubscribe).
+    html_body += _compliance_footer(unsubscribe_url)
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -90,6 +109,7 @@ def send_bulk_with_rate_limit(
             subject=item["subject"],
             html_body=item["html_body"],
             company_name=item.get("company_name", ""),
+            unsubscribe_url=item.get("unsubscribe_url", ""),
         )
         results.append({
             "to": item["to"],
