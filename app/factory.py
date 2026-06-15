@@ -7,10 +7,12 @@ from common.i18n import ui, is_rtl
 
 SUPPORTED_LANGS = ["en", "ru", "he"]
 
-# Rate limiting: track login attempts per IP (in-memory, resets on restart)
-_login_attempts: dict[str, list[float]] = {}
-LOGIN_RATE_LIMIT = 10  # max attempts per window
-LOGIN_RATE_WINDOW = 300  # 5 minutes
+# Login rate limiting now lives in app.auth (shared across /login, /user-login,
+# /register and keyed by IP+email). Kept out of factory to avoid a circular import.
+
+import re as _re
+# Match opening <form ... method="post" ...> tags (compiled once, not per request).
+_FORM_POST_RE = _re.compile(r'(<form[^>]*method=["\']post["\'][^>]*>)', _re.IGNORECASE)
 
 
 def create_app():
@@ -33,19 +35,20 @@ def create_app():
         # Auto-inject CSRF token into all POST forms via after_request
         @app.after_request
         def inject_csrf_token(response):
-            if response.content_type and "text/html" in response.content_type:
-                token = generate_csrf()
-                hidden_field = f'<input type="hidden" name="csrf_token" value="{token}">'
-                data = response.get_data(as_text=True)
-                # Inject after every <form that has method="post"
-                import re
-                data = re.sub(
-                    r'(<form[^>]*method=["\']post["\'][^>]*>)',
-                    r'\1' + hidden_field,
-                    data,
-                    flags=re.IGNORECASE,
-                )
-                response.set_data(data)
+            # Only touch HTML responses that actually contain a POST form. Direct
+            # passthrough (and skip the body rewrite entirely) for everything else
+            # so JSON/static/streamed responses are never re-encoded.
+            if not (response.content_type and "text/html" in response.content_type):
+                return response
+            if response.direct_passthrough:
+                return response
+            data = response.get_data(as_text=True)
+            if "<form" not in data:
+                return response
+            token = generate_csrf()
+            hidden_field = f'<input type="hidden" name="csrf_token" value="{token}">'
+            data = _FORM_POST_RE.sub(r'\1' + hidden_field, data)
+            response.set_data(data)
             return response
     except ImportError:
         pass  # flask-wtf not installed — skip CSRF

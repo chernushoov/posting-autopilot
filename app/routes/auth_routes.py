@@ -1,6 +1,12 @@
 import time
+from secrets import compare_digest as secrets_compare
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from ..auth import admin_login_ok
+from ..auth import (
+    admin_login_ok,
+    require_company,
+    check_login_rate_limit,
+    record_login_attempt,
+)
 from ..db import db_session
 from ..models import Company, User
 from .registration import _login_user, _verify_and_upgrade_password
@@ -37,30 +43,14 @@ def login():
         return redirect(url_for("auth.dashboard"))
     return render_template("login.html")
 
-def _check_rate_limit() -> bool:
-    """Check if current IP has exceeded login rate limit."""
-    from ..factory import _login_attempts, LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW
-    ip = request.remote_addr or "unknown"
-    now = time.time()
-    attempts = _login_attempts.get(ip, [])
-    attempts = [t for t in attempts if now - t < LOGIN_RATE_WINDOW]
-    _login_attempts[ip] = attempts
-    return len(attempts) < LOGIN_RATE_LIMIT
-
-
-def _record_attempt():
-    from ..factory import _login_attempts
-    ip = request.remote_addr or "unknown"
-    _login_attempts.setdefault(ip, []).append(time.time())
-
-
 @bp.post("/login")
 def login_post():
-    if not _check_rate_limit():
-        return render_template("login.html", error="Too many attempts. Please wait 5 minutes.")
-    _record_attempt()
     login = request.form.get("login","")
     password = request.form.get("password","")
+    _rl_email = login.strip().lower() if "@" in login else None
+    if not check_login_rate_limit(_rl_email):
+        return render_template("login.html", error="Too many attempts. Please wait 5 minutes.")
+    record_login_attempt(_rl_email)
     next_url = request.args.get("next") or request.form.get("next") or url_for("auth.dashboard")
 
     if "@" in login:
@@ -186,6 +176,7 @@ def terms():
 
 
 @bp.get("/connect/telegram")
+@require_company
 def connect_telegram():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
@@ -300,6 +291,7 @@ def connect_telegram():
     )
 
 @bp.post("/connect/telegram/send-code")
+@require_company
 def tg_send_code():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
@@ -334,6 +326,7 @@ def tg_send_code():
         return redirect(url_for("auth.connect_telegram", error=str(e)[:200]))
 
 @bp.post("/connect/telegram/verify")
+@require_company
 def tg_verify():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
@@ -390,6 +383,7 @@ def tg_verify():
         return redirect(url_for("auth.connect_telegram", error=err_msg))
 
 @bp.post("/connect/telegram/sync")
+@require_company
 def tg_sync():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
@@ -431,6 +425,7 @@ def tg_sync():
         return redirect(url_for("auth.connect_telegram", error=str(e)[:200]))
 
 @bp.post("/connect/telegram/add-selected")
+@require_company
 def tg_add_selected():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
@@ -491,6 +486,7 @@ def tg_add_selected():
     return redirect(url_for("auth.connect_telegram", message=f"Added {added} destinations"))
 
 @bp.get("/connect/facebook")
+@require_company
 def connect_facebook():
     if not session.get("is_admin"):
         return redirect(url_for("auth.login"))
@@ -541,6 +537,7 @@ def connect_facebook():
 
 
 @bp.post("/connect/facebook/bulk-add")
+@require_company
 def fb_bulk_add():
     """Paste a list of Facebook group URLs (one per line) → destinations.
     The fastest possible FB onboarding: no OAuth, no per-group modal."""
@@ -611,6 +608,7 @@ def fb_bulk_add():
 
 
 @bp.post("/connect/facebook/setup")
+@require_company
 def fb_setup():
     """Save FB App credentials and redirect to Facebook OAuth (official Pages flow)."""
     if not session.get("is_admin"):
@@ -629,14 +627,18 @@ def fb_setup():
     os.environ["FB_APP_ID"] = fb_app_id
     os.environ["FB_APP_SECRET"] = fb_app_secret
 
-    # Redirect to Facebook OAuth
+    # Redirect to Facebook OAuth with an anti-CSRF state token (verified in the callback).
+    import secrets
+    state = secrets.token_urlsafe(24)
+    session["fb_oauth_state"] = state
     from common.fb_client import get_login_url
     redirect_uri = request.host_url.rstrip("/") + "/connect/facebook/callback"
-    oauth_url = get_login_url(redirect_uri)
+    oauth_url = get_login_url(redirect_uri, state=state)
     return redirect(oauth_url)
 
 
 @bp.get("/connect/facebook/callback")
+@require_company
 def fb_callback():
     """Facebook OAuth callback — exchange code for token, sync Pages."""
     if not session.get("is_admin"):
@@ -644,6 +646,12 @@ def fb_callback():
     company_id = session.get("current_company_id")
     code = request.args.get("code")
     error = request.args.get("error")
+    state = request.args.get("state")
+
+    # Verify the anti-CSRF state token issued in fb_setup. Consume it (one-shot).
+    expected_state = session.pop("fb_oauth_state", None)
+    if not expected_state or not state or not secrets_compare(state, expected_state):
+        return redirect(url_for("auth.connect_facebook", error="Invalid OAuth state — please retry the connection."))
 
     if error or not code:
         return redirect(url_for("auth.connect_facebook", error=error or "Facebook login cancelled"))
@@ -700,6 +708,7 @@ def fb_callback():
 
 
 @bp.post("/connect/facebook/sync")
+@require_company
 def fb_sync():
     """Re-sync Facebook Pages through the official Pages API."""
     if not session.get("is_admin"):
@@ -727,6 +736,7 @@ def fb_sync():
     return redirect(url_for("auth.connect_facebook", error=result.get("error", "Pages sync failed")))
 
 @bp.post("/connect/facebook/add-selected-pages")
+@require_company
 def fb_add_selected_pages():
     """Add selected Facebook Pages as posting destinations."""
     if not session.get("is_admin"):

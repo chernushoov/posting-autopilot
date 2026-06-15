@@ -8,8 +8,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import db_session
 from ..models import User, UserRole, Company
+from ..auth import check_login_rate_limit, record_login_attempt
 
 bp = Blueprint("registration", __name__)
+
+MIN_PASSWORD_LEN = 8
 
 TRIAL_DAYS = 14
 
@@ -70,12 +73,16 @@ def register_post():
     password = request.form.get("password", "").strip()
     company_name = request.form.get("company_name", "").strip()
 
+    if not check_login_rate_limit(email):
+        return render_template("register.html", error="Too many attempts. Please wait 5 minutes.")
+    record_login_attempt(email)
+
     if not email or not password or not company_name:
         return render_template("register.html", error="All fields are required.")
     if not _valid_email(email):
         return render_template("register.html", error="Invalid email address.")
-    if len(password) < 6:
-        return render_template("register.html", error="Password must be at least 6 characters.")
+    if len(password) < MIN_PASSWORD_LEN:
+        return render_template("register.html", error=f"Password must be at least {MIN_PASSWORD_LEN} characters.")
 
     db = db_session()
     existing = db.query(User).filter(User.email == email).first()
@@ -124,6 +131,10 @@ def user_login_post():
 
     if not email or not password:
         return render_template("user_login.html", error="Email and password required.")
+
+    if not check_login_rate_limit(email):
+        return render_template("user_login.html", error="Too many attempts. Please wait 5 minutes.")
+    record_login_attempt(email)
 
     db = db_session()
     user = db.query(User).filter(User.email == email, User.is_active == True).first()
