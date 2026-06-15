@@ -1,0 +1,44 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto">
+  <h1>Privacy Policy</h1>
+  <p style="color:var(--muted)">Last updated: 2025</p>
+
+  <h3>1. Who We Are</h3>
+  <p>Posting Autopilot ("we", "us") provides automated posting and AI-powered lead screening for businesses. This policy explains what data we collect, why, and your rights over it.</p>
+
+  <h3>2. Data We Collect</h3>
+  <p>
+    <b>Account data:</b> your email, password (hashed), and company name.<br>
+    <b>Campaign data:</b> the listings, posts, and group/channel targets you configure.<br>
+    <b>Platform credentials:</b> Telegram session credentials and Facebook connection data, stored encrypted at rest. We never store these in plain text.<br>
+    <b>Lead data:</b> names, phone numbers, and conversation messages collected from people who respond to your posts. This data belongs to your business; we process it on your behalf.<br>
+    <b>Usage data:</b> basic logs needed to operate and secure the service.
+  </p>
+
+  <h3>3. How We Use Data</h3>
+  <p>We use your data solely to operate the service: to publish your posts, run the AI assistant that screens and qualifies responses, deliver leads to your dashboard, process billing, and keep the service secure. We do not use your lead data for any purpose other than delivering it to you.</p>
+
+  <h3>4. Sharing &amp; Third Parties</h3>
+  <p>We do not sell personal data. We share data only with the providers required to run the service: the platforms you choose to post to (Telegram, Facebook), our payment processor (for billing), and our email provider (for account and notification emails). Each processes data only as needed to provide their function.</p>
+
+  <h3>5. Data Security</h3>
+  <p>Sensitive data — platform credentials and lead personal information (phone numbers and conversation logs) — is encrypted at rest. Access is restricted and scoped per account, so one customer's data is never visible to another.</p>
+
+  <h3>6. Your Rights — Export &amp; Deletion</h3>
+  <p>You can export your data or delete your account at any time from the dashboard. Account deletion removes your personal data and lead records; residual backups are purged on our standard cycle. You may also contact us to exercise these rights.</p>
+
+  <h3>7. Data Retention</h3>
+  <p>We retain your data while your account is active. After cancellation or deletion, data is retained for up to 30 days and then removed, except where a longer period is required by law.</p>
+
+  <h3>8. Your Responsibilities as a Customer</h3>
+  <p>You are the controller of the lead data you collect through the service. You are responsible for handling it lawfully, including honoring opt-out requests and complying with applicable privacy and anti-spam laws in your market.</p>
+
+  <h3>9. Cookies</h3>
+  <p>We use only the cookies necessary to keep you signed in and to operate the dashboard. We do not use advertising or cross-site tracking cookies.</p>
+
+  <h3>10. Contact</h3>
+  <p>For any privacy question or to exercise your rights, contact us through the platform dashboard.</p>
+</div>
+{% endblock %}
+{# Baseline policy reflecting actual data practices (encryption, export/delete, no data sale). Review with counsel before scaling paid US/EU traffic. #}
