@@ -119,6 +119,10 @@
     {% if message %}<div class="alert success">{{ message }}</div>{% endif %}
     {% block content %}{% endblock %}
   </main>
+  <footer class="container" style="padding:24px 0 40px;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--border-light,#eee);margin-top:24px">
+    <a href="/terms" style="color:var(--muted);margin:0 10px">{{ ui("terms_link") if ui("terms_link") != "terms_link" else "Terms" }}</a>
+    <a href="/privacy" style="color:var(--muted);margin:0 10px">{{ ui("privacy_link") if ui("privacy_link") != "privacy_link" else "Privacy" }}</a>
+  </footer>
   {% block scripts %}{% endblock %}
 </body>
 </html>

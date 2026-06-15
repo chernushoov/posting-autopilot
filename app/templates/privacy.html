@@ -1,0 +1,72 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto">
+  <h1>Privacy Policy</h1>
+  <p style="color:var(--muted)">Last updated: June 2026</p>
+
+  <p>This Privacy Policy explains what data Posting Autopilot ("we", "the service")
+  collects, how we use it, and the choices you have. By using the service you agree
+  to this policy.</p>
+
+  <h3>1. Data We Collect</h3>
+  <ul>
+    <li><strong>Account data:</strong> your email, company/business name, and
+        password (stored only as a salted hash — never in plain text).</li>
+    <li><strong>Billing data:</strong> handled by our payment processor (Stripe).
+        We store only a customer/subscription identifier and your plan — never your
+        full card number.</li>
+    <li><strong>Connected-channel credentials:</strong> Telegram session data and
+        Facebook access tokens you connect, stored to operate posting on your behalf.</li>
+    <li><strong>Listing &amp; campaign content</strong> you create.</li>
+    <li><strong>Lead data:</strong> names, phone numbers, and messages of people who
+        respond to your listings, collected on your behalf so you can follow up.</li>
+    <li><strong>Prospect data</strong> used for outreach (business name, public
+        contact email/phone).</li>
+  </ul>
+
+  <h3>2. How We Use Data</h3>
+  <p>We use this data solely to operate the service for you: publishing your listings,
+  running the AI assistant that answers and qualifies responders, delivering leads to
+  your dashboard, processing billing, and sending you notifications. We do <strong>not</strong>
+  sell personal data to third parties.</p>
+
+  <h3>3. Third-Party Processors</h3>
+  <p>We share the minimum necessary data with: <strong>Stripe</strong> (billing),
+  <strong>OpenAI</strong> (AI screening of responses), <strong>Telegram</strong> and
+  <strong>Facebook</strong> (to post and receive messages on connected accounts), and
+  our transactional email provider. Each processes data only to provide its function.</p>
+
+  <h3>4. Marketing / Outreach Email</h3>
+  <p>Outreach emails we send on your behalf include the sender's identity, a physical
+  postal address, and a one-click unsubscribe link, in compliance with the US CAN-SPAM
+  Act. Anyone may opt out at any time using that link, and we honor opt-outs promptly.</p>
+
+  <h3>5. Data Retention</h3>
+  <p>We keep your data while your account is active. After cancellation, data is
+  retained for 30 days to allow recovery, then deleted. You may request earlier deletion
+  (see Your Rights).</p>
+
+  <h3>6. Your Rights</h3>
+  <p>You can access, export, correct, or delete your data, and withdraw consent, at any
+  time by contacting us through the dashboard. We honor applicable rights under the GDPR
+  (EU/EEA) and CCPA (California), including the right to know, delete, and opt out of any
+  sale of personal information (we do not sell it).</p>
+
+  <h3>7. Security</h3>
+  <p>Connected-channel credentials are stored with restricted access, passwords are
+  salted-and-hashed, and billing card data never touches our servers. No system is
+  perfectly secure, but we take reasonable measures to protect your data.</p>
+
+  <h3>8. Children</h3>
+  <p>The service is for businesses and is not directed to anyone under 18.</p>
+
+  <h3>9. Changes</h3>
+  <p>We may update this policy; material changes will be reflected by the "Last updated"
+  date above.</p>
+
+  <h3>10. Contact</h3>
+  <p>For privacy questions or data requests, contact us through the platform dashboard.</p>
+
+  <p style="margin-top:24px"><a href="/terms">Terms of Service</a></p>
+</div>
+{% endblock %}

@@ -168,6 +168,45 @@ PLANS = {
 PLAN_KEYS = ["starter", "pro", "agency"]
 
 
+# ── Region-based pricing ─────────────────────────────────────────────────────
+# Currency is a property of the VISITOR'S REGION (where they browse from), NOT of
+# the UI language. A Russian-speaker in the US pays USD; an English-speaker in
+# Israel pays ₪. Language only controls the surrounding copy.
+REGION_PRICES = {
+    "US": {"cur": "$", "pos": "pre",  "starter": 29,  "pro": 89,  "agency": 199},
+    "IL": {"cur": "₪", "pos": "post", "starter": 299, "pro": 899, "agency": 1999},
+    "GB": {"cur": "£", "pos": "pre",  "starter": 25,  "pro": 75,  "agency": 169},
+    "EU": {"cur": "€", "pos": "pre",  "starter": 29,  "pro": 85,  "agency": 189},
+}
+DEFAULT_REGION = os.getenv("DEFAULT_PRICING_REGION", "US")
+
+_EU_COUNTRIES = {"DE","FR","ES","IT","NL","BE","AT","IE","PT","FI","GR","LU","SK",
+                 "SI","EE","LV","LT","CY","MT","PL","CZ","HU","RO","BG","HR","DK","SE"}
+COUNTRY_TO_REGION = {"US": "US", "IL": "IL", "GB": "GB", **{c: "EU" for c in _EU_COUNTRIES}}
+
+
+def _resolve_region() -> str:
+    """Visitor's pricing region. Priority: explicit override (?region= / cookie)
+    -> geo header from the proxy/CDN (CF-IPCountry / X-Country-Code) -> country
+    subtag of Accept-Language -> DEFAULT_REGION. Independent of UI language."""
+    override = (request.args.get("region") or request.cookies.get("pricing_region") or "").upper()
+    if override in REGION_PRICES:
+        return override
+    cc = (request.headers.get("CF-IPCountry") or request.headers.get("X-Country-Code") or "").upper()
+    if not cc:
+        import re
+        m = re.search(r"[A-Za-z]{2}-([A-Za-z]{2})", request.headers.get("Accept-Language", ""))
+        if m:
+            cc = m.group(1).upper()
+    return COUNTRY_TO_REGION.get(cc, DEFAULT_REGION)
+
+
+def _format_price(region: str, plan_key: str) -> str:
+    p = REGION_PRICES.get(region, REGION_PRICES[DEFAULT_REGION])
+    amount, cur = p[plan_key], p["cur"]
+    return f"{cur}{amount}" if p["pos"] == "pre" else f"{amount}{cur}"
+
+
 BILLING_ERROR_KEYS = {
     "billing_not_configured": "billing_not_configured_msg",
     "invalid_plan": "billing_invalid_plan_msg",
@@ -178,15 +217,20 @@ BILLING_ERROR_KEYS = {
 @bp.route("/pricing")
 def pricing_page():
     lang = session.get("ui_lang", "he")
-    plans = PLANS.get(lang, PLANS["en"])
-    # Add checkout URLs
+    region = _resolve_region()
+    # Copy the per-language plans so we never mutate the module-global PLANS
+    # (the old code appended checkout_url to the shared dicts on every request).
+    plans = [dict(p) for p in PLANS.get(lang, PLANS["en"])]
     for i, plan in enumerate(plans):
         if i < len(PLAN_KEYS):
-            plan["checkout_url"] = f"/billing/checkout/{PLAN_KEYS[i]}"
+            key = PLAN_KEYS[i]
+            plan["price"] = _format_price(region, key)   # region drives currency, not language
+            plan["checkout_url"] = f"/billing/checkout/{key}"
     return render_template(
         "pricing.html",
         title="Pricing",
         plans=plans,
+        pricing_region=region,
         trial_expired=request.args.get("trial_expired") == "1",
         billing_error_key=BILLING_ERROR_KEYS.get(request.args.get("error", "")),
         support_contact_url=os.getenv("SUPPORT_CONTACT_URL", ""),

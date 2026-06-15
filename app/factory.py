@@ -127,9 +127,24 @@ def create_app():
             session["ui_lang"] = lang
         return redirect(request.referrer or "/")
 
+    def _default_lang_from_request():
+        """Pick the default UI language by the visitor's locale/region when they
+        haven't explicitly chosen one — a US visitor should land on English, an
+        Israeli on Hebrew. (Language follows region; it is not hardcoded to 'he'.)"""
+        cc = (request.headers.get("CF-IPCountry") or request.headers.get("X-Country-Code") or "").upper()
+        al = request.headers.get("Accept-Language", "")
+        primary = al.split(",")[0].strip().lower() if al else ""
+        if cc == "IL" or primary.startswith("he"):
+            return "he"
+        if primary.startswith("ru"):
+            return "ru"
+        if primary.startswith("en") or cc in ("US", "GB", "CA", "AU"):
+            return "en"
+        return "en"  # US-launch default
+
     @app.context_processor
     def inject_globals():
-        lang = session.get("ui_lang", "he")
+        lang = session.get("ui_lang") or _default_lang_from_request()
         company_id = session.get("current_company_id")
         company_name = None
         operator_copilot = None

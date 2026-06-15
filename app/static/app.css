@@ -81,6 +81,7 @@ textarea{resize:vertical}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .stack{display:flex;flex-direction:column;gap:16px}
 .stack.tight{gap:10px}
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -176,7 +177,8 @@ textarea{resize:vertical}
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media(max-width:960px){.panel-grid,.queue-layout{grid-template-columns:1fr}.page-hero{flex-direction:column}}
 @media(max-width:720px){
-  .grid2,.grid3,.setup-grid{grid-template-columns:1fr}
+  .grid2,.grid3,.grid4,.setup-grid{grid-template-columns:1fr}
+  .table,.table-wrap table{display:block;overflow-x:auto;white-space:nowrap}
   .landing-features{grid-template-columns:1fr}
   .landing-hero{padding:60px 20px 40px}
   .hamburger{display:block}

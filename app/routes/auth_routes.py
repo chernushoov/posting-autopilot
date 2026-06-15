@@ -175,6 +175,11 @@ def terms():
     return render_template("terms.html")
 
 
+@bp.get("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
 @bp.get("/connect/telegram")
 @require_company
 def connect_telegram():
