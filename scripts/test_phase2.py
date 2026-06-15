@@ -347,21 +347,21 @@ def test_2_6():
     except Exception as e:
         fail("CSRF in layout", str(e))
 
-    # Rate limiting on login
+    # Rate limiting on login (shared helper in app/auth.py, applied to login)
     try:
         auth_code = (ROOT / "app" / "routes" / "auth_routes.py").read_text()
-        assert "_check_rate_limit" in auth_code, "Login should check rate limit"
-        assert "_record_attempt" in auth_code, "Login should record attempts"
+        assert "check_login_rate_limit" in auth_code, "Login should check rate limit"
+        assert "record_login_attempt" in auth_code, "Login should record attempts"
         assert "Too many" in auth_code, "Should show rate limit message"
         ok("Login rate limiting implemented")
     except Exception as e:
         fail("Login rate limiting", str(e))
 
-    # Rate limit config
+    # Rate limit config (now centralized in app/auth.py, keyed by IP + email)
     try:
-        factory_code = (ROOT / "app" / "factory.py").read_text()
-        assert "LOGIN_RATE_LIMIT" in factory_code
-        assert "LOGIN_RATE_WINDOW" in factory_code
+        auth_mod = (ROOT / "app" / "auth.py").read_text()
+        assert "LOGIN_RATE_LIMIT" in auth_mod
+        assert "LOGIN_RATE_WINDOW" in auth_mod
         ok("Rate limit constants configured")
     except Exception as e:
         fail("Rate limit config", str(e))
