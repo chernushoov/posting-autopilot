@@ -305,10 +305,10 @@ class Candidate(Base):
     summary = Column(Text, nullable=False, default="")
     red_flags = Column(Text, nullable=False, default="[]")
 
-    phone = Column(String(30), nullable=True)
+    phone = Column(EncryptedString, nullable=True)  # PII: encrypted at rest
     language = Column(String(10), nullable=True)  # detected candidate language (ru/he/en)
     classification = Column(String(10), nullable=True)  # hot/warm/cold
-    chat_log_json = Column(Text, nullable=False, default="[]")  # [{role,text,ts}]
+    chat_log_json = Column(EncryptedString, nullable=False, default="[]")  # PII: encrypted at rest  [{role,text,ts}]
     next_action_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
