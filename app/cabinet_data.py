@@ -138,17 +138,17 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
     # Literals are the RU source/fallback; tk/fk are i18n keys (cabinet-i18n.js)
     # so the billing screen re-translates on every live RU/EN/HE switch.
     boot["plans"] = [
-        {"id": "starter", "name": "Starter", "price": "299₪", "tagline": "Одно объявление, ручной постинг",
+        {"id": "starter", "name": "Starter", "price": "$99", "tagline": "Одно объявление, ручной постинг",
          "tk": "pl.starter.tag",
          "feats": ["1 активное объявление", "10 каналов постинга", "AI-бот скрининга", "Лиды и базовый дашборд"],
          "fk": ["pl.starter.f1", "pl.starter.f2", "pl.starter.f3", "pl.starter.f4"]},
-        {"id": "pro", "name": "Pro", "price": "899₪", "tagline": "Активный мультиканальный постинг",
+        {"id": "pro", "name": "Pro", "price": "$299", "tagline": "Активный мультиканальный постинг",
          "tk": "pl.pro.tag",
          "featured": True, "current": True,
          "feats": ["5 активных объявлений", "50 каналов постинга", "Планировщик и ночной режим",
                    "Аналитика и воронка", "Приоритетная поддержка"],
          "fk": ["pl.pro.f1", "pl.pro.f2", "pl.pro.f3", "pl.pro.f4", "pl.pro.f5"]},
-        {"id": "agency", "name": "Agency", "price": "1999₪", "tagline": "Агентствам и нескольким компаниям",
+        {"id": "agency", "name": "Agency", "price": "$499", "tagline": "Агентствам и нескольким компаниям",
          "tk": "pl.agency.tag",
          "feats": ["Безлимит объявлений", "Мультикомпания", "API и вебхуки",
                    "White-label кабинет", "Персональный менеджер"],

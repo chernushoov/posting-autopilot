@@ -5,8 +5,8 @@ Run AFTER the owner provides PADDLE_API_KEY (sandbox first, then live):
     PADDLE_API_KEY=... PADDLE_ENV=sandbox python scripts/paddle_setup.py
 
 Prints PADDLE_PRICE_STARTER/PRO/AGENCY lines to paste into .env.prod.
-Amounts are in the currency's minor unit (ILS agorot): ₪299 = 29900.
-If Paddle rejects ILS for your account, re-run with PADDLE_CURRENCY=USD (adjust amounts).
+Amounts are in the currency's minor unit (USD cents): $99 = 9900.
+Override with PADDLE_CURRENCY / edit PLANS amounts if the pricing changes.
 """
 import os
 import sys
@@ -16,13 +16,13 @@ import requests
 API_KEY = os.getenv("PADDLE_API_KEY", "").strip()
 ENV = (os.getenv("PADDLE_ENV", "sandbox").strip().lower() or "sandbox")
 BASE = "https://sandbox-api.paddle.com" if ENV == "sandbox" else "https://api.paddle.com"
-CUR = os.getenv("PADDLE_CURRENCY", "ILS").strip().upper()
+CUR = os.getenv("PADDLE_CURRENCY", "USD").strip().upper()
 
-# (env-key, product name, amount in minor units for CUR=ILS)
+# (env-key, product name, amount in minor units for CUR=USD cents)
 PLANS = [
-    ("STARTER", "Posting Autopilot — Starter", "29900"),
-    ("PRO",     "Posting Autopilot — Pro",     "89900"),
-    ("AGENCY",  "Posting Autopilot — Agency",  "199900"),
+    ("STARTER", "Posting Autopilot — Starter", "9900"),    # $99/mo
+    ("PRO",     "Posting Autopilot — Pro",     "29900"),   # $299/mo
+    ("AGENCY",  "Posting Autopilot — Agency",  "49900"),   # $499/mo
 ]
 
 

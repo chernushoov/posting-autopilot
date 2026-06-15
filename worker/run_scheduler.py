@@ -19,29 +19,26 @@ TRIAL_REMINDER_HOUR_IL = int(os.getenv("TRIAL_REMINDER_HOUR_IL", "10"))
 
 
 def _trial_email(stage: str, base: str, days_left: int):
-    """Hebrew-primary reminder (registration default is HE; IL market) + EN fallback.
-    No-op-safe: send_email silently does nothing until an email provider is configured."""
+    """English-primary reminder (US market). No-op-safe: send_email silently does
+    nothing until an email provider is configured."""
     pricing = base + "/pricing"
     cab = base + "/cabinet"
     if stage == "expired":
-        subj = "תקופת הניסיון הסתיימה — הפרסום האוטומטי הושהה · Posting Autopilot"
-        he = ("<p>שלום,</p>"
-              "<p>תקופת הניסיון Pro שלך הסתיימה, והפרסום האוטומטי הושהה. "
-              "כדי לחדש את הפרסום והבוט, בחרו מסלול שמתאים לכם.</p>"
-              f'<p><a href="{pricing}">בחירת מסלול ←</a></p>')
-        en = "Your Pro trial has ended and auto-posting is paused. Pick a plan to resume."
-        txt = f"תקופת הניסיון הסתיימה. בחירת מסלול: {pricing}"
+        subj = "Your trial has ended — posting is paused · Posting Autopilot"
+        body = ("<p>Hi,</p>"
+                "<p>Your Pro trial has ended and auto-posting is paused. "
+                "Pick a plan to resume posting and your AI assistant.</p>"
+                f'<p><a href="{pricing}">Choose a plan →</a></p>')
+        txt = f"Your trial has ended. Choose a plan: {pricing}"
     else:
         d = max(1, days_left)
-        subj = f"נותרו {d} ימים לתקופת הניסיון · Posting Autopilot"
-        he = ("<p>שלום,</p>"
-              f"<p>נותרו <b>{d}</b> ימים לתקופת הניסיון Pro שלך. "
-              "כדי שהפרסום האוטומטי והבוט ימשיכו לעבוד ללא הפסקה — בחרו מסלול מראש.</p>"
-              f'<p><a href="{pricing}">בחירת מסלול ←</a> · <a href="{cab}">לקבינט</a></p>')
-        en = f"Your Pro trial ends in {d} day(s) — pick a plan to keep auto-posting running."
-        txt = f"נותרו {d} ימים לניסיון. בחירת מסלול: {pricing}"
-    html = (f'<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;line-height:1.6">{he}</div>'
-            f'<hr style="border:none;border-top:1px solid #eee"><p style="color:#888;font-size:13px">{en}</p>')
+        subj = f"{d} day(s) left in your trial · Posting Autopilot"
+        body = ("<p>Hi,</p>"
+                f"<p>You have <b>{d}</b> day(s) left in your Pro trial. "
+                "Pick a plan now to keep auto-posting and your AI assistant running without interruption.</p>"
+                f'<p><a href="{pricing}">Choose a plan →</a> &nbsp;·&nbsp; <a href="{cab}">Open cabinet</a></p>')
+        txt = f"{d} day(s) left in your trial. Choose a plan: {pricing}"
+    html = f'<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6">{body}</div>'
     return subj, html, txt
 
 

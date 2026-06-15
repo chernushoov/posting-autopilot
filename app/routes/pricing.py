@@ -23,7 +23,7 @@ PLANS = {
     "ru": [
         {
             "name": "Стартер",
-            "price": "299₪",
+            "price": "$99",
             "price_note": "/мес",
             "features": [
                 "1 активная вакансия",
@@ -39,7 +39,7 @@ PLANS = {
         },
         {
             "name": "Про",
-            "price": "899₪",
+            "price": "$299",
             "price_note": "/мес",
             "features": [
                 "5 активных вакансий",
@@ -56,7 +56,7 @@ PLANS = {
         },
         {
             "name": "Агентство",
-            "price": "1999₪",
+            "price": "$499",
             "price_note": "/мес",
             "features": [
                 "Безлимит вакансий",
@@ -75,7 +75,7 @@ PLANS = {
     "he": [
         {
             "name": "סטארטר",
-            "price": "299₪",
+            "price": "$99",
             "price_note": "/חודש",
             "features": [
                 "משרה פעילה אחת",
@@ -91,7 +91,7 @@ PLANS = {
         },
         {
             "name": "פרו",
-            "price": "899₪",
+            "price": "$299",
             "price_note": "/חודש",
             "features": [
                 "5 משרות פעילות",
@@ -108,7 +108,7 @@ PLANS = {
         },
         {
             "name": "סוכנות",
-            "price": "1999₪",
+            "price": "$499",
             "price_note": "/חודש",
             "features": [
                 "ללא הגבלת משרות",
@@ -127,7 +127,7 @@ PLANS = {
     "en": [
         {
             "name": "Starter",
-            "price": "299₪",
+            "price": "$99",
             "price_note": "/mo",
             "features": [
                 "1 active vacancy",
@@ -143,7 +143,7 @@ PLANS = {
         },
         {
             "name": "Pro",
-            "price": "899₪",
+            "price": "$299",
             "price_note": "/mo",
             "features": [
                 "5 active vacancies",
@@ -160,7 +160,7 @@ PLANS = {
         },
         {
             "name": "Agency",
-            "price": "1999₪",
+            "price": "$499",
             "price_note": "/mo",
             "features": [
                 "Unlimited vacancies",
