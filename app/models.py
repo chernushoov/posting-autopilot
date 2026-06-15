@@ -122,6 +122,18 @@ class User(Base):
     company = relationship("Company", backref="users")
 
 
+class TrialReminder(Base):
+    """One row per (user, stage) trial-reminder email sent. The scheduler checks
+    this before sending so it never double-emails. New table → created by
+    bootstrap_schema()'s create_all (no migration needed)."""
+    __tablename__ = "trial_reminders"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    stage = Column(String(16), nullable=False)  # d3 | d1 | expired
+    sent_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("user_id", "stage", name="uq_trial_reminder_user_stage"),)
+
+
 class BusinessType(str, enum.Enum):
     company = "company"
     individual = "individual"

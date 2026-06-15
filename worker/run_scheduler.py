@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from redis import Redis
 from rq import Queue
 from app.db import db_session
-from app.models import Campaign, Company
+from app.models import Campaign, Company, User, TrialReminder
 from app.schema import bootstrap_schema
 from common.env_guard import validate_runtime_environment
 from worker.queue import schedule_campaign_tick, enqueue_daily_digest
@@ -15,6 +15,70 @@ from worker.queue import schedule_campaign_tick, enqueue_daily_digest
 
 ISRAEL_TZ = timezone(timedelta(hours=3))
 DAILY_DIGEST_HOUR = int(os.getenv("DAILY_DIGEST_HOUR_IL", "8"))
+TRIAL_REMINDER_HOUR_IL = int(os.getenv("TRIAL_REMINDER_HOUR_IL", "10"))
+
+
+def _trial_email(stage: str, base: str, days_left: int):
+    """Hebrew-primary reminder (registration default is HE; IL market) + EN fallback.
+    No-op-safe: send_email silently does nothing until an email provider is configured."""
+    pricing = base + "/pricing"
+    cab = base + "/cabinet"
+    if stage == "expired":
+        subj = "תקופת הניסיון הסתיימה — הפרסום האוטומטי הושהה · Posting Autopilot"
+        he = ("<p>שלום,</p>"
+              "<p>תקופת הניסיון Pro שלך הסתיימה, והפרסום האוטומטי הושהה. "
+              "כדי לחדש את הפרסום והבוט, בחרו מסלול שמתאים לכם.</p>"
+              f'<p><a href="{pricing}">בחירת מסלול ←</a></p>')
+        en = "Your Pro trial has ended and auto-posting is paused. Pick a plan to resume."
+        txt = f"תקופת הניסיון הסתיימה. בחירת מסלול: {pricing}"
+    else:
+        d = max(1, days_left)
+        subj = f"נותרו {d} ימים לתקופת הניסיון · Posting Autopilot"
+        he = ("<p>שלום,</p>"
+              f"<p>נותרו <b>{d}</b> ימים לתקופת הניסיון Pro שלך. "
+              "כדי שהפרסום האוטומטי והבוט ימשיכו לעבוד ללא הפסקה — בחרו מסלול מראש.</p>"
+              f'<p><a href="{pricing}">בחירת מסלול ←</a> · <a href="{cab}">לקבינט</a></p>')
+        en = f"Your Pro trial ends in {d} day(s) — pick a plan to keep auto-posting running."
+        txt = f"נותרו {d} ימים לניסיון. בחירת מסלול: {pricing}"
+    html = (f'<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;line-height:1.6">{he}</div>'
+            f'<hr style="border:none;border-top:1px solid #eee"><p style="color:#888;font-size:13px">{en}</p>')
+    return subj, html, txt
+
+
+def _run_trial_reminders(db) -> int:
+    """Once-daily scan: email users whose Pro trial ends in 3d / 1d / just expired.
+    Deduped per (user, stage) via the trial_reminders table (survives restarts)."""
+    from app.mailer import send_email
+    from app.config import Config
+    now = datetime.utcnow()
+    base = (getattr(Config, "PUBLIC_APP_URL", "") or "").rstrip("/")
+    users = db.query(User).filter(User.is_active == True, User.trial_expires_at.isnot(None)).all()
+    sent = 0
+    for u in users:
+        secs = (u.trial_expires_at - now).total_seconds()
+        if secs > 3 * 86400:
+            continue
+        if secs > 86400:
+            stage = "d3"
+        elif secs > 0:
+            stage = "d1"
+        elif secs >= -2 * 86400:
+            stage = "expired"
+        else:
+            continue  # long-expired — don't blast dead accounts
+        if db.query(TrialReminder).filter(TrialReminder.user_id == u.id, TrialReminder.stage == stage).first():
+            continue
+        days_left = max(0, int((secs + 86399) // 86400))  # ceil to whole days
+        subj, html, txt = _trial_email(stage, base, days_left)
+        try:
+            send_email(u.email, subj, html, text=txt)
+        except Exception:
+            pass
+        db.add(TrialReminder(user_id=u.id, stage=stage))
+        sent += 1
+    if sent:
+        db.commit()
+    return sent
 
 
 def _campaign_window_check(c, now: datetime):
@@ -42,6 +106,7 @@ def main():
     Redis.from_url(redis_url)  # connectivity check
     last_run = {}
     last_digest_date_by_company: dict[int, str] = {}
+    last_trial_reminder_date: str | None = None
     while True:
         db = db_session()
         campaigns = db.query(Campaign).filter(Campaign.is_running == True).all()
@@ -66,6 +131,19 @@ def main():
                 try:
                     enqueue_daily_digest(company.id)
                     last_digest_date_by_company[company.id] = today_marker
+                except Exception:
+                    pass
+
+        # Trial-ending reminders — once/day at TRIAL_REMINDER_HOUR_IL.
+        # The trial_reminders table dedupes per (user, stage) across restarts.
+        if israel_now.hour == TRIAL_REMINDER_HOUR_IL:
+            tmark = israel_now.strftime("%Y-%m-%d")
+            if last_trial_reminder_date != tmark:
+                try:
+                    n = _run_trial_reminders(db)
+                    last_trial_reminder_date = tmark
+                    if n:
+                        print(f"[scheduler] sent {n} trial reminder(s)", flush=True)
                 except Exception:
                     pass
 
