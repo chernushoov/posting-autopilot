@@ -27,5 +27,10 @@ Thumbs.db
 # Docker volumes
 postgres-data/
 data/tg_sessions/
+# Facebook Playwright sessions are password-equivalent (full account auth cookies) —
+# never commit them.
+data/fb_sessions/
+data/fb_screenshots/
+data/fb_cache/
 
 .wrangler/

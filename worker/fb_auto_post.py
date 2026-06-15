@@ -36,9 +36,88 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SESSION_NAME = os.getenv("FB_BROWSER_SESSION_NAME", "floordsgn")
 
+# Anti-ban guards (env-tunable). Posting byte-identical text to many groups fast
+# from one account is the canonical FB spam signature — so we cap per-session daily
+# volume, enforce a per-group cooldown, lightly vary each post, and freeze a session
+# the moment FB flags it.
+MAX_POSTS_PER_SESSION_PER_DAY = int(os.getenv("FB_MAX_POSTS_PER_SESSION_PER_DAY", "20"))
+GROUP_COOLDOWN_HOURS = int(os.getenv("FB_GROUP_COOLDOWN_HOURS", "12"))
+SESSION_BLOCK_COOLDOWN_SECONDS = int(os.getenv("FB_SESSION_BLOCK_COOLDOWN_SECONDS", str(6 * 3600)))
+# Error kinds from the browser poster that mean "FB is flagging this account".
+_BLOCK_ERROR_KINDS = {"post_blocked", "captcha", "not_logged_in"}
+
 
 def _resolve_session_name(company_id: int) -> str:
     return os.getenv(f"FB_BROWSER_SESSION_COMPANY_{company_id}", DEFAULT_SESSION_NAME)
+
+
+def _redis():
+    try:
+        from worker.queue import redis_conn
+        return redis_conn
+    except Exception:
+        return None
+
+
+def _session_blocked(session_name: str) -> bool:
+    r = _redis()
+    if not r:
+        return False
+    try:
+        return bool(r.get(f"fb:blocked:{session_name}"))
+    except Exception:
+        return False
+
+
+def _flag_session_blocked(session_name: str, reason: str) -> None:
+    r = _redis()
+    if not r:
+        return
+    try:
+        r.setex(f"fb:blocked:{session_name}", SESSION_BLOCK_COOLDOWN_SECONDS, reason)
+        logger.error(f"[fb_auto_post] session '{session_name}' frozen for {SESSION_BLOCK_COOLDOWN_SECONDS}s after {reason}")
+    except Exception:
+        pass
+
+
+def _daily_count_key(session_name: str) -> str:
+    from datetime import timezone
+    day = datetime.now(timezone.utc).strftime("%Y%m%d")
+    return f"fb:postcount:{session_name}:{day}"
+
+
+def _daily_cap_reached(session_name: str) -> bool:
+    r = _redis()
+    if not r:
+        return False
+    try:
+        cur = int(r.get(_daily_count_key(session_name)) or 0)
+        return cur >= MAX_POSTS_PER_SESSION_PER_DAY
+    except Exception:
+        return False
+
+
+def _incr_daily_count(session_name: str) -> None:
+    r = _redis()
+    if not r:
+        return
+    try:
+        key = _daily_count_key(session_name)
+        cur = r.incr(key)
+        if cur == 1:
+            r.expire(key, 36 * 3600)
+    except Exception:
+        pass
+
+
+def _vary_text(text: str, seed: int) -> str:
+    """Light, content-preserving variation so the same run does not post a
+    byte-identical string to every group. Deterministic per seed (queue item)."""
+    leads = ["", "👋 ", "📣 ", "🔔 ", "✨ "]
+    tails = ["", " ", "\n", "\n ", " ."]
+    lead = leads[seed % len(leads)]
+    tail = tails[(seed // len(leads)) % len(tails)]
+    return f"{lead}{text}{tail}"
 
 
 def auto_post_queue_item(queue_item_id: int) -> dict:
@@ -52,10 +131,18 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
         )
         if not item:
             return {"ok": False, "error": f"queue_item {queue_item_id} not found"}
+        # Idempotency: if a result row already exists, the post already happened.
+        # (queue_item_id is UNIQUE on fb_posting_results.) Never re-post.
+        if db.query(FacebookPostingResult).filter(
+            FacebookPostingResult.queue_item_id == item.id
+        ).first():
+            return {"ok": False, "error": f"queue_item {queue_item_id} already has a result; skipping"}
+        # Only freshly-queued items are eligible. 'opened' is deliberately EXCLUDED:
+        # an item left 'opened' means a prior attempt already claimed it (and may
+        # have posted before crashing) — re-firing it would double-post.
         if item.status not in (
             FacebookPostingQueueItemStatus.pending,
             FacebookPostingQueueItemStatus.current,
-            FacebookPostingQueueItemStatus.opened,
         ):
             return {
                 "ok": False,
@@ -87,9 +174,25 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
             return {"ok": False, "error": f"variant {run.post_variant_id} missing full_text"}
 
         company_id = run.company_id
+
+        # Cross-tenant safety: the group and variant must belong to the same tenant
+        # as the run. Refuse to post one tenant's text to another tenant's group.
+        if group.company_id != company_id or variant.company_id != company_id:
+            return {
+                "ok": False,
+                "error": (
+                    f"tenant mismatch: run.company={company_id} "
+                    f"group.company={group.company_id} variant.company={variant.company_id}"
+                ),
+            }
+
         session_name = _resolve_session_name(company_id)
 
         from common.fb_browser_poster import post_to_group, session_exists
+
+        # Fail-fast: if FB already flagged this session, do not keep firing into it.
+        if _session_blocked(session_name):
+            return {"ok": False, "error": f"session '{session_name}' is frozen after a recent FB block; skipping"}
 
         if not session_exists(session_name):
             err = f"FB session '{session_name}' not captured. Run scripts/fb_capture_session.py first."
@@ -99,11 +202,46 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
             db.commit()
             return {"ok": False, "error": err}
 
-        item.status = FacebookPostingQueueItemStatus.opened
-        item.opened_at = item.opened_at or datetime.utcnow()
-        if not item.copied_at:
-            item.copied_at = datetime.utcnow()
+        # Daily per-session volume cap.
+        if _daily_cap_reached(session_name):
+            return {"ok": False, "error": f"session '{session_name}' hit daily post cap ({MAX_POSTS_PER_SESSION_PER_DAY}); skipping"}
+
+        # Per-group cooldown — never hammer the same group repeatedly.
+        if group.last_posted_at and (datetime.utcnow() - group.last_posted_at) < timedelta(hours=GROUP_COOLDOWN_HOURS):
+            return {"ok": False, "error": f"group {group.id} posted within cooldown ({GROUP_COOLDOWN_HOURS}h); skipping"}
+
+        # Atomic claim: flip pending/current -> opened only if still eligible. If
+        # zero rows update, another worker already claimed it -> abort (no double-post).
+        from sqlalchemy import func as _sqlfunc
+        now = datetime.utcnow()
+        claimed = (
+            db.query(FacebookPostingQueueItem)
+            .filter(
+                FacebookPostingQueueItem.id == item.id,
+                FacebookPostingQueueItem.status.in_([
+                    FacebookPostingQueueItemStatus.pending,
+                    FacebookPostingQueueItemStatus.current,
+                ]),
+            )
+            .update(
+                {
+                    "status": FacebookPostingQueueItemStatus.opened,
+                    "opened_at": _sqlfunc.coalesce(FacebookPostingQueueItem.opened_at, now),
+                    "copied_at": _sqlfunc.coalesce(FacebookPostingQueueItem.copied_at, now),
+                },
+                synchronize_session=False,
+            )
+        )
         db.commit()
+        if not claimed:
+            return {"ok": False, "error": f"queue_item {queue_item_id} already claimed by another worker; skipping"}
+        item = (
+            db.query(FacebookPostingQueueItem)
+            .filter(FacebookPostingQueueItem.id == queue_item_id)
+            .first()
+        )
+
+        post_text = _vary_text(variant.full_text, item.id)
 
         logger.info(
             f"[fb_auto_post] firing queue_item={item.id} run={run.id} "
@@ -112,7 +250,7 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
         result = post_to_group(
             session_name=session_name,
             group_url=group.facebook_url,
-            text=variant.full_text,
+            text=post_text,
             queue_item_id=item.id,
         )
 
@@ -131,6 +269,7 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
             item.completed_by = "fb_auto_post_worker"
             item.post_url_manual = result.final_url
             item.group_note = notes_blob
+            group.last_posted_at = datetime.utcnow()
 
             db.add(
                 FacebookPostingResult(
@@ -145,7 +284,7 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
                         f"auto-posted via browser; before={result.screenshot_before}; "
                         f"after={result.screenshot_after}; duration={result.duration_seconds:.1f}s"
                     ),
-                    recorded_by="fb_auto_post_worker",
+                    updated_by="fb_auto_post_worker",
                 )
             )
         else:
@@ -167,11 +306,19 @@ def auto_post_queue_item(queue_item_id: int) -> dict:
                         f"auto-post failed: {result.error_kind} — {result.error_message}; "
                         f"before={result.screenshot_before}; after={result.screenshot_after}"
                     ),
-                    recorded_by="fb_auto_post_worker",
+                    updated_by="fb_auto_post_worker",
                 )
             )
 
         db.commit()
+
+        # Post-commit anti-ban bookkeeping (outside the critical write).
+        if result.ok:
+            _incr_daily_count(session_name)
+        elif result.error_kind in _BLOCK_ERROR_KINDS:
+            # FB flagged the account — freeze the session so the remaining
+            # staggered jobs in this run skip instead of piling onto the block.
+            _flag_session_blocked(session_name, result.error_kind or "blocked")
         return {
             "ok": result.ok,
             "queue_item_id": item.id,
@@ -217,6 +364,13 @@ def fire_run_staggered(
         )
         if not run:
             return {"ok": False, "error": f"run {run_id} not found"}
+
+        # Billing gate: do not fire a posting run for a tenant whose trial expired
+        # or whose subscription lapsed (enforced here, not only in the web UI).
+        from app.plans import is_billing_active
+        company = db.query(Company).filter(Company.id == run.company_id).first()
+        if not is_billing_active(db, company):
+            return {"ok": False, "error": f"billing inactive for company {run.company_id}; run not fired"}
 
         items = (
             db.query(FacebookPostingQueueItem)

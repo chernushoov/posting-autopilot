@@ -346,6 +346,19 @@ def post_to_group(
             except Exception:
                 captcha_present = 0
 
+            # Checkpoint / login redirect after submit == account flagged.
+            if "/checkpoint" in final_url or _detect_login_required(page):
+                return PostResult(
+                    ok=False,
+                    error_kind="post_blocked",
+                    error_message="FB redirected to a checkpoint/login after submit (account flagged).",
+                    final_url=final_url,
+                    screenshot_before=str(before_path),
+                    screenshot_after=str(after_path),
+                    duration_seconds=time.time() - started,
+                    notes=notes,
+                )
+
             if blocked:
                 return PostResult(
                     ok=False,
@@ -362,6 +375,28 @@ def post_to_group(
                     ok=False,
                     error_kind="captcha",
                     error_message="FB threw a captcha challenge mid-flow.",
+                    final_url=final_url,
+                    screenshot_before=str(before_path),
+                    screenshot_after=str(after_path),
+                    duration_seconds=time.time() - started,
+                    notes=notes,
+                )
+
+            # Confirm the post actually went through: a successful submit closes the
+            # composer dialog. If the dialog/textbox is still visible, the post did
+            # NOT publish — do not report a false success (silent lead loss).
+            try:
+                dialog_still_open = page.locator(
+                    'div[role="dialog"] div[role="textbox"][contenteditable="true"]'
+                ).count()
+            except Exception:
+                dialog_still_open = 0
+            if dialog_still_open:
+                notes.append("composer_still_open_after_submit")
+                return PostResult(
+                    ok=False,
+                    error_kind="post_unconfirmed",
+                    error_message="Composer dialog still open after submit — post not confirmed published.",
                     final_url=final_url,
                     screenshot_before=str(before_path),
                     screenshot_after=str(after_path),
