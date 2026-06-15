@@ -426,6 +426,12 @@ html,body{overflow-x:clip}
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 .l-footer{text-align:center;padding:24px;color:var(--light);font-size:12px;background:#fff;border-top:1px solid var(--border-light)}
+.l-author{position:relative;display:inline-block;color:var(--muted);font-weight:600;cursor:default;border-bottom:1px dashed rgba(0,0,0,.28);outline:none}
+.l-author .l-pop{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translate(-50%,8px);display:flex;flex-direction:column;gap:2px;min-width:150px;padding:8px;background:#fff;border:1px solid var(--border-light);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.14);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,transform .24s cubic-bezier(.34,1.56,.64,1);z-index:50}
+.l-author .l-pop::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#fff;filter:drop-shadow(0 2px 1px rgba(0,0,0,.05))}
+.l-author .l-pop a{display:block;padding:7px 14px;border-radius:9px;font-size:13px;font-weight:500;color:var(--muted);text-align:center;text-decoration:none;transition:background .15s,color .15s}
+.l-author .l-pop a:hover{background:var(--accent-light);color:var(--accent)}
+.l-author:hover .l-pop,.l-author:focus-within .l-pop{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}
 
 /* ── RTL ─────────────────────────────────────────────────────────────────── */
 
@@ -827,7 +833,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 </section>
 
 
-<footer class="l-footer">Posting Autopilot &copy; 2025 · נוצר על־ידי Alexey Chernushoov</footer>
+<footer class="l-footer">Posting Autopilot &copy; 2025 · נוצר על־ידי <span class="l-author" tabindex="0">Alexey Chernushov<span class="l-pop"><a href="https://www.instagram.com/chernushoov" target="_blank" rel="noopener">Instagram</a><a href="https://www.facebook.com/share/1EW8FN76Kg/" target="_blank" rel="noopener">Facebook</a><a href="https://www.linkedin.com/in/alexey-chernushoov-363120113/" target="_blank" rel="noopener">LinkedIn</a></span></span></footer>
 
 <!-- ═══ Scripts ═══ -->
 <script>
