@@ -254,7 +254,10 @@ async def send_hot_lead_notification(bot: Bot, company: Company, candidate: Cand
     if db_chat.lstrip("-").isdigit():
         targets.append(db_chat)
 
-    if company.owner_id and company.owner_id.replace("_", "").replace("admin", "").strip().isdigit():
+    # Legacy path: owner_id is only a valid destination if it's a bare numeric
+    # Telegram chat id. Self-service tenants store an email here, and sentinels
+    # like "admin_owner" must never be used as a chat id.
+    if company.owner_id and company.owner_id.lstrip("-").isdigit():
         if company.owner_id not in targets:
             targets.append(company.owner_id)
 
@@ -317,6 +320,31 @@ def company_can_screen(db, company) -> bool:
 
 
 @dp.message(F.text.startswith("/start"))
+def _company_if_active(db, company_id):
+    """Return the active Company for an id, or None."""
+    if not company_id:
+        return None
+    return db.query(Company).filter(Company.id == company_id, Company.is_active == True).first()
+
+
+def _latest_candidate(db, tg_user_id, company_id=None):
+    """The Candidate row representing this Telegram user's current conversation.
+
+    The bot runs on ONE shared token, so the tenant cannot be inferred from the
+    token — it MUST come from the candidate, which was created under the correct
+    company on /start (deep link). One TG user may have applied to several tenants,
+    so we key by tg_user_id (optionally scoped to a known company) and take the
+    most recent row. This replaces the old 'first active company' guess that
+    silently mis-routed every tenant except the lowest id.
+    """
+    if not tg_user_id:
+        return None
+    q = db.query(Candidate).filter(Candidate.tg_user_id == str(tg_user_id))
+    if company_id is not None:
+        q = q.filter(Candidate.company_id == company_id)
+    return q.order_by(Candidate.id.desc()).first()
+
+
 async def cmd_start(message: Message):
     db = db_session()
     try:
@@ -350,14 +378,22 @@ async def cmd_start(message: Message):
                     tg_lang = message.from_user.language_code if message.from_user else None
                     await message.answer(t("vacancy_unavailable", detect_language(tg_lang)))
                     return
+        # No deep link: resolve the tenant from this user's existing conversation
+        # rather than guessing the first company. Only fall back to "first active
+        # company" for a brand-new user in legacy single-tenant mode.
+        c = None
+        if not comp:
+            existing = _latest_candidate(db, tg_user_id)
+            if existing:
+                comp = _company_if_active(db, existing.company_id)
+                c = existing
         if not comp:
             comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
         if not comp:
             await message.answer(t("not_configured", "en"))
             return
 
-        c = None
-        if tg_user_id:
+        if c is None and tg_user_id:
             c = db.query(Candidate).filter(
                 Candidate.company_id == comp.id,
                 Candidate.tg_user_id == tg_user_id
@@ -406,20 +442,15 @@ async def on_lang_select(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
+        tg_user_id = str(callback.from_user.id)
+        c = _latest_candidate(db, tg_user_id)
+        comp = _company_if_active(db, c.company_id) if c else None
+        if not c or not comp:
             await callback.answer()
             return
 
-        tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
-
-        if c:
-            c.language = lang
-            db.commit()
+        c.language = lang
+        db.commit()
 
         await callback.message.edit_text(t("language_set", lang))
         await callback.answer()
@@ -440,21 +471,19 @@ async def on_apply(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await callback.answer()
-            return
-
+        # Tenant comes from the vacancy being applied to (deep-link-equivalent),
+        # not from a global "first company" guess.
         vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
         if not vacancy:
             await callback.answer()
             return
+        comp = _company_if_active(db, vacancy.company_id)
+        if not comp:
+            await callback.answer()
+            return
 
         tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
+        c = _latest_candidate(db, tg_user_id, company_id=comp.id)
         if not c:
             await callback.answer()
             return
@@ -494,21 +523,17 @@ async def on_reapply(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await callback.answer()
-            return
-
         vacancy = db.query(Vacancy).filter(Vacancy.id == vacancy_id, Vacancy.is_active == True).first()
         if not vacancy:
             await callback.answer()
             return
+        comp = _company_if_active(db, vacancy.company_id)
+        if not comp:
+            await callback.answer()
+            return
 
         tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
+        c = _latest_candidate(db, tg_user_id, company_id=comp.id)
         if not c:
             await callback.answer()
             return
@@ -537,21 +562,13 @@ async def on_screening_action(callback: CallbackQuery):
 
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await callback.answer()
-            return
-
         tg_user_id = str(callback.from_user.id)
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
+        c = _latest_candidate(db, tg_user_id)
         if not c or not c.vacancy_id:
             await callback.answer()
             return
 
-        vacancy = db.query(Vacancy).filter(Vacancy.id == c.vacancy_id).first()
+        vacancy = db.query(Vacancy).filter(Vacancy.id == c.vacancy_id, Vacancy.company_id == c.company_id).first()
         if not vacancy:
             await callback.answer()
             return
@@ -595,20 +612,11 @@ async def on_screening_action(callback: CallbackQuery):
 async def on_message(message: Message):
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            await message.answer(t("not_configured", "en"))
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
-        c = None
-        if tg_user_id:
-            c = db.query(Candidate).filter(
-                Candidate.company_id == comp.id,
-                Candidate.tg_user_id == tg_user_id
-            ).first()
+        c = _latest_candidate(db, tg_user_id)
+        comp = _company_if_active(db, c.company_id) if c else None
 
-        if not c:
+        if not c or not comp:
             tg_lang = message.from_user.language_code if message.from_user else None
             lang = detect_language(tg_lang)
             await message.answer(t("no_active_conversation", lang))
@@ -756,20 +764,14 @@ async def on_contact(message: Message):
     """Handle shared contact for phone collection."""
     db = db_session()
     try:
-        comp = db.query(Company).filter(Company.is_active == True).order_by(Company.id.asc()).first()
-        if not comp:
-            return
-
         tg_user_id = str(message.from_user.id) if message.from_user else None
         if not tg_user_id:
             return
 
-        c = db.query(Candidate).filter(
-            Candidate.company_id == comp.id,
-            Candidate.tg_user_id == tg_user_id
-        ).first()
+        c = _latest_candidate(db, tg_user_id)
+        comp = _company_if_active(db, c.company_id) if c else None
 
-        if not c or c.status != CandidateStatus.interviewing:
+        if not c or not comp or c.status != CandidateStatus.interviewing:
             return
 
         phone = message.contact.phone_number

@@ -345,6 +345,20 @@ def _is_night_hours() -> bool:
     return hour >= NIGHT_START or hour < NIGHT_END
 
 
+def _seconds_until_morning() -> int:
+    """Seconds from now until NIGHT_END (07:00) Israel time, for rescheduling
+    posts that hit the night freeze instead of dropping them."""
+    if ZoneInfo is not None:
+        israel_tz = ZoneInfo("Asia/Jerusalem")
+    else:  # pragma: no cover
+        israel_tz = timezone(timedelta(hours=3))
+    now = datetime.now(israel_tz)
+    target = now.replace(hour=NIGHT_END, minute=0, second=0, microsecond=0)
+    if now.hour >= NIGHT_END:
+        target = target + timedelta(days=1)
+    return max(60, int((target - now).total_seconds()))
+
+
 def _record_post(company_id: int):
     """Record a successful post for rate limiting (Redis-backed, in-mem fallback)."""
     now = time.time()
@@ -424,11 +438,18 @@ async def _post_to_group_async(
             return {"ok": True, "message_id": msg_id, "error": None}
 
         except FloodWaitError as e:
-            last_error = f"FloodWait: {e.seconds}s (attempt {attempt + 1}/{MAX_RETRIES})"
-            logger.warning(f"[tg_client] FloodWaitError for company {company_id}, group {group_id}: wait {e.seconds}s")
-            # Wait the required time + extra buffer
-            wait_time = min(e.seconds + 30, FLOOD_WAIT_PAUSE)
-            await asyncio.sleep(wait_time)
+            # Do NOT sleep the FloodWait inside the RQ job — it can exceed the job
+            # timeout (and the session lock TTL), killing the job mid-sleep and
+            # losing the post. Return immediately with the wait time so the worker
+            # can reschedule the post after the cooldown.
+            logger.warning(f"[tg_client] FloodWaitError for company {company_id}, group {group_id}: reschedule after {e.seconds}s")
+            await client.disconnect()
+            return {
+                "ok": False,
+                "message_id": None,
+                "error": f"FLOOD_WAIT:{e.seconds}",
+                "retry_after": int(e.seconds) + 5,
+            }
 
         except ChatWriteForbiddenError:
             await client.disconnect()
@@ -473,14 +494,14 @@ def post_to_group(
 
     Enforces anti-spam: rate limits, night hours, random delays.
     """
-    # Night hours check
+    # Night hours check — signal a reschedule (to morning) instead of dropping.
     if _is_night_hours():
-        return False, "NIGHT_MODE: posting paused (23:00-07:00)"
+        return False, f"RETRY_LATER:{_seconds_until_morning()}:NIGHT_MODE posting paused (23:00-07:00)"
 
-    # Rate limit check
+    # Rate limit check — signal a reschedule after the window, don't drop the post.
     ok, reason = _check_rate_limit(company_id)
     if not ok:
-        return False, f"RATE_LIMIT: {reason}"
+        return False, f"RETRY_LATER:900:RATE_LIMIT {reason}"
 
     # Random delay before posting (anti-spam jitter)
     base_delay = random.uniform(POST_DELAY_MIN, POST_DELAY_MAX)
@@ -489,12 +510,23 @@ def post_to_group(
     logger.info(f"[tg_client] Anti-spam delay: {delay:.0f}s before posting to {group_id}")
     time.sleep(delay)
 
+    # Use a dedicated event loop per call (and close it) rather than reusing a
+    # shared module loop across threads/calls — the worker runs this synchronously
+    # and a leaked/closed shared loop corrupts subsequent Telethon calls.
     try:
         with _session_lock(company_id):
-            loop = _get_loop()
-            result = loop.run_until_complete(
-                _post_to_group_async(api_id, api_hash, company_id, group_id, text, file_path)
-            )
+            loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(
+                    _post_to_group_async(api_id, api_hash, company_id, group_id, text, file_path)
+                )
+            finally:
+                try:
+                    loop.close()
+                except Exception:
+                    pass
+                asyncio.set_event_loop(None)
     except TimeoutError as e:
         return False, str(e)
 
@@ -502,4 +534,9 @@ def post_to_group(
         _record_post(company_id)
         return True, f"sent (msg_id={result['message_id']})"
     else:
-        return False, result["error"] or "unknown error"
+        # Surface FloodWait as a reschedule signal so the worker requeues the post.
+        err = result.get("error") or "unknown error"
+        if isinstance(err, str) and err.startswith("FLOOD_WAIT:"):
+            secs = result.get("retry_after") or 300
+            return False, f"RETRY_LATER:{secs}:{err}"
+        return False, err
