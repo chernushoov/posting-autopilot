@@ -170,6 +170,26 @@ def send_test_message(source_id: int, text: str):
     db.commit()
     db.close()
 
+def _company_trial_expired(db, company_id) -> bool:
+    """Paywall for the scheduler/worker path (the HTTP enforce_paywall doesn't run
+    here). True ONLY when billing is ON and the company's owner trial has expired
+    with no active subscription. Fail-open — never block posting on a check error."""
+    try:
+        from app.config import Config
+        if not Config.billing_enabled():
+            return False
+        from app.models import User, UserRole
+        owner = (
+            db.query(User).filter(User.company_id == company_id, User.role == UserRole.owner).first()
+            or db.query(User).filter(User.company_id == company_id).first()
+        )
+        if not owner or owner.trial_expires_at is None:
+            return False  # no owner row, or perpetual/paid -> allow
+        return datetime.utcnow() > owner.trial_expires_at
+    except Exception:
+        return False
+
+
 def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "scheduler_interval"):
     # MVP: post vacancy text to each source once. Scheduler will call periodically.
     db = db_session()
@@ -178,6 +198,11 @@ def campaign_tick(campaign_id: int, run_key: str | None = None, trigger: str = "
     if not c or (not c.is_running and not allow_paused_run):
         db.close(); return
     if c.interval_minutes <= 0:
+        db.close(); return
+
+    # Paywall: an expired-trial company must not keep auto-posting once billing is on.
+    if _company_trial_expired(db, c.company_id):
+        logger.info("[campaign_tick] company %s trial expired — skipped (paywall)", c.company_id)
         db.close(); return
 
     hours, days = _load_campaign_window(c)
