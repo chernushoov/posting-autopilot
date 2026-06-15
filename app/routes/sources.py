@@ -224,6 +224,12 @@ def delete_source(source_id: int):
     db = db_session()
     source = scoped(db, Source).filter(Source.id == source_id).first()
     if source:
+        # Remove dependent rows first — campaign links and posting history both
+        # carry a NOT NULL source_id, so a bare delete would hit a FK violation
+        # once enforcement is on. Delete children, then the source.
+        from ..models import CampaignSource, PostingAttempt
+        db.query(CampaignSource).filter(CampaignSource.source_id == source.id).delete(synchronize_session=False)
+        db.query(PostingAttempt).filter(PostingAttempt.source_id == source.id).delete(synchronize_session=False)
         db.delete(source)
         db.commit()
     db.close()

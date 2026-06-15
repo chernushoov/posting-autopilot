@@ -6,6 +6,48 @@ from ..models import Company, User, UserRole
 bp = Blueprint("companies", __name__, url_prefix="/companies")
 
 
+def _delete_company_cascade(db, company_id: int) -> None:
+    """Delete a company and every row that belongs to it, children first.
+
+    Done explicitly (not relying on DB ON DELETE) so a tenant offboarding /
+    GDPR-deletion fully clears candidate PII and posting history on the existing
+    SQLite database too — whose tables predate the ondelete= declarations. Order
+    matters: leaf tables before the rows they reference.
+    """
+    from ..models import (
+        Vacancy, Source, Campaign, CampaignSource, Candidate, PostingAttempt,
+        FacebookGroupSource, FacebookGroup, FacebookPostVariant,
+        FacebookPostingRun, FacebookPostingQueueItem, FacebookPostingResult,
+        Prospect, OutreachAttempt,
+    )
+    campaign_ids = [c.id for c in db.query(Campaign.id).filter(Campaign.company_id == company_id).all()]
+
+    # Facebook posting tree (results -> queue items -> runs -> variants -> groups -> sources)
+    db.query(FacebookPostingResult).filter(FacebookPostingResult.company_id == company_id).delete(synchronize_session=False)
+    db.query(FacebookPostingQueueItem).filter(FacebookPostingQueueItem.company_id == company_id).delete(synchronize_session=False)
+    db.query(FacebookPostingRun).filter(FacebookPostingRun.company_id == company_id).delete(synchronize_session=False)
+    db.query(FacebookPostVariant).filter(FacebookPostVariant.company_id == company_id).delete(synchronize_session=False)
+    db.query(FacebookGroup).filter(FacebookGroup.company_id == company_id).delete(synchronize_session=False)
+    db.query(FacebookGroupSource).filter(FacebookGroupSource.company_id == company_id).delete(synchronize_session=False)
+
+    # Prospecting
+    db.query(OutreachAttempt).filter(OutreachAttempt.company_id == company_id).delete(synchronize_session=False)
+    db.query(Prospect).filter(Prospect.company_id == company_id).delete(synchronize_session=False)
+
+    # Posting + screening
+    db.query(PostingAttempt).filter(PostingAttempt.company_id == company_id).delete(synchronize_session=False)
+    if campaign_ids:
+        db.query(CampaignSource).filter(CampaignSource.campaign_id.in_(campaign_ids)).delete(synchronize_session=False)
+    db.query(Candidate).filter(Candidate.company_id == company_id).delete(synchronize_session=False)
+    db.query(Campaign).filter(Campaign.company_id == company_id).delete(synchronize_session=False)
+    db.query(Source).filter(Source.company_id == company_id).delete(synchronize_session=False)
+    db.query(Vacancy).filter(Vacancy.company_id == company_id).delete(synchronize_session=False)
+
+    # Users belonging to the tenant, then the company itself
+    db.query(User).filter(User.company_id == company_id).delete(synchronize_session=False)
+    db.query(Company).filter(Company.id == company_id).delete(synchronize_session=False)
+
+
 @bp.get("/")
 @login_required
 def list_companies():
@@ -124,7 +166,7 @@ def delete_company(company_id: int):
     owner_id = session.get("owner_id")
     c = db.query(Company).filter(Company.id == company_id, Company.owner_id == owner_id, Company.is_active == False).first()
     if c:
-        db.delete(c)
+        _delete_company_cascade(db, company_id)
         db.commit()
         if session.get("current_company_id") == company_id:
             session.pop("current_company_id", None)

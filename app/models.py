@@ -111,7 +111,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String(300), nullable=False, unique=True, index=True)
     password_hash = Column(String(256), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=True, index=True)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.owner)
     is_active = Column(Boolean, nullable=False, default=True)
     trial_expires_at = Column(DateTime, nullable=True)
@@ -138,8 +138,11 @@ class Company(Base):
 
     # Billing — plan tier drives feature limits (see app/plans.py)
     plan_tier = Column(String(20), nullable=False, default="trial")
-    stripe_customer_id = Column(String(64), nullable=True)
-    stripe_subscription_id = Column(String(64), nullable=True)
+    # Indexed + unique so webhook lookups by Stripe id are fast and unambiguous
+    # (one Stripe customer/subscription maps to exactly one Company). NULLs allowed
+    # (multiple un-subscribed companies) on both SQLite and Postgres.
+    stripe_customer_id = Column(String(64), nullable=True, index=True, unique=True)
+    stripe_subscription_id = Column(String(64), nullable=True, index=True, unique=True)
 
     # Profile fields
     business_type = Column(String(20), nullable=False, default="company")
@@ -185,7 +188,7 @@ class Company(Base):
 class Vacancy(Base):
     __tablename__ = "vacancies"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String(200), nullable=False)
     body = Column(Text, nullable=False, default="")
     city = Column(String(120), nullable=True)
@@ -229,7 +232,7 @@ class SourceType(str, enum.Enum):
 class Source(Base):
     __tablename__ = "sources"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     tg_ref = Column(String(200), nullable=False)  # @username or numeric id
     label = Column(String(200), nullable=True)
     source_type = Column(Enum(SourceType), nullable=False, default=SourceType.group)
@@ -259,8 +262,8 @@ class Source(Base):
 class Campaign(Base):
     __tablename__ = "campaigns"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    vacancy_id = Column(Integer, ForeignKey("vacancies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    vacancy_id = Column(Integer, ForeignKey("vacancies.id", ondelete="CASCADE"), nullable=False, index=True)
 
     name = Column(String(200), nullable=False, default="")
     interval_minutes = Column(Integer, nullable=False, default=180)
@@ -279,8 +282,8 @@ class Campaign(Base):
 class CampaignSource(Base):
     __tablename__ = "campaign_sources"
     id = Column(Integer, primary_key=True)
-    campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=False, index=True)
-    source_id = Column(Integer, ForeignKey("sources.id"), nullable=False, index=True)
+    campaign_id = Column(Integer, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_id = Column(Integer, ForeignKey("sources.id", ondelete="CASCADE"), nullable=False, index=True)
 
     campaign = relationship("Campaign", back_populates="sources")
     source = relationship("Source", back_populates="campaign_sources")
@@ -292,8 +295,8 @@ class CampaignSource(Base):
 class Candidate(Base):
     __tablename__ = "candidates"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    vacancy_id = Column(Integer, ForeignKey("vacancies.id"), nullable=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    vacancy_id = Column(Integer, ForeignKey("vacancies.id", ondelete="SET NULL"), nullable=True, index=True)
 
     tg_user_id = Column(String(64), nullable=True, index=True)
     tg_username = Column(String(200), nullable=True)
@@ -319,10 +322,10 @@ class Candidate(Base):
 class PostingAttempt(Base):
     __tablename__ = "posting_attempts"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=True, index=True)
-    vacancy_id = Column(Integer, ForeignKey("vacancies.id"), nullable=False, index=True)
-    source_id = Column(Integer, ForeignKey("sources.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    campaign_id = Column(Integer, ForeignKey("campaigns.id", ondelete="SET NULL"), nullable=True, index=True)
+    vacancy_id = Column(Integer, ForeignKey("vacancies.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_id = Column(Integer, ForeignKey("sources.id", ondelete="CASCADE"), nullable=False, index=True)
     run_key = Column(String(120), nullable=False, index=True)
 
     platform = Column(String(20), nullable=False, default="telegram")
@@ -344,11 +347,17 @@ class PostingAttempt(Base):
     vacancy = relationship("Vacancy", back_populates="posting_attempts")
     source = relationship("Source", back_populates="posting_attempts")
 
+    # One logical post per (posting cycle, destination): guards against a retried
+    # or double-fired tick recording/posting the same content to the same source.
+    __table_args__ = (
+        UniqueConstraint("run_key", "source_id", name="uq_posting_attempt_runkey_source"),
+    )
+
 
 class FacebookGroupSource(Base):
     __tablename__ = "fb_group_sources"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     source_type = Column(Enum(FacebookGroupSourceType), nullable=False, default=FacebookGroupSourceType.seed_csv)
     source_label = Column(String(120), nullable=False)
     import_batch_key = Column(String(120), nullable=False)
@@ -381,8 +390,8 @@ class FacebookGroupSource(Base):
 class FacebookGroup(Base):
     __tablename__ = "fb_groups"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    seed_source_id = Column(Integer, ForeignKey("fb_group_sources.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    seed_source_id = Column(Integer, ForeignKey("fb_group_sources.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(200), nullable=False)
     facebook_url = Column(Text, nullable=False)
     facebook_url_normalized = Column(String(255), nullable=False)
@@ -422,8 +431,8 @@ class FacebookGroup(Base):
 class FacebookPostVariant(Base):
     __tablename__ = "fb_post_variants"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    vacancy_id = Column(Integer, ForeignKey("vacancies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    vacancy_id = Column(Integer, ForeignKey("vacancies.id", ondelete="CASCADE"), nullable=False, index=True)
     variant_label = Column(String(80), nullable=False)
     tone = Column(Enum(FacebookPostTone), nullable=False)
     length_mode = Column(Enum(FacebookPostLengthMode), nullable=False)
@@ -450,9 +459,9 @@ class FacebookPostVariant(Base):
 class FacebookPostingRun(Base):
     __tablename__ = "fb_posting_runs"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    vacancy_id = Column(Integer, ForeignKey("vacancies.id"), nullable=False, index=True)
-    post_variant_id = Column(Integer, ForeignKey("fb_post_variants.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    vacancy_id = Column(Integer, ForeignKey("vacancies.id", ondelete="CASCADE"), nullable=False, index=True)
+    post_variant_id = Column(Integer, ForeignKey("fb_post_variants.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(160), nullable=True)
     status = Column(Enum(FacebookPostingRunStatus), nullable=False, default=FacebookPostingRunStatus.draft)
     group_count = Column(Integer, nullable=False, default=0)
@@ -472,9 +481,9 @@ class FacebookPostingRun(Base):
 class FacebookPostingQueueItem(Base):
     __tablename__ = "fb_posting_queue_items"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    run_id = Column(Integer, ForeignKey("fb_posting_runs.id"), nullable=False, index=True)
-    group_id = Column(Integer, ForeignKey("fb_groups.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    run_id = Column(Integer, ForeignKey("fb_posting_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    group_id = Column(Integer, ForeignKey("fb_groups.id", ondelete="CASCADE"), nullable=False, index=True)
     position = Column(Integer, nullable=False)
     status = Column(Enum(FacebookPostingQueueItemStatus), nullable=False, default=FacebookPostingQueueItemStatus.pending)
     opened_at = Column(DateTime, nullable=True)
@@ -501,8 +510,8 @@ class FacebookPostingQueueItem(Base):
 class FacebookPostingResult(Base):
     __tablename__ = "fb_posting_results"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    queue_item_id = Column(Integer, ForeignKey("fb_posting_queue_items.id"), nullable=False, index=True, unique=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    queue_item_id = Column(Integer, ForeignKey("fb_posting_queue_items.id", ondelete="CASCADE"), nullable=False, index=True, unique=True)
     result_status = Column(Enum(FacebookPostingResultStatus), nullable=False, default=FacebookPostingResultStatus.posted)
     response_count = Column(Integer, nullable=True)
     cv_count = Column(Integer, nullable=True)
@@ -547,7 +556,7 @@ class OutreachStatus(str, enum.Enum):
 class Prospect(Base):
     __tablename__ = "prospects"
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(300), nullable=False)
     category = Column(String(200), nullable=True)
     address = Column(Text, nullable=True)
@@ -568,8 +577,8 @@ class Prospect(Base):
 class OutreachAttempt(Base):
     __tablename__ = "outreach_attempts"
     id = Column(Integer, primary_key=True)
-    prospect_id = Column(Integer, ForeignKey("prospects.id"), nullable=False, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    prospect_id = Column(Integer, ForeignKey("prospects.id", ondelete="CASCADE"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     subject = Column(String(500), nullable=True)
     body_preview = Column(Text, nullable=True)
     sent_at = Column(DateTime, nullable=True)
