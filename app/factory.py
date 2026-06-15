@@ -4,6 +4,7 @@ from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
+from .observability import init_sentry
 from .operator_copilot import build_operator_copilot
 from .routes import register_routes
 from .schema import bootstrap_schema
@@ -19,6 +20,7 @@ LOGIN_RATE_WINDOW = 300  # 5 minutes
 
 
 def create_app():
+    init_sentry("web")
     validate_runtime_environment("web")
     bootstrap_schema()
     app = Flask(__name__)

@@ -2,10 +2,12 @@ import os
 from redis import Redis
 from rq import Worker, Queue, Connection
 from app.schema import bootstrap_schema
+from app.observability import init_sentry
 from common.env_guard import validate_runtime_environment
 
 
 def main():
+    init_sentry("worker")
     validate_runtime_environment("worker")
     bootstrap_schema()
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
