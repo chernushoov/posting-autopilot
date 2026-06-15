@@ -263,7 +263,7 @@ function channelTg(state){
   if(state.tgView==='wizard') return tgWizard(state);
   var groups=D.TG_GROUPS.map(function(g,i){
     return '<label class="grp-row"><input type="checkbox" data-grp="'+i+'"'+(g.on?' checked':'')+'>'
-    + '<span class="grp-name">'+g.name+'</span><span class="grp-folder">'+g.folder+'</span>'
+    + '<span class="grp-name">'+g.name+(g.themeKey?' <span class="grp-theme" style="display:inline-block;margin-inline-start:6px;padding:0 7px;border-radius:999px;background:#eef1f6;color:#5b6472;font-size:11px;font-weight:600;vertical-align:middle">'+t(g.themeKey)+'</span>':'')+'</span><span class="grp-folder">'+g.folder+'</span>'
     + '<span class="grp-members">'+g.members+'</span></label>';
   }).join('');
   var tgN=D.TG_GROUPS.length, tgConn=tgN>0, tgPct=Math.min(100,Math.round(tgN/50*100));
@@ -329,7 +329,7 @@ function channelFb(state){
   var readyMap={ready:['status-ready',t('rd.ready')],check:['status-manual_action_required',t('rd.check')],format:['status-pending',t('rd.format')]};
   var fbRows=D.FB_SOURCES.map(function(s){
     var r=readyMap[s.ready]||readyMap.format;
-    return '<tr><td><strong>'+s.name+'</strong></td><td>'+s.mode+'</td>'
+    return '<tr><td><strong>'+s.name+'</strong>'+(s.themeKey?' <span class="grp-theme" style="display:inline-block;margin-inline-start:6px;padding:0 7px;border-radius:999px;background:#eef1f6;color:#5b6472;font-size:11px;font-weight:600;vertical-align:middle">'+t(s.themeKey)+'</span>':'')+'</td><td>'+s.mode+'</td>'
     + '<td><span class="status '+r[0]+'">'+r[1]+'</span></td>'
     + '<td style="text-align:right"><button class="pill" data-act="src-test"><span class="ico" data-i="send"></span> '+t('c.test')+'</button></td></tr>';
   }).join('');

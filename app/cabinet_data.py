@@ -17,6 +17,7 @@ from .models import (
     Company, User, Vacancy, Source, Campaign, CampaignSource, Candidate,
     CandidateStatus, PostingAttempt, UserRole,
 )
+from common.group_theme import theme_label_key
 
 # CandidateStatus (DB) -> design status token (localised client-side via ls.*)
 _STATUS_MAP = {
@@ -250,11 +251,16 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
         kind = {"group": "Группа", "channel": "Канал", "chat": "Чат"}.get(
             (s.source_type.value if s.source_type else "group"), "Группа")
         plat = "Telegram" if s.platform == "telegram" else "Facebook"
-        sources.append({"name": nm, "platform": plat, "kind": kind, "mode": mode, "ready": _ready(s)})
+        theme_key = theme_label_key(nm)
+        sources.append({"name": nm, "platform": plat, "kind": kind, "mode": mode, "ready": _ready(s), "themeKey": theme_key})
         if s.platform == "telegram":
-            tg_groups.append({"name": nm, "members": "", "folder": s.folder or "—", "on": True})
+            tg_groups.append({"name": nm, "members": "", "folder": s.folder or "—", "on": True, "themeKey": theme_key})
         else:
-            fb_sources.append({"name": nm, "mode": mode, "ready": _ready(s)})
+            fb_sources.append({"name": nm, "mode": mode, "ready": _ready(s), "themeKey": theme_key})
+    # Auto-organize by theme: cluster same-vertical channels together for display
+    # (display-only; does not change posting routing or what gets synced).
+    tg_groups.sort(key=lambda g: g.get("themeKey", "vert.other"))
+    fb_sources.sort(key=lambda g: g.get("themeKey", "vert.other"))
     boot["sources"] = sources
     boot["tg_groups"] = tg_groups
     boot["fb_sources"] = fb_sources
