@@ -5,6 +5,7 @@ _What doesn't work / isn't needed. Hard-won; ignoring these costs hours or break
 - **DON'T expect `git push` to deploy.** App code is BAKED into the Docker image. You MUST `git archive HEAD app … | ssh … tar -x` then `docker compose … build web && up -d web`. Only `web` for app/template changes.
 - **DON'T `caddy reload` via `exec` for Caddyfile changes — it silently doesn't apply.** Use `docker compose restart caddy` (cost a 404→403 debug loop to learn).
 - **DON'T forget non-`app/` files.** Proxy code lives in `common/` + `scripts/` — ship those too or changes don't land.
+- **DON'T assume `build web` updates the worker.** Each service builds its OWN image (`build: .` shared base → `posting-autopilot-web`, `-worker`, `-scheduler`, `-bot`, `-listener`). A change in `worker/`, `bot/`, or shared `app/` code used by them needs `docker compose build worker scheduler bot && up -d --force-recreate …` — else the worker silently runs stale code (this hid a Sentry-init + worker-paywall change until caught). For web-only changes, `build web` is enough.
 - **DON'T edit GLB/build artifacts to fix a bug** (general rule): fix at the source/runtime layer.
 
 ## Facebook (critical)
