@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="{{ ui_lang or 'ru' }}"{% if ui_lang == 'he' %} dir="rtl"{% endif %}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Posting Autopilot — Checkout</title>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#0f1115;color:#e7e9ee;display:flex;
+       min-height:100vh;align-items:center;justify-content:center;margin:0}
+  .box{text-align:center;max-width:420px;padding:24px}
+  .spin{width:34px;height:34px;border:3px solid #2a2e39;border-top-color:#6E63FF;border-radius:50%;
+        margin:0 auto 16px;animation:r 0.9s linear infinite}
+  @keyframes r{to{transform:rotate(360deg)}}
+  a{color:#6E63FF}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="spin"></div>
+  <p>Открываем безопасную оплату…</p>
+  <p style="opacity:.6;font-size:13px">Если окно не открылось — <a href="#" onclick="openCheckout();return false">нажмите здесь</a>,
+     или <a href="/pricing">вернуться к тарифам</a>.</p>
+</div>
+<script>
+  function openCheckout(){
+    var opts = {
+      items: [{ priceId: {{ price_id|tojson }}, quantity: 1 }],
+      customData: { user_id: {{ user_id|tojson }}, company_id: {{ company_id|tojson }}, plan: {{ plan|tojson }} },
+      settings: { successUrl: {{ success_url|tojson }} }
+    };
+    var email = {{ customer_email|tojson }};
+    if (email) { opts.customer = { email: email }; }
+    try { Paddle.Checkout.open(opts); }
+    catch (e) { console.error("Paddle checkout error", e); }
+  }
+  try {
+    {% if paddle_env == 'sandbox' %}Paddle.Environment.set("sandbox");{% endif %}
+    Paddle.Initialize({ token: {{ paddle_token|tojson }} });
+    openCheckout();
+  } catch (e) { console.error("Paddle init error", e); }
+</script>
+</body>
+</html>

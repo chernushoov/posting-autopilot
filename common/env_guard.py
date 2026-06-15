@@ -113,12 +113,12 @@ def _validate_billing(errors: list[str]) -> None:
     if not _truthy("BILLING_ENABLED"):
         return
     for name in (
-        "STRIPE_SECRET_KEY",
-        "STRIPE_PUBLISHABLE_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRICE_STARTER",
-        "STRIPE_PRICE_PRO",
-        "STRIPE_PRICE_AGENCY",
+        "PADDLE_API_KEY",
+        "PADDLE_CLIENT_TOKEN",
+        "PADDLE_WEBHOOK_SECRET",
+        "PADDLE_PRICE_STARTER",
+        "PADDLE_PRICE_PRO",
+        "PADDLE_PRICE_AGENCY",
     ):
         _require(name, errors)
 

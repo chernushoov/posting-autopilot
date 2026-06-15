@@ -1,8 +1,20 @@
-"""Task 3.1: Stripe Billing — checkout, webhook, trial expiration."""
-import os
-import logging
+"""Billing — Paddle (Merchant of Record). Overlay checkout + webhook + trial expiry.
 
-from flask import Blueprint, redirect, request, url_for, session, jsonify
+Replaced Stripe with Paddle on 2026-06-15: Stripe does not onboard Israeli sellers,
+Paddle does (payout via Payoneer/wire) and handles VAT as Merchant of Record.
+
+Access model (unchanged): User.trial_expires_at — future = trial, None = paid
+(perpetual), past = expired (enforce_paywall redirects to /pricing). The webhook is
+the source of truth: subscription.activated grants, subscription.canceled revokes.
+"""
+import os
+import json
+import hmac
+import hashlib
+import logging
+from datetime import datetime
+
+from flask import Blueprint, redirect, request, url_for, session, jsonify, render_template
 
 from ..auth import require_company
 from ..config import Config
@@ -13,180 +25,155 @@ logger = logging.getLogger(__name__)
 
 bp = Blueprint("billing", __name__, url_prefix="/billing")
 
-def _stripe_secret_key() -> str:
-    return os.getenv("STRIPE_SECRET_KEY", "").strip()
+
+def _paddle_client_token() -> str:
+    return os.getenv("PADDLE_CLIENT_TOKEN", "").strip()
 
 
-def _stripe_webhook_secret() -> str:
-    return os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
+def _paddle_webhook_secret() -> str:
+    return os.getenv("PADDLE_WEBHOOK_SECRET", "").strip()
+
+
+def _paddle_env() -> str:
+    return (os.getenv("PADDLE_ENV", "sandbox").strip().lower() or "sandbox")
 
 
 def _price_ids() -> dict[str, str]:
     return {
-        "starter": os.getenv("STRIPE_PRICE_STARTER", "").strip(),
-        "pro": os.getenv("STRIPE_PRICE_PRO", "").strip(),
-        "agency": os.getenv("STRIPE_PRICE_AGENCY", "").strip(),
+        "starter": os.getenv("PADDLE_PRICE_STARTER", "").strip(),
+        "pro": os.getenv("PADDLE_PRICE_PRO", "").strip(),
+        "agency": os.getenv("PADDLE_PRICE_AGENCY", "").strip(),
     }
-
-
-PRICE_IDS = _price_ids()
-
-
-def _get_stripe():
-    """Lazy-load stripe module. Returns None if not configured."""
-    if not Config.billing_enabled():
-        return None
-    secret_key = _stripe_secret_key()
-    if not secret_key:
-        return None
-    try:
-        import stripe
-        stripe.api_key = secret_key
-        return stripe
-    except ImportError:
-        logger.warning("[billing] stripe package not installed")
-        return None
 
 
 @bp.get("/checkout/<plan>")
 @require_company
 def checkout(plan: str):
-    """Create Stripe Checkout session and redirect."""
-    stripe = _get_stripe()
-    if not stripe:
+    """Render the Paddle.js overlay-checkout page for the chosen plan.
+
+    Keeps the existing /billing/checkout/<plan> links working; the page loads
+    Paddle.js and opens the overlay with the plan's price + the user's id in
+    customData (so the webhook can map the resulting subscription back to us)."""
+    if not Config.billing_enabled():
         return redirect(url_for("pricing.pricing_page") + "?error=billing_disabled")
-
     price_id = _price_ids().get(plan)
-    if not price_id:
+    token = _paddle_client_token()
+    if not price_id or not token:
         return redirect(url_for("pricing.pricing_page") + "?error=invalid_plan")
-
-    user_id = session.get("user_id")
-    company_id = session.get("current_company_id")
-
-    try:
-        base_url = request.host_url.rstrip("/")
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{"price": price_id, "quantity": 1}],
-            mode="subscription",
-            success_url=f"{base_url}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{base_url}/pricing",
-            metadata={
-                "user_id": str(user_id or ""),
-                "company_id": str(company_id or ""),
-                "plan": plan,
-            },
-            # Carry user_id onto the SUBSCRIPTION too (not just the session) so the
-            # customer.subscription.deleted webhook can map back to our user and
-            # revoke access on cancellation.
-            subscription_data={
-                "metadata": {
-                    "user_id": str(user_id or ""),
-                    "company_id": str(company_id or ""),
-                    "plan": plan,
-                },
-            },
-        )
-        return redirect(checkout_session.url)
-    except Exception as e:
-        logger.error(f"[billing] Checkout error: {e}")
-        return redirect(url_for("pricing.pricing_page") + f"?error=checkout_failed")
+    base_url = request.host_url.rstrip("/")
+    return render_template(
+        "paddle_checkout.html",
+        paddle_token=token,
+        paddle_env=_paddle_env(),
+        price_id=price_id,
+        plan=plan,
+        customer_email=session.get("owner_id", "") or "",
+        user_id=str(session.get("user_id") or ""),
+        company_id=str(session.get("current_company_id") or ""),
+        success_url=f"{base_url}/billing/success",
+    )
 
 
 @bp.get("/success")
 def checkout_success():
-    """Post-checkout success page."""
+    """Post-checkout success page (access itself is granted by the webhook)."""
     return redirect(url_for("auth.dashboard") + "?message=subscription_active")
 
 
+def _verify_paddle_signature(raw_body: bytes, header: str, secret: str) -> bool:
+    """Paddle-Signature: 'ts=<unix>;h1=<hex>'. Signed payload = ts + ':' + raw body,
+    HMAC-SHA256 with the notification-destination secret. Timing-safe compare.
+    We don't reject on timestamp age — Paddle retries can be delayed, and a replayed
+    valid event is idempotent here (it just re-sets trial_expires_at)."""
+    if not secret or not header:
+        return False
+    ts = h1 = None
+    for part in header.split(";"):
+        key, _, val = part.partition("=")
+        if key.strip() == "ts":
+            ts = val.strip()
+        elif key.strip() == "h1":
+            h1 = val.strip()
+    if not ts or not h1:
+        return False
+    signed = ts.encode() + b":" + raw_body
+    digest = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(digest, h1)
+
+
 @bp.post("/webhook")
-def stripe_webhook():
-    """Handle Stripe webhook events."""
-    stripe = _get_stripe()
-    if not stripe:
-        return jsonify({"error": "not configured"}), 400
-
-    payload = request.get_data(as_text=True)
-    sig_header = request.headers.get("Stripe-Signature", "")
-
-    # Security: never trust an unsigned webhook. Without the signing secret we
-    # cannot prove Stripe sent this, so a forged checkout.session.completed could
-    # grant anyone a paid/cleared trial. Reject rather than parse raw JSON.
-    if not _stripe_webhook_secret():
-        logger.error("[billing] Webhook rejected: STRIPE_WEBHOOK_SECRET is not set")
+def paddle_webhook():
+    """Handle Paddle webhook events. Never trust an unsigned/forged event."""
+    secret = _paddle_webhook_secret()
+    if not secret:
+        logger.error("[billing] webhook rejected: PADDLE_WEBHOOK_SECRET not set")
         return jsonify({"error": "webhook not configured"}), 400
 
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, _stripe_webhook_secret())
-    except Exception as e:
-        logger.error(f"[billing] Webhook signature verification failed: {e}")
+    raw = request.get_data()  # raw bytes, exactly as received
+    sig = request.headers.get("Paddle-Signature", "")
+    if not _verify_paddle_signature(raw, sig, secret):
+        logger.error("[billing] webhook signature verification failed")
         return jsonify({"error": "invalid signature"}), 400
 
-    event_type = event.get("type", "")
-    data = event.get("data", {}).get("object", {})
+    try:
+        event = json.loads(raw.decode("utf-8"))
+    except Exception:
+        return jsonify({"error": "bad json"}), 400
 
-    if event_type == "checkout.session.completed":
-        _handle_checkout_completed(data)
-    elif event_type == "customer.subscription.deleted":
-        _handle_subscription_cancelled(data)
-    elif event_type == "invoice.payment_failed":
-        _handle_payment_failed(data)
+    etype = event.get("event_type", "")
+    data = event.get("data", {}) or {}
+    status = (data.get("status") or "").lower()
+
+    if etype in ("subscription.activated", "subscription.created", "transaction.completed"):
+        if etype.startswith("subscription") and status in ("canceled", "paused"):
+            logger.info(f"[billing] {etype} status={status} — not granting")
+        else:
+            _grant_access(data)
+    elif etype == "subscription.canceled":
+        _revoke_access(data)
+    elif etype in ("transaction.payment_failed", "subscription.past_due"):
+        logger.warning(f"[billing] payment issue: {etype} id={data.get('id')}")
 
     return jsonify({"status": "ok"})
 
 
-def _handle_checkout_completed(session_data: dict):
-    """Activate subscription after successful checkout."""
-    metadata = session_data.get("metadata", {})
-    user_id = metadata.get("user_id")
-    plan = metadata.get("plan", "starter")
+def _user_id_from(data: dict):
+    return (data.get("custom_data") or {}).get("user_id")
 
-    if not user_id:
-        logger.warning("[billing] checkout.session.completed without user_id")
+
+def _grant_access(data: dict):
+    uid = _user_id_from(data)
+    if not uid:
+        logger.warning("[billing] grant: no user_id in custom_data")
         return
-
     db = db_session()
     try:
-        user = db.query(User).filter(User.id == int(user_id)).first()
+        user = db.query(User).filter(User.id == int(uid)).first()
         if user:
-            # Remove trial expiration — user is now paying
-            user.trial_expires_at = None
+            user.trial_expires_at = None  # perpetual access = paying
             db.commit()
-            logger.info(f"[billing] User {user_id} subscribed to {plan}")
+            logger.info(f"[billing] access granted user={uid}")
     except Exception as e:
-        logger.error(f"[billing] Error activating subscription: {e}")
+        logger.error(f"[billing] grant error: {e}")
         db.rollback()
     finally:
         db.close()
 
 
-def _handle_subscription_cancelled(sub_data: dict):
-    """Revoke access on cancellation: expire the trial so enforce_paywall redirects
-    the user to /pricing on their next request. Without this a cancelled customer
-    kept full access (the access signal is User.trial_expires_at; checkout sets it
-    to None = perpetual, so cancellation must set it back to 'now' = expired).
-    user_id rides on the subscription metadata we set at checkout."""
-    from datetime import datetime
-    metadata = sub_data.get("metadata", {}) or {}
-    user_id = metadata.get("user_id")
-    logger.info(f"[billing] Subscription cancelled: {sub_data.get('id')} user={user_id}")
-    if not user_id:
-        logger.warning("[billing] cancellation without user_id metadata — cannot revoke access")
+def _revoke_access(data: dict):
+    uid = _user_id_from(data)
+    if not uid:
+        logger.warning("[billing] revoke: no user_id in custom_data — cannot revoke")
         return
     db = db_session()
     try:
-        user = db.query(User).filter(User.id == int(user_id)).first()
+        user = db.query(User).filter(User.id == int(uid)).first()
         if user:
-            user.trial_expires_at = datetime.utcnow()  # immediately expired -> paywall
+            user.trial_expires_at = datetime.utcnow()  # expired -> paywall
             db.commit()
-            logger.info(f"[billing] Access revoked for user {user_id} after cancellation")
+            logger.info(f"[billing] access revoked user={uid}")
     except Exception as e:
-        logger.error(f"[billing] Error revoking access on cancellation: {e}")
+        logger.error(f"[billing] revoke error: {e}")
         db.rollback()
     finally:
         db.close()
-
-
-def _handle_payment_failed(invoice_data: dict):
-    """Handle failed payment."""
-    logger.warning(f"[billing] Payment failed for invoice: {invoice_data.get('id')}")

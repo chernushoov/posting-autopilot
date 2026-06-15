@@ -48,7 +48,7 @@ def create_app():
         app.jinja_env.globals["csrf_token"] = generate_csrf
         # Exempt API endpoints that don't use forms
         csrf.exempt("fb_safe_workflow.api_groups")
-        csrf.exempt("billing.stripe_webhook")
+        csrf.exempt("billing.paddle_webhook")
         csrf.exempt("auth.fb_callback")
         # Caddy forward_auth target for /fbvnc/* (called GET, no form): exempt so a
         # non-form gateway probe is never rejected by CSRF.
