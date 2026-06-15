@@ -629,7 +629,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
     </div>
     <div class="pain-stat reveal stagger-4">
       <div class="pain-icon"><i class="ico" data-i="wallet"></i></div>
-      <div class="pain-num red" data-count="12000" data-prefix="&#8362;" data-suffix="">0</div>
+      <div class="pain-num red" data-count="3000" data-prefix="$" data-suffix="">0</div>
       <div class="pain-label">manual worker salary / month</div>
     </div>
   </div>
@@ -648,17 +648,17 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
       <input type="range" id="calc-hours" min="1" max="8" value="3" step="0.5">
     </div>
     <div class="calc-row">
-      <label>&#8362;/hour of your time <span id="calc-rate-val">80</span></label>
+      <label>$/hour of your time <span id="calc-rate-val">80</span></label>
       <input type="range" id="calc-rate" min="30" max="200" value="80" step="10">
     </div>
     <div class="calc-results">
       <div class="calc-result">
-        <div class="calc-result-num" id="calc-monthly">&#8362;5,280</div>
+        <div class="calc-result-num" id="calc-monthly">$5,280</div>
         <div class="calc-result-label">Your monthly cost</div>
       </div>
       <div class="calc-payback">
         <div class="calc-payback-num" id="calc-payback">1.7 days</div>
-        <div class="calc-payback-label">Payback on 299&#8362; plan</div>
+        <div class="calc-payback-label">Payback on $99 plan</div>
       </div>
     </div>
   </div>
@@ -777,7 +777,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
   <div class="price-cards">
     <div class="price-card reveal stagger-1">
       <div class="price-name">Starter</div>
-      <div class="price-amount">299&#8362; <span>/mo</span></div>
+      <div class="price-amount">$99 <span>/mo</span></div>
       <ul class="price-list">
         <li>1 listing</li>
         <li>10 groups</li>
@@ -789,7 +789,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
     <div class="price-card pop reveal stagger-2">
       <div class="price-badge">Most Popular</div>
       <div class="price-name">Pro</div>
-      <div class="price-amount">899&#8362; <span>/mo</span></div>
+      <div class="price-amount">$299 <span>/mo</span></div>
       <ul class="price-list">
         <li>5 listings</li>
         <li>50 groups</li>
@@ -800,7 +800,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
     </div>
     <div class="price-card reveal stagger-3">
       <div class="price-name">Agency</div>
-      <div class="price-amount">1999&#8362; <span>/mo</span></div>
+      <div class="price-amount">$499 <span>/mo</span></div>
       <ul class="price-list">
         <li>Unlimited</li>
         <li>API</li>
@@ -890,8 +890,8 @@ function updateCalc() {
   calcRateVal.textContent = r;
   var monthly = Math.round(h * r * 22);   // labour cost / month (22 working days)
   var perDay = h * r;                      // cost of one working day
-  var payback = perDay > 0 ? (299 / perDay).toFixed(1) : '---';
-  calcMonthly.textContent = '\u20AA' + monthly.toLocaleString();
+  var payback = perDay > 0 ? (99 / perDay).toFixed(1) : '---';
+  calcMonthly.textContent = '$' + monthly.toLocaleString();
   calcPayback.textContent = payback + ' ' + daysWord;
 }
 calcHours.addEventListener('input', updateCalc);
@@ -900,14 +900,14 @@ updateCalc();
 
 // ── Bot demo: sequential chat with typing animation ──
 var botMsgs = [
-  {who:'bot',text:'Hi! I am the Dirot TLV bot. Looking for an apartment?'},
-  {who:'user',text:'Yes, 3 rooms in the Florentin area'},
-  {who:'bot',text:'Great! What is your budget?'},
-  {who:'user',text:'Up to 6000₪'},
-  {who:'bot',text:'We found 3 matching apartments! Can you share a phone number?'},
-  {who:'user',text:'054-555-1234'},
-  {who:'bot',text:'Thank you! I have passed your details to the agent.'},
-  {who:'alert',text:'✓ HOT lead\nName: User TG\n3 rooms · Florentin · 6000₪\nPhone: 054-555-1234'}
+  {who:'bot',text:'Hi! Thanks for reaching out 👋 Is this for a home, apartment, or a move-out clean?'},
+  {who:'user',text:'A 2-bedroom in Brooklyn'},
+  {who:'bot',text:'Great! Regular clean or a deep / move-out clean?'},
+  {who:'user',text:'Move-out clean'},
+  {who:'bot',text:'Got it. Best phone number for your quote?'},
+  {who:'user',text:'(347) 555-0182'},
+  {who:'bot',text:'Thank you! I have passed your details to the team.'},
+  {who:'alert',text:'✓ HOT lead\nName: User TG\nMove-out · 2BR · Brooklyn\nPhone: (347) 555-0182'}
 ];
 
 var chatContainer = document.getElementById('bot-chat-demo');
