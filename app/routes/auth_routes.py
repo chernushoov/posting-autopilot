@@ -943,3 +943,131 @@ def fb_add_selected_pages():
     db.commit()
     db.close()
     return redirect(url_for("auth.connect_facebook", message=f"Added {added} Pages"))
+
+
+# ── GDPR: data export + account deletion ──────────────────────────────────────
+@bp.get("/account/export")
+@require_company
+def account_export():
+    """Download ALL of this tenant's data as JSON (right to access/portability).
+    Strictly scoped to the session company_id."""
+    from flask import Response
+    import json as _json
+    company_id = session.get("current_company_id")
+    db = db_session()
+    try:
+        from ..models import (Company, Vacancy, Source, Campaign, Candidate,
+                              PostingAttempt, User, Creative, Prospect)
+
+        def rows(model):
+            return [
+                {c.name: getattr(r, c.name) for c in model.__table__.columns}
+                for r in db.query(model).filter(model.company_id == company_id).all()
+            ]
+
+        comp = db.query(Company).get(company_id)
+        data = {
+            "exported_at": datetime.utcnow().isoformat() + "Z",
+            "company": ({c.name: getattr(comp, c.name) for c in Company.__table__.columns} if comp else None),
+            "vacancies": rows(Vacancy),
+            "sources": rows(Source),
+            "campaigns": rows(Campaign),
+            "candidates": rows(Candidate),
+            "posting_attempts": rows(PostingAttempt),
+            "creatives": rows(Creative),
+            "prospects": rows(Prospect),
+            "team": [
+                {"id": u.id, "email": u.email, "role": str(getattr(u, "role", "")),
+                 "created_at": getattr(u, "created_at", None)}
+                for u in db.query(User).filter(User.company_id == company_id).all()
+            ],
+        }
+    finally:
+        db.close()
+    payload = _json.dumps(data, ensure_ascii=False, indent=2, default=str)
+    return Response(payload, mimetype="application/json",
+                    headers={"Content-Disposition": f"attachment; filename=posting-autopilot-export-{company_id}.json"})
+
+
+@bp.get("/account/delete")
+@require_company
+def account_delete():
+    company_id = session.get("current_company_id")
+    db = db_session()
+    try:
+        comp = db.query(Company).get(company_id)
+        name = comp.name if comp else ""
+    finally:
+        db.close()
+    return render_template("account_delete.html", company_name=name)
+
+
+@bp.post("/account/delete")
+@require_company
+def account_delete_post():
+    """Right to erasure: hard-delete the whole tenant (company + users + all data),
+    FK-safe order, scoped by company_id. Owner-only, confirm by typing company name."""
+    company_id = session.get("current_company_id")
+    confirm = request.form.get("confirm", "").strip()
+    db = db_session()
+    comp = None
+    try:
+        from ..models import (
+            Company, Vacancy, Source, Campaign, CampaignSource, Candidate, PostingAttempt,
+            User, UserRole, Creative, Prospect, OutreachAttempt, PasswordResetToken,
+            FacebookGroup, FacebookGroupSource, FacebookPostVariant, FacebookPostingRun,
+            FacebookPostingQueueItem, FacebookPostingResult,
+        )
+        comp = db.query(Company).get(company_id)
+        if not comp:
+            return redirect("/cabinet")
+        me = db.query(User).get(session.get("user_id")) if session.get("user_id") else None
+        if me is not None and getattr(me, "role", None) != UserRole.owner:
+            return render_template("account_delete.html", company_name=comp.name,
+                                   error="Удалить компанию может только владелец аккаунта.")
+        if confirm != comp.name:
+            return render_template("account_delete.html", company_name=comp.name,
+                                   error="Введите точное название компании для подтверждения.")
+        camp_ids = [c.id for c in db.query(Campaign).filter(Campaign.company_id == company_id).all()]
+        user_ids = [u.id for u in db.query(User).filter(User.company_id == company_id).all()]
+        # children -> parents, all scoped to this tenant
+        db.query(FacebookPostingResult).filter(FacebookPostingResult.company_id == company_id).delete(synchronize_session=False)
+        db.query(FacebookPostingQueueItem).filter(FacebookPostingQueueItem.company_id == company_id).delete(synchronize_session=False)
+        db.query(FacebookPostingRun).filter(FacebookPostingRun.company_id == company_id).delete(synchronize_session=False)
+        db.query(FacebookPostVariant).filter(FacebookPostVariant.company_id == company_id).delete(synchronize_session=False)
+        db.query(FacebookGroup).filter(FacebookGroup.company_id == company_id).delete(synchronize_session=False)
+        db.query(FacebookGroupSource).filter(FacebookGroupSource.company_id == company_id).delete(synchronize_session=False)
+        db.query(OutreachAttempt).filter(OutreachAttempt.company_id == company_id).delete(synchronize_session=False)
+        db.query(Prospect).filter(Prospect.company_id == company_id).delete(synchronize_session=False)
+        db.query(PostingAttempt).filter(PostingAttempt.company_id == company_id).delete(synchronize_session=False)
+        if camp_ids:
+            db.query(CampaignSource).filter(CampaignSource.campaign_id.in_(camp_ids)).delete(synchronize_session=False)
+        db.query(Candidate).filter(Candidate.company_id == company_id).delete(synchronize_session=False)
+        db.query(Campaign).filter(Campaign.company_id == company_id).delete(synchronize_session=False)
+        db.query(Source).filter(Source.company_id == company_id).delete(synchronize_session=False)
+        db.query(Vacancy).filter(Vacancy.company_id == company_id).delete(synchronize_session=False)
+        db.query(Creative).filter(Creative.company_id == company_id).delete(synchronize_session=False)
+        if user_ids:
+            db.query(PasswordResetToken).filter(PasswordResetToken.user_id.in_(user_ids)).delete(synchronize_session=False)
+        db.query(User).filter(User.company_id == company_id).delete(synchronize_session=False)
+        db.query(Company).filter(Company.id == company_id).delete(synchronize_session=False)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        current_app.logger.exception("account deletion failed")
+        return render_template("account_delete.html",
+                               company_name=(comp.name if comp else ""),
+                               error="Не удалось удалить: " + str(e)[:140])
+    finally:
+        db.close()
+    # Best-effort: remove this tenant's TG/FB session files too.
+    try:
+        import os, glob
+        base = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+        for sub in ("tg_sessions", "fb_sessions"):
+            for f in glob.glob(os.path.join(base, sub, f"company_{company_id}.*")):
+                os.remove(f)
+    except Exception:
+        pass
+    session.clear()
+    return redirect("/?deleted=1")

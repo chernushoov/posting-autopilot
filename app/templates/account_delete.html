@@ -1,0 +1,15 @@
+{% extends "_layout.html" %}
+{% block content %}
+<div style="max-width:480px;margin:48px auto">
+  <h1>Удаление аккаунта компании</h1>
+  <p class="muted">Это <b>безвозвратно</b> удалит компанию «{{ company_name }}» — всех пользователей, вакансии, источники, кампании, кандидатов, историю и подключённые сессии. Действие необратимо.</p>
+  <p class="muted">Перед удалением можно <a href="/account/export">скачать все данные (JSON)</a>.</p>
+  {% if error %}<div class="alert error" style="margin:10px 0">{{ error }}</div>{% endif %}
+  <form method="post" action="/account/delete" class="card" style="padding:1.5rem;margin-top:12px">
+    <label>Для подтверждения введите название компании: <b>{{ company_name }}</b></label>
+    <input name="confirm" type="text" required autocomplete="off" placeholder="{{ company_name }}" style="width:100%;box-sizing:border-box;margin-top:8px">
+    <button type="submit" class="btn" style="margin-top:14px;width:100%;background:#c0392b;border-color:#c0392b">Удалить навсегда</button>
+  </form>
+  <p style="margin-top:14px"><a href="/cabinet">← Отмена</a></p>
+</div>
+{% endblock %}
