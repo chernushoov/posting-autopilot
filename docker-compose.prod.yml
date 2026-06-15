@@ -5,14 +5,17 @@
 services:
   postgres:
     restart: unless-stopped
+    mem_limit: 512m
     ports: []
 
   redis:
     restart: unless-stopped
+    mem_limit: 256m
     ports: []
 
   web:
     restart: unless-stopped
+    mem_limit: 768m
     environment:
       APP_ENV: production
     command:
@@ -27,27 +30,32 @@ services:
 
   worker:
     restart: unless-stopped
+    mem_limit: 1500m   # runs chromium+Xvfb for FB capture — the spiky one; swap-backed
     environment:
       APP_ENV: production
 
   scheduler:
     restart: unless-stopped
+    mem_limit: 384m
     environment:
       APP_ENV: production
 
   bot:
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       APP_ENV: production
 
   listener:
     restart: unless-stopped
+    mem_limit: 384m
     environment:
       APP_ENV: production
 
   caddy:
     image: caddy:2
     restart: unless-stopped
+    mem_limit: 128m
     depends_on:
       web:
         condition: service_healthy
