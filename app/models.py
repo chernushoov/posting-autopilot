@@ -536,6 +536,16 @@ class FacebookPostingResult(Base):
     )
 
 
+class StripeWebhookEvent(Base):
+    """Idempotency ledger for Stripe webhooks. Stripe delivers at-least-once and
+    retries on any non-2xx/timeout, so we record each event id and skip replays."""
+    __tablename__ = "stripe_webhook_events"
+    id = Column(Integer, primary_key=True)
+    event_id = Column(String(80), nullable=False, unique=True, index=True)
+    event_type = Column(String(80), nullable=True)
+    processed_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
 # ── Prospecting ────────────────────────────────────────────────────────────────
 
 class ProspectStatus(str, enum.Enum):

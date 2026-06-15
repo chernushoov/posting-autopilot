@@ -15,10 +15,44 @@ PLAN_LIMITS = {
 
 UPGRADE_HINT = "Upgrade your plan on the Pricing page to add more."
 
+# Tiers that entitle the tenant to the paid service (auto-posting + lead delivery).
+PAID_TIERS = {"starter", "pro", "agency"}
+# Tiers that explicitly revoke service (set by billing webhooks on failure/cancel).
+INACTIVE_TIERS = {"past_due", "cancelled", "canceled", "unpaid"}
+
 
 def get_plan_tier(company) -> str:
     tier = (getattr(company, "plan_tier", None) or "trial").lower()
     return tier if tier in PLAN_LIMITS else "trial"
+
+
+def is_billing_active(db, company) -> bool:
+    """Whether a tenant may consume the paid service right now.
+
+    Enforced in the *worker* (not only the Flask before_request gate) so a tenant
+    whose trial expired, whose card failed, or who cancelled cannot keep getting
+    scheduled posts + hot leads for free.
+
+    - Paid tiers (starter/pro/agency): always active.
+    - Revoked tiers (past_due/cancelled/unpaid): never active.
+    - Trial/unknown: active while at least one owning user's trial has not expired.
+      Companies with no self-service user (operator/admin-owned) are treated as
+      active so the operator's own pilots are never silently frozen.
+    """
+    if company is None:
+        return False
+    raw = (getattr(company, "plan_tier", None) or "trial").lower()
+    if raw in PAID_TIERS:
+        return True
+    if raw in INACTIVE_TIERS:
+        return False
+    from datetime import datetime
+    from .models import User
+    users = db.query(User).filter(User.company_id == company.id, User.is_active == True).all()
+    if not users:
+        return True
+    now = datetime.utcnow()
+    return any(u.trial_expires_at is None or u.trial_expires_at > now for u in users)
 
 
 def _limit(company, key: str):
