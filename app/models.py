@@ -599,3 +599,16 @@ class Creative(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     company = relationship("Company")
+
+
+class PasswordResetToken(Base):
+    """One-time password-reset token. Only the SHA-256 hash is stored (never the raw
+    token). Pre-auth flow → looked up by token hash, not by session. Auto-created by
+    Base.metadata.create_all."""
+    __tablename__ = "password_reset_tokens"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    token_hash = Column(String(128), nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

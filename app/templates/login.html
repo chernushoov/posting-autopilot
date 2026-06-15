@@ -45,11 +45,17 @@
         <input name="password" type="password" placeholder="{{ ui('password_field') }}" required>
       </div>
       <button type="submit" class="btn">{{ ui("enter_btn") }}</button>
+      {% if request.args.get('reset') %}
+      <div class="login-error" style="background:#e7f7ee;color:#137a43;border:1px solid #137a43">Пароль обновлён — войдите с новым паролем.</div>
+      {% endif %}
       {% if error %}
       <div class="login-error">{{ error }}</div>
       {% endif %}
     </form>
-    <p class="muted" style="font-size:13px;margin:16px 0 0;text-align:center">
+    <p class="muted" style="font-size:13px;margin:14px 0 0;text-align:center">
+      <a href="/forgot-password">Forgot password?</a>
+    </p>
+    <p class="muted" style="font-size:13px;margin:8px 0 0;text-align:center">
       New here? <a href="{{ public_register_url }}">Create an account</a>
     </p>
   </div>
