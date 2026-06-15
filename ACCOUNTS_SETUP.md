@@ -8,13 +8,13 @@ Already configured (no action): TELEGRAM_BOT_TOKEN, RECRUITBOT_TG_API_ID/HASH,
 FB_APP_ID/SECRET, DATA_ENCRYPTION_KEY, domains + HTTPS.
 
 ## TIER 1 — needed before the first paying customer
-1. **Stripe** — take money. https://dashboard.stripe.com/register
-   - Sign up (business/KYC), create 3 recurring prices: Starter ₪299, Pro ₪899, Agency ₪1999 /mo.
-     Add a webhook endpoint → `https://app.posting-autopilot.com/billing/webhook` (events: checkout/subscription).
-   - Give me: `STRIPE_SECRET_KEY` (sk_live_…), `STRIPE_WEBHOOK_SECRET` (whsec_…),
-     `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PRO` / `STRIPE_PRICE_AGENCY` (price_…).
-     Publishable key NOT needed (server-side Checkout).
-   - Then I set them + flip `BILLING_ENABLED=true` + test a live checkout. Plans already render in the cabinet.
+1. **Paddle** — take money (Merchant of Record; Stripe does NOT onboard Israeli sellers). https://www.paddle.com
+   - Sign up from Israel (payout via Payoneer/wire). Paddle reviews the account (~1–3 days; needs the live
+     site with Pricing/Terms/Privacy). Market = US/USD, prices $99/$299/$499 (I create them via API).
+   - Webhook → `https://app.posting-autopilot.com/billing/webhook` (subscription.activated/canceled, transaction.completed).
+   - Give me (sandbox first, then live): `PADDLE_API_KEY`, `PADDLE_CLIENT_TOKEN`, `PADDLE_WEBHOOK_SECRET`.
+     I run `scripts/paddle_setup.py` → creates the 3 prices → sets `PADDLE_PRICE_*` + flips `BILLING_ENABLED` + tests.
+   - (Billing code is already built + deployed dormant: Paddle overlay checkout + signed webhook.)
 
 2. **Email provider** — password reset / welcome / trial-ending / receipts (all wired, currently no-op).
    https://resend.com (simplest) — or any SMTP (Brevo/Mailgun/Gmail).
