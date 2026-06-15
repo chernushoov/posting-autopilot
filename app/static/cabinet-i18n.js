@@ -43,7 +43,14 @@
       'cb.cps.company': 'Профиль компании и маршрутизация горячих лидов. Укажите, куда слать горячих, чтобы не упустить контакт.',
       'cb.cps.billing': 'Пробный период Pro — осталось {days} дней. После окончания автопостинг встанет на паузу.',
       'cb.cps.billing_exp': 'Пробный период истёк — выберите тариф, чтобы возобновить автопостинг.',
-      'cb.cps.billing_paid': 'Тариф Pro активен.'
+      'cb.cps.billing_paid': 'Тариф Pro активен.',
+      'cb.dow.0': 'Пн', 'cb.dow.1': 'Вт', 'cb.dow.2': 'Ср', 'cb.dow.3': 'Чт', 'cb.dow.4': 'Пт', 'cb.dow.5': 'Сб', 'cb.dow.6': 'Вс',
+      'pl.starter.tag': 'Одно объявление, ручной постинг',
+      'pl.starter.f1': '1 активное объявление', 'pl.starter.f2': '10 каналов постинга', 'pl.starter.f3': 'AI-бот скрининга', 'pl.starter.f4': 'Лиды и базовый дашборд',
+      'pl.pro.tag': 'Активный мультиканальный постинг',
+      'pl.pro.f1': '5 активных объявлений', 'pl.pro.f2': '50 каналов постинга', 'pl.pro.f3': 'Планировщик и ночной режим', 'pl.pro.f4': 'Аналитика и воронка', 'pl.pro.f5': 'Приоритетная поддержка',
+      'pl.agency.tag': 'Агентствам и нескольким компаниям',
+      'pl.agency.f1': 'Безлимит объявлений', 'pl.agency.f2': 'Мультикомпания', 'pl.agency.f3': 'API и вебхуки', 'pl.agency.f4': 'White-label кабинет', 'pl.agency.f5': 'Персональный менеджер'
     },
     en: {
       'cb.fn.all': 'All responses', 'cb.fn.bot': 'Passed the bot', 'cb.fn.warm': 'Warm', 'cb.fn.hot': 'Hot', 'cb.fn.closed': 'Closed',
@@ -79,7 +86,14 @@
       'cb.cps.company': 'Company profile and hot-lead routing. Set where to send hot leads so you don’t miss a contact.',
       'cb.cps.billing': 'Pro trial — {days} days left. After it ends auto-posting pauses.',
       'cb.cps.billing_exp': 'Trial expired — pick a plan to resume auto-posting.',
-      'cb.cps.billing_paid': 'Pro plan is active.'
+      'cb.cps.billing_paid': 'Pro plan is active.',
+      'cb.dow.0': 'Mon', 'cb.dow.1': 'Tue', 'cb.dow.2': 'Wed', 'cb.dow.3': 'Thu', 'cb.dow.4': 'Fri', 'cb.dow.5': 'Sat', 'cb.dow.6': 'Sun',
+      'pl.starter.tag': 'One listing, manual posting',
+      'pl.starter.f1': '1 active listing', 'pl.starter.f2': '10 posting channels', 'pl.starter.f3': 'AI screening bot', 'pl.starter.f4': 'Leads and basic dashboard',
+      'pl.pro.tag': 'Active multi-channel posting',
+      'pl.pro.f1': '5 active listings', 'pl.pro.f2': '50 posting channels', 'pl.pro.f3': 'Scheduler and night mode', 'pl.pro.f4': 'Analytics and funnel', 'pl.pro.f5': 'Priority support',
+      'pl.agency.tag': 'For agencies and multiple companies',
+      'pl.agency.f1': 'Unlimited listings', 'pl.agency.f2': 'Multi-company', 'pl.agency.f3': 'API and webhooks', 'pl.agency.f4': 'White-label cabinet', 'pl.agency.f5': 'Personal manager'
     },
     he: {
       'cb.fn.all': 'כל הפניות', 'cb.fn.bot': 'עברו את הבוט', 'cb.fn.warm': 'פושרים', 'cb.fn.hot': 'חמים', 'cb.fn.closed': 'נסגרו',
@@ -115,7 +129,14 @@
       'cb.cps.company': 'פרופיל החברה וניתוב לידים חמים. הגדירו לאן לשלוח לידים חמים כדי לא לפספס קשר.',
       'cb.cps.billing': 'תקופת ניסיון Pro — נותרו {days} ימים. בסיומה הפרסום האוטומטי יושהה.',
       'cb.cps.billing_exp': 'תקופת הניסיון הסתיימה — בחרו תוכנית כדי לחדש את הפרסום האוטומטי.',
-      'cb.cps.billing_paid': 'תוכנית Pro פעילה.'
+      'cb.cps.billing_paid': 'תוכנית Pro פעילה.',
+      'cb.dow.0': 'ב׳', 'cb.dow.1': 'ג׳', 'cb.dow.2': 'ד׳', 'cb.dow.3': 'ה׳', 'cb.dow.4': 'ו׳', 'cb.dow.5': 'ש׳', 'cb.dow.6': 'א׳',
+      'pl.starter.tag': 'מודעה אחת, פרסום ידני',
+      'pl.starter.f1': 'מודעה פעילה אחת', 'pl.starter.f2': '10 ערוצי פרסום', 'pl.starter.f3': 'בוט סינון AI', 'pl.starter.f4': 'לידים ולוח בקרה בסיסי',
+      'pl.pro.tag': 'פרסום רב-ערוצי פעיל',
+      'pl.pro.f1': '5 מודעות פעילות', 'pl.pro.f2': '50 ערוצי פרסום', 'pl.pro.f3': 'מתזמן ומצב לילה', 'pl.pro.f4': 'אנליטיקה ומשפך', 'pl.pro.f5': 'תמיכה בעדיפות',
+      'pl.agency.tag': 'לסוכנויות ולמספר חברות',
+      'pl.agency.f1': 'מודעות ללא הגבלה', 'pl.agency.f2': 'ריבוי חברות', 'pl.agency.f3': 'API ו-Webhooks', 'pl.agency.f4': 'קבינט White-label', 'pl.agency.f5': 'מנהל אישי'
     }
   };
   ['ru', 'en', 'he'].forEach(function (l) {

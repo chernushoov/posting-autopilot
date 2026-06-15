@@ -396,6 +396,10 @@ function applyLang(lang){
     var _R=function(k,v){ return (k&&window.PA_I18N)?window.PA_I18N.t(k,v):null; };
     FUNNEL.forEach(function(f){ if(f.lk){var x=_R(f.lk); if(x!=null)f.label=x;} });
     ONBOARD.forEach(function(s){ if(s.lk){var x=_R(s.lk); if(x!=null)s.t=x;} });
+    ANALYTICS.days.forEach(function(d){ if(d.dk){var x=_R(d.dk); if(x!=null)d.d=x;} });
+    TEAM.forEach(function(m){ if(m.rk){var x=_R(m.rk); if(x!=null)m.role=x;} });
+    PLANS.forEach(function(p){ if(p.tk){var x=_R(p.tk); if(x!=null)p.tagline=x;}
+      if(p.fk){p.feats=p.fk.map(function(k){var y=_R(k); return y!=null?y:k;}); } });
     [ANALYTICS.kpi,ANALYTICS.funnel,ANALYTICS.langs,ANALYTICS.ops].forEach(function(arr){
       (arr||[]).forEach(function(it){ if(it.lk){var x=_R(it.lk); if(x!=null)it.label=x;}
         if(it.sk){var s=_R(it.sk,it.sv||{}); if(s!=null)it.sub=s;} }); });

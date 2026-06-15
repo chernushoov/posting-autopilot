@@ -129,21 +129,29 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
     boot["trial"] = trial
 
     # company subtitle (vertical · plan) once we know plan/trial
-    plan_label = ("Pro · триал" if trial["days"] is not None and not trial["expired"] else "Pro")
+    plan_label = "Pro"  # plan name only; trial state is shown via the localized trial chip (foot.trial)
     for c in boot["companies"]:
         c["type"] = plan_label
 
     # static plan catalogue (billing screen); current = Pro for now
+    # Literals are the RU source/fallback; tk/fk are i18n keys (cabinet-i18n.js)
+    # so the billing screen re-translates on every live RU/EN/HE switch.
     boot["plans"] = [
         {"id": "starter", "name": "Starter", "price": "299₪", "tagline": "Одно объявление, ручной постинг",
-         "feats": ["1 активное объявление", "10 каналов постинга", "AI-бот скрининга", "Лиды и базовый дашборд"]},
+         "tk": "pl.starter.tag",
+         "feats": ["1 активное объявление", "10 каналов постинга", "AI-бот скрининга", "Лиды и базовый дашборд"],
+         "fk": ["pl.starter.f1", "pl.starter.f2", "pl.starter.f3", "pl.starter.f4"]},
         {"id": "pro", "name": "Pro", "price": "899₪", "tagline": "Активный мультиканальный постинг",
+         "tk": "pl.pro.tag",
          "featured": True, "current": True,
          "feats": ["5 активных объявлений", "50 каналов постинга", "Планировщик и ночной режим",
-                   "Аналитика и воронка", "Приоритетная поддержка"]},
+                   "Аналитика и воронка", "Приоритетная поддержка"],
+         "fk": ["pl.pro.f1", "pl.pro.f2", "pl.pro.f3", "pl.pro.f4", "pl.pro.f5"]},
         {"id": "agency", "name": "Agency", "price": "1999₪", "tagline": "Агентствам и нескольким компаниям",
+         "tk": "pl.agency.tag",
          "feats": ["Безлимит объявлений", "Мультикомпания", "API и вебхуки",
-                   "White-label кабинет", "Персональный менеджер"]},
+                   "White-label кабинет", "Персональный менеджер"],
+         "fk": ["pl.agency.f1", "pl.agency.f2", "pl.agency.f3", "pl.agency.f4", "pl.agency.f5"]},
     ]
     boot["ad_limit"] = 5  # Pro plan
 
@@ -334,7 +342,9 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
     for c in cands:
         if c.created_at and c.created_at.date() in day_counts:
             day_counts[c.created_at.date()] += 1
-    days = [{"d": _RU_DOW[(today - timedelta(days=i)).weekday()], "v": day_counts[today - timedelta(days=i)]}
+    days = [{"d": _RU_DOW[(today - timedelta(days=i)).weekday()],
+             "dk": "cb.dow.%d" % (today - timedelta(days=i)).weekday(),
+             "v": day_counts[today - timedelta(days=i)]}
             for i in range(6, -1, -1)]
 
     langs_map = {}
@@ -399,6 +409,7 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
             "name": (u.email.split("@")[0] if u.email else "—"),
             "email": u.email or "",
             "role": "Владелец" if is_owner else "Оператор",
+            "rk": "role.owner" if is_owner else "role.operator",
             "you": bool(user and u.id == getattr(user, "id", None)),
             "active": bool(u.is_active),
         })
