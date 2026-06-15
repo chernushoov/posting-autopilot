@@ -82,6 +82,16 @@ textarea{resize:vertical}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+/* Lead classification pills (candidates list) — were class-applied but undefined,
+   so hot/cold rendered with no color. */
+.pill.hot{background:#fde8e8;color:#b42318}
+.pill.warm{background:#fef3c7;color:#92400e}
+.pill.cold{background:#eef1f4;color:#475569}
+/* Deep-link row highlight (?focus_source=/?focus_attempt=) — class applied but
+   never styled, so the highlight never showed. */
+.focus-row{background:rgba(0,113,227,.10)}
+/* Keyboard focus visibility on interactive controls (was inputs-only). */
+.btn:focus-visible,.pill:focus-visible,.nav a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .stack{display:flex;flex-direction:column;gap:16px}
 .stack.tight{gap:10px}
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
