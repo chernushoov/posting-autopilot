@@ -23,6 +23,59 @@ q_default = Queue(
 )
 
 
+# ---- Redis coordination primitives (cross-process dedup, locks, atomic caps) ----
+
+def acquire_lock(key: str, ttl: int):
+    """SET NX lock. Returns an opaque token to release with, or None if held."""
+    token = uuid4().hex
+    try:
+        if redis_conn.set(key, token, nx=True, ex=ttl):
+            return token
+    except Exception:
+        # No Redis -> degrade to "always acquired" (single-process dev).
+        return uuid4().hex
+    return None
+
+
+def release_lock(key: str, token: str) -> None:
+    try:
+        if token and redis_conn.get(key) == token.encode():
+            redis_conn.delete(key)
+    except Exception:
+        pass
+
+
+def claim_once(key: str, ttl: int) -> bool:
+    """True exactly once per (key, ttl window) across all processes. Used for
+    scheduler interval/digest dedup so a second scheduler instance can't double-fire."""
+    try:
+        return bool(redis_conn.set(key, "1", nx=True, ex=ttl))
+    except Exception:
+        return True
+
+
+def reserve_daily_slot(key: str, limit: int, ttl: int = 36 * 3600) -> bool:
+    """Atomically reserve one slot under `limit` for the day. Returns False when the
+    cap is already reached. Roll back with release_daily_slot on post failure."""
+    try:
+        n = redis_conn.incr(key)
+        if n == 1:
+            redis_conn.expire(key, ttl)
+        if n > limit:
+            redis_conn.decr(key)
+            return False
+        return True
+    except Exception:
+        return True  # no Redis -> rely on in-process guard
+
+
+def release_daily_slot(key: str) -> None:
+    try:
+        redis_conn.decr(key)
+    except Exception:
+        pass
+
+
 def _within_campaign_window(campaign: Campaign) -> bool:
     try:
         hours = json.loads(campaign.active_hours_json or '{"start":9,"end":19}')
@@ -47,7 +100,9 @@ def _within_campaign_window(campaign: Campaign) -> bool:
 
 def enqueue_check_source(source_id: int):
     from .tasks import check_source_access
-    return q_default.enqueue(check_source_access, source_id)
+    from rq import Retry
+    # Read-only access check — safe to auto-retry on transient Redis/network blips.
+    return q_default.enqueue(check_source_access, source_id, retry=Retry(max=2, interval=[30, 90]))
 
 def enqueue_test_message(source_id: int, text: str):
     from .tasks import send_test_message
@@ -86,10 +141,15 @@ def schedule_campaign_tick(campaign_id: int, trigger: str = "scheduler_interval"
                 result_status="scheduled",
             )
         )
-    from .tasks import campaign_tick
+    from .tasks import campaign_tick, campaign_tick_on_failure
     db.commit()
     try:
-        job = q_default.enqueue(campaign_tick, campaign_id, run_key, trigger)
+        # No auto-retry (a whole-run repost is not idempotent); instead an
+        # on_failure callback unsticks 'scheduled'/'pending' attempts if the job dies.
+        job = q_default.enqueue(
+            campaign_tick, campaign_id, run_key, trigger,
+            on_failure=campaign_tick_on_failure,
+        )
     except Exception as exc:
         logger.error("[queue] failed to enqueue campaign_tick campaign=%s run_key=%s: %s", campaign_id, run_key, exc)
         db.query(PostingAttempt).filter(PostingAttempt.run_key == run_key).update(

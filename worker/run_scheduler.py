@@ -5,14 +5,19 @@ from redis import Redis
 from rq import Queue
 from app.db import db_session
 from app.models import Campaign, Company
+from app.plans import is_billing_active
 from app.schema import bootstrap_schema
-from worker.queue import schedule_campaign_tick, enqueue_daily_digest
+from worker.queue import schedule_campaign_tick, enqueue_daily_digest, claim_once
 
 # Simple scheduler: every 60s checks running campaigns and enqueues if interval elapsed.
 # Plus a daily-digest fire at DAILY_DIGEST_HOUR Israel time, exactly once per day per company.
 # Replace with APScheduler/Cron later.
 
-ISRAEL_TZ = timezone(timedelta(hours=3))
+try:
+    from zoneinfo import ZoneInfo
+    ISRAEL_TZ = ZoneInfo("Asia/Jerusalem")  # handles IDT/IST transitions (matches worker/queue.py)
+except Exception:
+    ISRAEL_TZ = timezone(timedelta(hours=3))
 DAILY_DIGEST_HOUR = int(os.getenv("DAILY_DIGEST_HOUR_IL", "8"))
 
 
@@ -38,32 +43,37 @@ def main():
     bootstrap_schema()
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     Redis.from_url(redis_url)  # connectivity check
-    last_run = {}
-    last_digest_date_by_company: dict[int, str] = {}
     while True:
         db = db_session()
         campaigns = db.query(Campaign).filter(Campaign.is_running == True).all()
-        now = datetime.now()
+        # Evaluate the posting window in Israel local time (the container runs UTC),
+        # matching what worker/queue.py and worker/tasks.py enforce.
+        now = datetime.now(ISRAEL_TZ)
         for c in campaigns:
             if not _campaign_window_check(c, now):
                 continue
-            prev = last_run.get(c.id)
-            if not prev or (now - prev).total_seconds() >= c.interval_minutes * 60:
-                schedule_campaign_tick(c.id, "scheduler_interval")
-                last_run[c.id] = now
+            # Cross-process dedup: claim this campaign's interval bucket in Redis so a
+            # second scheduler instance (or a restart) can't double-fire the same tick.
+            interval = max(int(c.interval_minutes) * 60, 60)
+            bucket = int(time.time()) // interval
+            if not claim_once(f"sched:tick:{c.id}:{bucket}", interval):
+                continue
+            # Billing gate: don't post for tenants whose trial expired / plan lapsed.
+            company = db.query(Company).filter(Company.id == c.company_id).first()
+            if not is_billing_active(db, company):
+                continue
+            schedule_campaign_tick(c.id, "scheduler_interval")
 
-        # Daily digest at 08:00 Israel (configurable). Fires once per company per day.
-        # If the scheduler restarts after the trigger hour but before the next day,
-        # the per-company date marker prevents double-firing.
+        # Daily digest at 08:00 Israel (configurable). Fires once per company per day,
+        # deduped via Redis across scheduler instances/restarts.
         israel_now = datetime.now(ISRAEL_TZ)
         if israel_now.hour == DAILY_DIGEST_HOUR:
             today_marker = israel_now.strftime("%Y-%m-%d")
             for company in db.query(Company).filter(Company.is_active == True).all():
-                if last_digest_date_by_company.get(company.id) == today_marker:
+                if not claim_once(f"sched:digest:{company.id}:{today_marker}", 26 * 3600):
                     continue
                 try:
                     enqueue_daily_digest(company.id)
-                    last_digest_date_by_company[company.id] = today_marker
                 except Exception:
                     pass
 
