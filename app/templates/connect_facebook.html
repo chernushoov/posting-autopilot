@@ -257,14 +257,17 @@
             <input type="hidden" name="tg_ref" value="">
             <input type="hidden" name="folder" value="marketplace">
             <div class="grid2">
-              <div><label class="small">{% if ui_lang == 'ru' %}Город / Регион{% elif ui_lang == 'he' %}עיר / אזור{% else %}City / Region{% endif %}</label><input name="label" required placeholder="{% if ui_lang == 'ru' %}Тель-Авив{% elif ui_lang == 'he' %}תל אביב{% else %}Tel Aviv{% endif %}"></div>
+              {# Marketplace city is region-neutral by default; the operator edits the
+                 destination URL to their own city after adding it. #}
+              {% set mp_city = 'your-city' %}
+              <div><label class="small">{% if ui_lang == 'ru' %}Город / Регион{% elif ui_lang == 'he' %}עיר / אזור{% else %}City / Region{% endif %}</label><input name="label" required placeholder="{% if ui_lang == 'ru' %}Ваш город{% elif ui_lang == 'he' %}העיר שלך{% else %}Your city{% endif %}"></div>
               <div><label class="small">{% if ui_lang == 'ru' %}Категория{% elif ui_lang == 'he' %}קטגוריה{% else %}Category{% endif %}</label>
                 <select name="destination_url" style="width:100%">
-                  <option value="https://facebook.com/marketplace/telaviv/vehicles">{% if ui_lang == 'ru' %}Авто{% elif ui_lang == 'he' %}רכב{% else %}Vehicles{% endif %}</option>
-                  <option value="https://facebook.com/marketplace/telaviv/propertyrentals">{% if ui_lang == 'ru' %}Недвижимость{% elif ui_lang == 'he' %}נדל"ן{% else %}Property{% endif %}</option>
-                  <option value="https://facebook.com/marketplace/telaviv/jobs">{% if ui_lang == 'ru' %}Вакансии{% elif ui_lang == 'he' %}משרות{% else %}Jobs{% endif %}</option>
-                  <option value="https://facebook.com/marketplace/telaviv/search">{% if ui_lang == 'ru' %}Товары{% elif ui_lang == 'he' %}מוצרים{% else %}Items{% endif %}</option>
-                  <option value="https://facebook.com/marketplace/telaviv/services">{% if ui_lang == 'ru' %}Услуги{% elif ui_lang == 'he' %}שירותים{% else %}Services{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/{{ mp_city }}/vehicles">{% if ui_lang == 'ru' %}Авто{% elif ui_lang == 'he' %}רכב{% else %}Vehicles{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/{{ mp_city }}/propertyrentals">{% if ui_lang == 'ru' %}Недвижимость{% elif ui_lang == 'he' %}נדל"ן{% else %}Property{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/{{ mp_city }}/jobs">{% if ui_lang == 'ru' %}Вакансии{% elif ui_lang == 'he' %}משרות{% else %}Jobs{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/{{ mp_city }}/search">{% if ui_lang == 'ru' %}Товары{% elif ui_lang == 'he' %}מוצרים{% else %}Items{% endif %}</option>
+                  <option value="https://facebook.com/marketplace/{{ mp_city }}/services">{% if ui_lang == 'ru' %}Услуги{% elif ui_lang == 'he' %}שירותים{% else %}Services{% endif %}</option>
                 </select>
               </div>
             </div>

@@ -100,11 +100,11 @@
       </div>
       <div>
         <label>{{ ui("tg_phone") }}</label>
-        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+972501234567" value="{{ tg_phone or '' }}" required>
+        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+1 555 123 4567" value="{{ tg_phone or '' }}" required>
         <div class="small muted" style="margin-top:6px">
-          {% if ui_lang == 'ru' %}Можно ввести израильский номер как 0501234567 — мы приведём его к +972501234567.
-          {% elif ui_lang == 'he' %}אפשר להזין מספר ישראלי כמו 0501234567 — נמיר אותו ל-+972501234567.
-          {% else %}Israeli numbers like 0501234567 are accepted and converted to +972501234567.{% endif %}
+          {% if ui_lang == 'ru' %}Введите номер в международном формате с кодом страны (израильские 0501234567 тоже принимаем — приведём к +972501234567).
+          {% elif ui_lang == 'he' %}הזינו מספר בפורמט בינלאומי עם קידומת מדינה (מספר ישראלי כמו 0501234567 יומר אוטומטית ל-+972501234567).
+          {% else %}Enter your number in full international format, including the country code (e.g. +1 555 123 4567).{% endif %}
         </div>
       </div>
       <button class="btn" type="submit">{{ ui("tg_send_code_btn") }}</button>
@@ -126,7 +126,7 @@
       <input type="hidden" name="posting_mode" value="auto">
       <input type="hidden" name="destination_kind" value="group">
       <div><label>{% if ui_lang == 'ru' %}Telegram группа / канал{% elif ui_lang == 'he' %}קבוצת / ערוץ טלגרם{% else %}Telegram group / channel{% endif %}</label><input name="tg_ref" placeholder="@group_name or -100..." required></div>
-      <div><label>{{ ui("label_optional") }}</label><input name="label" placeholder="Jobs Tel Aviv"></div>
+      <div><label>{{ ui("label_optional") }}</label><input name="label" placeholder="{% if ui_lang == 'ru' %}Напр. Уборка Майами{% elif ui_lang == 'he' %}לדוגמה: ניקיון מיאמי{% else %}e.g. Cleaning Miami{% endif %}"></div>
       <button class="pill" type="submit">{% if ui_lang == 'ru' %}Добавить вручную{% elif ui_lang == 'he' %}הוסף ידנית{% else %}Add manually{% endif %}</button>
     </form>
   </div>
