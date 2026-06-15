@@ -60,7 +60,12 @@ def register():
 
 @bp.post("/register")
 def register_post():
+    from .auth_routes import _check_rate_limit, _record_attempt
     invite_required = bool(_signup_invite_code())
+    if not _check_rate_limit():
+        return render_template("register.html", invite_required=invite_required,
+                               error="Слишком много попыток. Подождите 5 минут и попробуйте снова.")
+    _record_attempt()
     lang = session.get("ui_lang", "he")
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "").strip()
@@ -104,6 +109,20 @@ def register_post():
     # Auto-login
     _start_authenticated_session(user)
     db.close()
+
+    # Welcome email (best-effort; no-op until an email provider is configured).
+    try:
+        from ..mailer import send_email
+        base = request.host_url.rstrip("/")
+        send_email(
+            email, "Добро пожаловать в Posting Autopilot",
+            f"<p>Привет! Аккаунт «{company_name}» создан — у вас {TRIAL_DAYS} дней пробного периода.</p>"
+            f'<p>Кабинет: <a href="{base}/cabinet">{base}/cabinet</a></p>'
+            f"<p>Подключите Telegram и запустите первую кампанию — AI-бот начнёт собирать и фильтровать лидов.</p>",
+            text=f"Добро пожаловать! Кабинет: {base}/cabinet",
+        )
+    except Exception:
+        pass
 
     return redirect(url_for("auth.dashboard"))
 
