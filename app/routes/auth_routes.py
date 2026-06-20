@@ -1,7 +1,7 @@
 import time
 import secrets
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, session
 from ..auth import admin_login_ok
 from ..db import db_session
 from ..models import Company, User
@@ -19,6 +19,9 @@ bp = Blueprint("auth", __name__)
 def index():
     if session.get("is_admin"):
         return redirect(url_for("auth.dashboard"))
+    requested_lang = (request.args.get("lang") or "").strip().lower()
+    if requested_lang in {"en", "ru", "he"}:
+        session["ui_lang"] = requested_lang
     return render_template("landing.html")
 
 @bp.get("/login")
@@ -135,7 +138,7 @@ def dashboard():
             from .campaigns import ensure_default_campaign
             ensure_default_campaign(company_id)
         except Exception:
-            pass
+            current_app.logger.exception("default_campaign_autocreate_failed", extra={"company_id": company_id})
 
     campaign_count = db.query(Campaign).filter(Campaign.company_id == company_id).count() if has_company else 0
     has_campaign = campaign_count > 0
@@ -176,8 +179,14 @@ def dashboard():
             for candidate in recent_candidate_rows
         ]
 
-    steps_done = sum([has_company, has_vacancy, has_telegram, has_facebook, has_campaign, has_posted])
-    steps_total = 6
+    # Facebook is OPTIONAL for the launch pilot (TG-only path is fully supported:
+    # connecting Telegram alone is enough to create a campaign and go live). It must
+    # NOT count toward setup progress, otherwise a TG-only pilot user is stuck at
+    # "5/6" forever and the cabinet looks broken/incomplete. The 5 required steps are:
+    # company, listing, telegram, campaign, first run. Facebook stays a visible
+    # (clearly-optional) add-on card.
+    steps_done = sum([has_company, has_vacancy, has_telegram, has_campaign, has_posted])
+    steps_total = 5
     progress_pct = int((steps_done / steps_total) * 100)
 
     from common.roi import compute_roi

@@ -280,11 +280,12 @@ body{direction:rtl;text-align:right}
     <div class="lang-dots">
       {% for l in (supported_langs or ['en','ru','he']) %}
         {% if l == (ui_lang or 'he') %}<span class="active-lang">{{ l.upper() }}</span>
-        {% else %}<a href="/set-lang/{{ l }}">{{ l.upper() }}</a>{% endif %}
+        {% else %}<a href="/?lang={{ l }}">{{ l.upper() }}</a>{% endif %}
       {% endfor %}
     </div>
     <a href="#how">{% if ui_lang == 'he' %}איך זה עובד{% elif ui_lang == 'ru' %}Как это работает{% else %}How it works{% endif %}</a>
     <a href="#demo">{% if ui_lang == 'he' %}דמו{% elif ui_lang == 'ru' %}Демо{% else %}Demo{% endif %}</a>
+    <a href="#pricing">{% if ui_lang == 'he' %}תמחור{% elif ui_lang == 'ru' %}Тарифы{% else %}Pricing{% endif %}</a>
     <a href="{{ public_login_url }}">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
     <a href="{{ public_register_url }}" class="btn" style="border-radius:999px">{% if ui_lang == 'he' %}הרשמה{% elif ui_lang == 'ru' %}Регистрация{% else %}Register{% endif %}</a>
   </div>
@@ -308,6 +309,7 @@ body{direction:rtl;text-align:right}
     <a href="{{ public_register_url }}" class="btn">{% if ui_lang == 'he' %}הרשמה &rarr;{% elif ui_lang == 'ru' %}Регистрация &rarr;{% else %}Register &rarr;{% endif %}</a>
     <a href="{{ public_login_url }}" class="btn-ghost">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
   </div>
+  <p class="reveal stagger-3" style="margin-top:18px;font-size:14px;color:var(--light);font-weight:500">{% if ui_lang == 'he' %}{{ trial_days }} ימי ניסיון חינם · ללא כרטיס אשראי · התקנה תוך 10 דקות{% elif ui_lang == 'ru' %}{{ trial_days }} дней бесплатно · без карты · запуск за 10 минут{% else %}{{ trial_days }}-day free trial · no credit card · live in 10 minutes{% endif %}</p>
   <div class="hero-apps reveal stagger-3">
     <span class="hero-apps-label">{% if ui_lang == 'he' %}בקרוב גם באפליקציה לנייד{% elif ui_lang == 'ru' %}Скоро и в мобильном приложении{% else %}Coming soon on mobile{% endif %}</span>
     <div class="store-badges">
@@ -563,11 +565,59 @@ body{direction:rtl;text-align:right}
 </section>
 
 
+<!-- ═══ PRICING ═══ -->
+<section class="l-pricing" id="pricing">
+  <div class="section-label">
+    <div class="eyebrow reveal">{% if ui_lang == 'he' %}תמחור{% elif ui_lang == 'ru' %}Тарифы{% else %}Pricing{% endif %}</div>
+    <h2 class="reveal stagger-1">{% if ui_lang == 'he' %}פשוט וברור{% elif ui_lang == 'ru' %}Просто и честно{% else %}Simple and honest{% endif %}</h2>
+    <p class="reveal stagger-2">{% if ui_lang == 'he' %}{{ trial_days }} ימי ניסיון חינם · ללא כרטיס אשראי · ביטול בכל עת{% elif ui_lang == 'ru' %}{{ trial_days }} дней бесплатно · без карты · отмена в любой момент{% else %}{{ trial_days }}-day free trial · no card required · cancel anytime{% endif %}</p>
+  </div>
+  <div class="price-cards">
+    <div class="price-card reveal stagger-1">
+      <div class="price-name">{% if ui_lang == 'he' %}סטארטר{% elif ui_lang == 'ru' %}Стартер{% else %}Starter{% endif %}</div>
+      <div class="price-amount">₪299<span>{% if ui_lang == 'he' %}/חודש{% elif ui_lang == 'ru' %}/мес{% else %}/mo{% endif %}</span></div>
+      <ul class="price-list">
+        <li>{% if ui_lang == 'he' %}מודעה פעילה אחת{% elif ui_lang == 'ru' %}1 активное объявление{% else %}1 active listing{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}10 ערוצים{% elif ui_lang == 'ru' %}10 каналов{% else %}10 channels{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}פרסום אוטומטי בטלגרם{% elif ui_lang == 'ru' %}Автопостинг в Telegram{% else %}Auto-post to Telegram{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}סינון AI{% elif ui_lang == 'ru' %}AI-скрининг{% else %}AI screening{% endif %}</li>
+      </ul>
+      <a href="{{ public_register_url }}" class="price-cta outline">{% if ui_lang == 'he' %}התחל בחינם{% elif ui_lang == 'ru' %}Начать бесплатно{% else %}Start free{% endif %}</a>
+    </div>
+    <div class="price-card pop reveal stagger-2">
+      <span class="price-badge">{% if ui_lang == 'he' %}הכי פופולרי{% elif ui_lang == 'ru' %}Популярный{% else %}Most popular{% endif %}</span>
+      <div class="price-name">{% if ui_lang == 'he' %}פרו{% elif ui_lang == 'ru' %}Про{% else %}Pro{% endif %}</div>
+      <div class="price-amount">₪899<span>{% if ui_lang == 'he' %}/חודש{% elif ui_lang == 'ru' %}/мес{% else %}/mo{% endif %}</span></div>
+      <ul class="price-list">
+        <li>{% if ui_lang == 'he' %}5 מודעות פעילות{% elif ui_lang == 'ru' %}5 объявлений{% else %}5 active listings{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}50 ערוצים (טלגרם + פייסבוק){% elif ui_lang == 'ru' %}50 каналов (Telegram + Facebook){% else %}50 channels (Telegram + Facebook){% endif %}</li>
+        <li>{% if ui_lang == 'he' %}מתזמן קמפיינים{% elif ui_lang == 'ru' %}Планировщик кампаний{% else %}Campaign scheduler{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}אנליטיקה לפי ערוץ{% elif ui_lang == 'ru' %}Аналитика по каналам{% else %}Per-channel analytics{% endif %}</li>
+      </ul>
+      <a href="{{ public_register_url }}" class="price-cta primary">{% if ui_lang == 'he' %}התחל עכשיו{% elif ui_lang == 'ru' %}Начать сейчас{% else %}Start now{% endif %}</a>
+    </div>
+    <div class="price-card reveal stagger-3">
+      <div class="price-name">{% if ui_lang == 'he' %}סוכנות{% elif ui_lang == 'ru' %}Агентство{% else %}Agency{% endif %}</div>
+      <div class="price-amount">₪1999<span>{% if ui_lang == 'he' %}/חודש{% elif ui_lang == 'ru' %}/мес{% else %}/mo{% endif %}</span></div>
+      <ul class="price-list">
+        <li>{% if ui_lang == 'he' %}ללא הגבלת מודעות וערוצים{% elif ui_lang == 'ru' %}Безлимит объявлений и каналов{% else %}Unlimited listings & channels{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}ריבוי חברות + API{% elif ui_lang == 'ru' %}Мульти-компания + API{% else %}Multi-company + API{% endif %}</li>
+        <li>{% if ui_lang == 'he' %}מנהל אישי{% elif ui_lang == 'ru' %}Персональный менеджер{% else %}Dedicated manager{% endif %}</li>
+        <li>White-label</li>
+      </ul>
+      <a href="/pricing" class="price-cta outline">{% if ui_lang == 'he' %}פרטים{% elif ui_lang == 'ru' %}Подробнее{% else %}See details{% endif %}</a>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:28px"><a href="/pricing" style="color:var(--muted);font-size:14px">{% if ui_lang == 'he' %}השוואת תוכניות מלאה ושאלות נפוצות →{% elif ui_lang == 'ru' %}Полное сравнение тарифов и FAQ →{% else %}Full plan comparison & FAQ →{% endif %}</a></p>
+</section>
+
+
 <!-- ═══ FINAL CTA ═══ -->
 <section class="l-final">
   <h2 class="final-h2 reveal">{% if ui_lang == 'he' %}מוכנים להיכנס למערכת?{% elif ui_lang == 'ru' %}Готовы войти в систему?{% else %}Ready to enter the app?{% endif %}</h2>
   <p class="final-sub reveal stagger-1">{% if ui_lang == 'he' %}פותחים חשבון, מתחברים ללוח הבקרה ומתחילים לפרסם דרך האתר.{% elif ui_lang == 'ru' %}Создайте аккаунт, войдите в кабинет и начните работать через веб-приложение.{% else %}Create an account, sign in to the dashboard, and start working from the web app.{% endif %}</p>
-  <a href="{{ public_register_url }}" class="btn final-btn reveal stagger-2">{% if ui_lang == 'he' %}הרשמה{% elif ui_lang == 'ru' %}Регистрация{% else %}Register{% endif %}</a>
+  <a href="{{ public_register_url }}" class="btn final-btn reveal stagger-2">{% if ui_lang == 'he' %}התחל ניסיון חינם{% elif ui_lang == 'ru' %}Начать бесплатно{% else %}Start free trial{% endif %}</a>
+  <p class="reveal stagger-2" style="margin-top:14px;font-size:14px;color:var(--muted)">{% if ui_lang == 'he' %}{{ trial_days }} ימי ניסיון · ללא כרטיס אשראי{% elif ui_lang == 'ru' %}{{ trial_days }} дней бесплатно · без карты{% else %}{{ trial_days }}-day trial · no credit card{% endif %}</p>
   <div class="final-links reveal stagger-3">
     <a href="{{ public_login_url }}">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
     <a href="/terms">{% if ui_lang == 'he' %}תנאי שימוש{% elif ui_lang == 'ru' %}Условия{% else %}Terms{% endif %}</a>
