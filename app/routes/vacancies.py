@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
-from flask import Blueprint, redirect, render_template, request, url_for, jsonify
+from flask import Blueprint, current_app, redirect, render_template, request, url_for, jsonify
 from werkzeug.utils import secure_filename
 
 from ..auth import require_company
@@ -61,19 +61,6 @@ def _post_labels(listing_type: str, lang: str) -> dict:
     }
 
 
-def _safe_apply_url(raw) -> str | None:
-    """Allow only http(s) apply links. Rejects javascript:/data:/other schemes so a
-    tenant-supplied apply link can't become stored XSS when rendered on the vacancy
-    page. Returns None for empty/invalid (caller falls back to the generated link)."""
-    if not raw:
-        return None
-    candidate = str(raw).strip()
-    low = candidate.lower()
-    if low.startswith("http://") or low.startswith("https://"):
-        return candidate
-    return None
-
-
 def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[str, str]:
     title = form.get("final_post_title", "").strip() or form.get("title", "").strip()
     custom_body = form.get("final_post_body", "").strip()
@@ -86,7 +73,7 @@ def _build_post_asset_from_form(form, *, apply_url: str | None = None) -> tuple[
     salary_text = form.get("salary_text", "").strip()
     schedule_text = form.get("schedule_text", "").strip()
     contact_text = form.get("contact_text", "").strip()
-    apply_url = apply_url if apply_url is not None else _safe_apply_url(form.get("apply_url"))
+    apply_url = apply_url if apply_url is not None else form.get("apply_url", "").strip()
     if city:
         parts.append(f"{lbl['city']}: {city}")
     if salary_text:
@@ -322,7 +309,7 @@ def edit_vacancy_post(vacancy_id: int):
     v.salary_text = request.form.get("salary_text", "").strip() or None
     v.schedule_text = request.form.get("schedule_text", "").strip() or None
     v.contact_text = request.form.get("contact_text", "").strip() or None
-    apply_url_raw = _safe_apply_url(request.form.get("apply_url"))
+    apply_url_raw = request.form.get("apply_url", "").strip() or None
     v.apply_url = apply_url_raw or build_recruitbot_apply_link(v.id)
     v.listing_type = request.form.get("listing_type", "recruitment").strip() or "recruitment"
     v.bot_introduction = request.form.get("bot_introduction", "").strip() or None
@@ -401,7 +388,7 @@ def new_vacancy_post():
     salary_text = request.form.get("salary_text", "").strip() or None
     schedule_text = request.form.get("schedule_text", "").strip() or None
     contact_text = request.form.get("contact_text", "").strip() or None
-    apply_url = _safe_apply_url(request.form.get("apply_url"))
+    apply_url = request.form.get("apply_url", "").strip() or None
 
     if not title or not body:
         db.close()
@@ -450,8 +437,9 @@ def new_vacancy_post():
             ensure_ascii=False,
         )
 
+    company_id = current_company_id()
     vacancy = Vacancy(
-        company_id=current_company_id(),
+        company_id=company_id,
         title=title,
         body=body,
         city=city,
@@ -547,6 +535,11 @@ def new_vacancy_post():
 
     db.commit()
     db.close()
+    try:
+        from .campaigns import ensure_default_campaign
+        ensure_default_campaign(company_id)
+    except Exception:
+        current_app.logger.exception("default_campaign_autocreate_failed", extra={"company_id": company_id})
     return redirect(url_for("vacancies.list_vacancies", message="Listing created."))
 
 

@@ -21,6 +21,9 @@ def index():
     if session.get("is_admin"):
         return redirect(url_for("auth.cabinet"))
     # Premium white landing — one curated template per language (he default).
+    requested_lang = (request.args.get("lang") or "").strip().lower()
+    if requested_lang in {"en", "ru", "he"}:
+        session["ui_lang"] = requested_lang
     lang = session.get("ui_lang", "he")
     template = {"en": "landing_en.html", "ru": "landing_ru.html"}.get(lang, "landing.html")
     return render_template(template)
@@ -210,8 +213,10 @@ def dashboard():
             for candidate in recent_candidate_rows
         ]
 
-    steps_done = sum([has_company, has_vacancy, has_telegram, has_facebook, has_campaign, has_posted])
-    steps_total = 6
+    # Facebook is OPTIONAL for the pilot — a Telegram-only setup must reach 100%.
+    # FB is a bonus channel, not a required onboarding step.
+    steps_done = sum([has_company, has_vacancy, has_telegram, has_campaign, has_posted])
+    steps_total = 5
     progress_pct = int((steps_done / steps_total) * 100)
 
     from common.roi import compute_roi

@@ -1,5 +1,5 @@
 import time
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
 
 from common.integration_status import queue_status, telegram_authorization_status, telegram_destination_ready
 from ..auth import require_company
@@ -111,11 +111,12 @@ def new_source():
     if posting_mode not in {"auto", "assisted_manual"}:
         return redirect(url_for("sources.list_sources", error="Choose a valid posting mode."))
 
+    company_id = current_company_id()
     db = db_session()
     folder = request.form.get("folder", "").strip() or None
     source_type = SourceType(destination_kind) if platform == "telegram" else SourceType.group
     source = Source(
-        company_id=current_company_id(),
+        company_id=company_id,
         tg_ref=destination_ref,
         label=label,
         source_type=source_type,
@@ -145,6 +146,11 @@ def new_source():
             return redirect(ref + ("&" if "?" in ref else "?") + "error=already_exists")
         return redirect(url_for("sources.list_sources", error="This destination already exists."))
     db.close()
+    try:
+        from .campaigns import ensure_default_campaign
+        ensure_default_campaign(company_id)
+    except Exception:
+        current_app.logger.exception("default_campaign_autocreate_failed", extra={"company_id": company_id})
     # Return to referrer (Facebook/Telegram page) instead of sources list
     ref = request.referrer
     if ref:

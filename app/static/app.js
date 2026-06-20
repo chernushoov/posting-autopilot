@@ -198,7 +198,6 @@ function handleAct(a, el){
       if(a==='wa'){ var ph=L&&L.phone?L.phone.replace(/[^0-9]/g,''):''; if(ph){ window.open('https://wa.me/'+(ph.charAt(0)==='0'?'972'+ph.slice(1):ph),'_blank'); } return; }
       var un=L&&L.user?L.user.replace(/^@/,''):''; if(un){ window.open('https://t.me/'+un,'_blank'); } return;
     }
-    if(a==='plan-upgrade'){ window.location='/billing/checkout/'+((el.getAttribute('data-plan')||'pro')); return; }
     if(NAV[a]){ window.location=NAV[a]; return; }
   }
   switch(a){
@@ -246,7 +245,7 @@ function handleAct(a, el){
     case 'team-add': toast('Приглашение отправлено по email.'); break;
     case 'open-switcher': $('#cmpBtn').click(); break;
     /* billing */
-    case 'plan-upgrade': toast('Opening checkout — '+((el.getAttribute('data-plan')||'').toUpperCase())); break;
+    case 'plan-upgrade': toast('Переход на тариф '+((el.getAttribute('data-plan')||'').toUpperCase())+' — Stripe checkout…'); break;
     case 'plan-manage': toast('Управление подпиской…'); break;
     case 'trial-toggle': state.trialExpired=!state.trialExpired; rerender(); window.scrollTo(0,0); break;
     case 'pay-method': toast('Изменение способа оплаты…'); break;

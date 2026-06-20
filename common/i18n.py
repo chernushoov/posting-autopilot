@@ -301,6 +301,8 @@ UI = {
     "steps_completed": {"ru": "шагов завершено", "he": "צעדים הושלמו", "en": "steps completed"},
     "completed": {"ru": "Готово", "he": "הושלם", "en": "Completed"},
     "required": {"ru": "Необходимо", "he": "נדרש", "en": "Required"},
+    "optional": {"ru": "Необязательно", "he": "אופציונלי", "en": "Optional"},
+    "tg_alone_enough": {"ru": "Telegram уже достаточно, чтобы начать. Facebook можно подключить позже.", "he": "טלגרם לבדו מספיק כדי להתחיל. אפשר לחבר פייסבוק מאוחר יותר.", "en": "Telegram alone is enough to start — you can add Facebook later."},
     "company_profile": {"ru": "Профиль компании", "he": "פרופיל חברה", "en": "Company Profile"},
     "create_company_prompt": {"ru": "Создайте компанию для начала работы.", "he": "צור חברה כדי להתחיל.", "en": "Create your company to get started."},
     "create_company_btn": {"ru": "Создать компанию", "he": "צור חברה", "en": "Create Company"},

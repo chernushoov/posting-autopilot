@@ -1,4 +1,5 @@
 from flask import Flask, session, request, redirect
+from urllib.parse import urlparse
 from redis import Redis
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -243,6 +244,13 @@ def create_app():
     def set_lang(lang):
         if lang in SUPPORTED_LANGS:
             session["ui_lang"] = lang
+        referrer = request.referrer or ""
+        ref = urlparse(referrer)
+        host = ref.netloc or request.host
+        marketing_host = (Config.PUBLIC_MARKETING_URL or "").replace("https://", "").replace("http://", "").split("/", 1)[0]
+        is_marketing_home = (not referrer) or (ref.path in {"", "/"} and (not marketing_host or host == marketing_host or host == request.host))
+        if lang in SUPPORTED_LANGS and is_marketing_home:
+            return redirect(f"/?lang={lang}")
         return redirect(request.referrer or "/")
 
     @app.before_request
