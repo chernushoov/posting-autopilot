@@ -194,3 +194,37 @@ $C up -d listener     # after the owner's TG account login (optional)
 ```
 Rollback artifacts live in `/opt/posting-autopilot/backups/` (`LAST_BACKUP_TS` holds the timestamp).
 Do **not** run `deploy-hetzner.sh` as-is — it waits on bot+listener which need secrets and fails.
+
+---
+
+## 6. Conversion & SEO layer (wave 2 — landing + cabinet polish)
+
+Branch-only, additive, no prod redeploy. All changes verified locally on SQLite
+(app boots, `/` + `/dashboard` return 200 in EN/RU/HE, i18n keys resolve, JSON-LD parses).
+
+**Landing (`app/templates/landing.html`):**
+- **Objection-handling FAQ** (new `#faq` section + nav link) — 5 trilingual Q&A, `<details>`
+  accordion reusing landing card styling: *is it safe / ban risk · do I need Facebook ·
+  pricing & trial · data privacy · cancel anytime*. First item open by default.
+- **SEO/social head**: trilingual-aware `<title>` + `meta description`, canonical, full
+  OpenGraph + Twitter Card tags, `og:locale` per language (`he_IL`/`ru_RU`/`en_US`),
+  `theme-color`, and a **JSON-LD `SoftwareApplication`** block with 3 `Offer`s
+  (Starter ₪299 / Pro ₪899 / Agency ₪1999, ILS). `og:image` + canonical use
+  `PUBLIC_MARKETING_URL` (falls back to `https://posting-autopilot.com`).
+  - *Note:* the `og:image` currently points at `logo-mark.svg`. For best social previews,
+    the owner may later add a 1200×630 PNG share image and swap that one URL.
+- "How it works" (4 steps) and "manual vs Autopilot" before/after comparison were already
+  present from earlier work — wave 2 did **not** duplicate them; it added the missing FAQ.
+
+**Cabinet i18n stage-2:**
+- Routed the last inline-conditional strings through `ui()` / `common/i18n.py` so every
+  cabinet label has a single RU/HE/EN source of truth:
+  - dashboard "See how it works" card → `see_how_title` / `see_how_desc` / `see_how_btn`.
+  - top-nav `Proof` / `Experiment` / `Story` / `Autopilot` → `nav_proof` / `nav_experiment`
+    / `nav_story` / `nav_autopilot`.
+- The TG-only first-run path (profile → listing → connect Telegram → campaign → run) was
+  already fully `ui()`-driven from wave 1; no hardcoded English remained on it.
+
+**Trial reminder still stands:** keep **`TRIAL_DAYS=14`** in `.env.prod` (code default is 3).
+The landing trial copy and the JSON-LD/FAQ all read `trial_days` dynamically, so this single
+env var drives every "14-day free trial" mention on the site — no hardcoded numbers.

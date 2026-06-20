@@ -3,7 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Posting Autopilot</title>
+
+{# ── SEO / social meta (trilingual-aware) ──────────────────────────────── #}
+{% if ui_lang == 'he' %}
+  {% set seo_title = 'Posting Autopilot — פרסם פעם אחת, הבוט מטפל בשאר' %}
+  {% set seo_desc = 'מודעה אחת מגיעה ל-50+ קבוצות טלגרם ופייסבוק. בוט AI עונה, מסנן ואוסף טלפונים — אתה מקבל רק לידים חמים. גיוס, נדל"ן, רכב, שירותים. ' ~ trial_days ~ ' ימי ניסיון חינם, ללא כרטיס אשראי.' %}
+{% elif ui_lang == 'ru' %}
+  {% set seo_title = 'Posting Autopilot — опубликуй один раз, бот сделает остальное' %}
+  {% set seo_desc = 'Одно объявление → 50+ групп Telegram и Facebook. AI-бот отвечает, фильтрует и собирает телефоны — вы получаете только горячих лидов. Найм, недвижимость, авто, услуги. ' ~ trial_days ~ ' дней бесплатно, без карты.' %}
+{% else %}
+  {% set seo_title = 'Posting Autopilot — post once, the bot handles the rest' %}
+  {% set seo_desc = 'One listing → 50+ Telegram & Facebook groups. An AI bot answers, filters and collects phone numbers — you only get hot leads. Hiring, real estate, cars, services. ' ~ trial_days ~ '-day free trial, no credit card.' %}
+{% endif %}
+{% set canonical_url = public_marketing_url or 'https://posting-autopilot.com' %}
+
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="{{ canonical_url }}/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Posting Autopilot">
+<meta property="og:locale" content="{% if ui_lang == 'he' %}he_IL{% elif ui_lang == 'ru' %}ru_RU{% else %}en_US{% endif %}">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_desc }}">
+<meta property="og:url" content="{{ canonical_url }}/">
+<meta property="og:image" content="{{ canonical_url }}/static/logo-mark.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ seo_title }}">
+<meta name="twitter:description" content="{{ seo_desc }}">
+<meta name="twitter:image" content="{{ canonical_url }}/static/logo-mark.svg">
+<meta name="theme-color" content="#0071e3">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Posting Autopilot",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": {{ seo_desc | tojson }},
+  "url": "{{ canonical_url }}/",
+  "inLanguage": ["he", "ru", "en"],
+  "offers": [
+    {"@type": "Offer", "name": "Starter", "price": "299", "priceCurrency": "ILS"},
+    {"@type": "Offer", "name": "Pro", "price": "899", "priceCurrency": "ILS"},
+    {"@type": "Offer", "name": "Agency", "price": "1999", "priceCurrency": "ILS"}
+  ]
+}
+</script>
+
 <link rel="stylesheet" href="/static/app.css?v=20260613-logo">
 <style>
 /* ── Landing: 12-section scroll experience ───────────────────────────────── */
@@ -219,6 +266,17 @@
 .price-cta.outline{border:2px solid var(--border);color:var(--fg)}
 .price-cta.outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
 
+/* ── FAQ ─────────────────────────────────────────────────────────────────── */
+.l-faq{padding:100px 24px;background:#fff;position:relative}
+.faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.faq-item{background:var(--card);border:1px solid var(--border-light);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;transition:border-color .2s}
+.faq-item[open]{border-color:var(--accent)}
+.faq-item summary{list-style:none;cursor:pointer;padding:22px 26px;font-size:17px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:'+';font-size:24px;font-weight:400;color:var(--accent);flex-shrink:0;transition:transform .2s}
+.faq-item[open] summary::after{transform:rotate(45deg)}
+.faq-item .faq-a{padding:0 26px 22px;color:var(--muted);font-size:15px;line-height:1.65}
+
 /* ── Final CTA ───────────────────────────────────────────────────────────── */
 .l-final{padding:120px 24px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(170deg,#fff 0%,#f0f4ff 40%,#e8efff 100%)}
 .l-final::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(0,113,227,.06) 0%,transparent 60%);pointer-events:none;animation:pulse 6s ease-in-out infinite}
@@ -286,6 +344,7 @@ body{direction:rtl;text-align:right}
     <a href="#how">{% if ui_lang == 'he' %}איך זה עובד{% elif ui_lang == 'ru' %}Как это работает{% else %}How it works{% endif %}</a>
     <a href="#demo">{% if ui_lang == 'he' %}דמו{% elif ui_lang == 'ru' %}Демо{% else %}Demo{% endif %}</a>
     <a href="#pricing">{% if ui_lang == 'he' %}תמחור{% elif ui_lang == 'ru' %}Тарифы{% else %}Pricing{% endif %}</a>
+    <a href="#faq">{% if ui_lang == 'he' %}שאלות{% elif ui_lang == 'ru' %}FAQ{% else %}FAQ{% endif %}</a>
     <a href="{{ public_login_url }}">{% if ui_lang == 'he' %}כניסה{% elif ui_lang == 'ru' %}Войти{% else %}Sign in{% endif %}</a>
     <a href="{{ public_register_url }}" class="btn" style="border-radius:999px">{% if ui_lang == 'he' %}הרשמה{% elif ui_lang == 'ru' %}Регистрация{% else %}Register{% endif %}</a>
   </div>
@@ -609,6 +668,45 @@ body{direction:rtl;text-align:right}
     </div>
   </div>
   <p style="text-align:center;margin-top:28px"><a href="/pricing" style="color:var(--muted);font-size:14px">{% if ui_lang == 'he' %}השוואת תוכניות מלאה ושאלות נפוצות →{% elif ui_lang == 'ru' %}Полное сравнение тарифов и FAQ →{% else %}Full plan comparison & FAQ →{% endif %}</a></p>
+</section>
+
+
+<!-- ═══ FAQ — objection handling ═══ -->
+<section class="l-faq" id="faq">
+  <div class="section-label">
+    <div class="eyebrow reveal">{% if ui_lang == 'he' %}שאלות נפוצות{% elif ui_lang == 'ru' %}Частые вопросы{% else %}FAQ{% endif %}</div>
+    <h2 class="reveal stagger-1">{% if ui_lang == 'he' %}לפני שמתחילים{% elif ui_lang == 'ru' %}Прежде чем начать{% else %}Before you start{% endif %}</h2>
+  </div>
+  {% set faqs = [
+    (
+      ('האם זה בטוח? יש סיכון לחסימה?', 'Это безопасно? Есть риск блокировки?', 'Is it safe? Is there a ban risk?'),
+      ('פרסום בקבוצות רבות הוא אזור אפור בכל פלטפורמה. אנחנו מקלידים תו-אחר-תו (לא הדבקה), מוסיפים עיכובים אקראיים בין פרסומים (טלגרם 30 שניות–2 דקות, עד 10 בשעה; פייסבוק 5–10 דקות), ומכבדים שעות שקט בלילה. זה מפחית משמעותית את הסיכון, אבל אחריות הפרסום היא שלך — אנחנו ממליצים להתחיל בקצב מתון.', 'Постинг в множество групп — серая зона на любой платформе. Мы печатаем текст по символам (не вставка), добавляем случайные задержки между публикациями (Telegram 30 сек–2 мин, до 10 в час; Facebook 5–10 мин), и соблюдаем ночные паузы. Это сильно снижает риск, но ответственность за постинг на вас — рекомендуем начинать в спокойном темпе.', 'Posting to many groups is a grey area on every platform. We type text character-by-character (never paste), add random delays between posts (Telegram 30 s–2 min, max 10/hour; Facebook 5–10 min), and respect quiet night hours. This sharply lowers the risk, but posting responsibility is yours — we recommend starting at a gentle pace.')
+    ),
+    (
+      ('האם אני חייב חשבון פייסבוק?', 'Нужен ли мне Facebook?', 'Do I need Facebook?'),
+      ('לא. טלגרם לבדו מספיק כדי להתחיל פיילוט מלא — לפרסם, להריץ את הבוט ולקבל לידים חמים. פייסבוק הוא אופציונלי ואפשר להוסיף אותו מאוחר יותר כשתהיה מוכן.', 'Нет. Telegram сам по себе позволяет запустить полноценный пилот — постить, запускать бота и получать горячих лидов. Facebook опционален и его можно добавить позже, когда будете готовы.', 'No. Telegram alone is enough to run a full pilot — post, run the bot, and get hot leads. Facebook is optional and you can add it later when you are ready.')
+    ),
+    (
+      ('כמה זה עולה? יש תקופת ניסיון?', 'Сколько стоит? Есть пробный период?', 'How much does it cost? Is there a trial?'),
+      (trial_days ~ ' ימי ניסיון חינם, ללא כרטיס אשראי. אחרי הניסיון: סטארטר ₪299, פרו ₪899 (הכי פופולרי), סוכנות ₪1999 לחודש. אפשר לבטל בכל עת.', trial_days ~ ' дней бесплатно, без карты. После пробного периода: Стартер ₪299, Про ₪899 (популярный), Агентство ₪1999 в месяц. Отмена в любой момент.', trial_days ~ '-day free trial, no credit card. After the trial: Starter ₪299, Pro ₪899 (most popular), Agency ₪1999 per month. Cancel anytime.')
+    ),
+    (
+      ('מה קורה עם הנתונים שלי? פרטיות?', 'Что с моими данными? Приватность?', 'What about my data? Privacy?'),
+      ('הנתונים של כל חברה מבודדים לחלוטין — לקוח אחד לעולם לא רואה לידים או הגדרות של לקוח אחר. אסימוני גישה ופרטי חיבור רגישים נשמרים מוצפנים. אנחנו לא מוכרים את הנתונים שלך ולא משתפים אותם עם צד שלישי.', 'Данные каждой компании полностью изолированы — один клиент никогда не видит лидов или настроек другого. Токены доступа и чувствительные данные подключений хранятся в зашифрованном виде. Мы не продаём ваши данные и не передаём их третьим лицам.', 'Each company’s data is fully isolated — one client never sees another’s leads or settings. Access tokens and sensitive connection details are stored encrypted. We do not sell your data or share it with third parties.')
+    ),
+    (
+      ('אפשר לבטל בכל עת?', 'Можно отменить в любой момент?', 'Can I cancel anytime?'),
+      ('כן. אין חוזה והתחייבות. אפשר לבטל מתי שרוצים והמנוי לא יחודש. תקופת הניסיון לא דורשת כרטיס אשראי, אז לא תחויב בכלל אם תחליט לא להמשיך.', 'Да. Никаких контрактов и обязательств. Отменяйте когда угодно — подписка не продлится. Пробный период не требует карты, поэтому вы вообще не будете списаны, если решите не продолжать.', 'Yes. No contracts, no lock-in. Cancel whenever you like and the subscription simply won’t renew. The trial needs no credit card, so you are never charged if you decide not to continue.')
+    )
+  ] %}
+  <div class="faq-list">
+    {% for q, a in faqs %}
+    <details class="faq-item reveal stagger-{{ [loop.index, 4]|min }}"{% if loop.first %} open{% endif %}>
+      <summary>{% if ui_lang == 'he' %}{{ q[0] }}{% elif ui_lang == 'ru' %}{{ q[1] }}{% else %}{{ q[2] }}{% endif %}</summary>
+      <div class="faq-a">{% if ui_lang == 'he' %}{{ a[0] }}{% elif ui_lang == 'ru' %}{{ a[1] }}{% else %}{{ a[2] }}{% endif %}</div>
+    </details>
+    {% endfor %}
+  </div>
 </section>
 
 

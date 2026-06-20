@@ -47,10 +47,10 @@
       <a href="/campaigns/" {% if request.path.startswith('/campaigns') %}class="active"{% endif %}>{{ ui("nav_campaigns") }}</a>
       <a href="/candidates/" {% if request.path.startswith('/candidates') %}class="active"{% endif %}>{{ ui("nav_candidates") }}</a>
       <a href="/analytics/" {% if request.path.startswith('/analytics') %}class="active"{% endif %}>{{ ui("nav_analytics") }}</a>
-      <a href="/activity/" {% if request.path.startswith('/activity') %}class="active"{% endif %}>{% if ui_lang == 'he' %}הוכחה{% elif ui_lang == 'ru' %}Доказательство{% else %}Proof{% endif %}</a>
-      <a href="/experiment" {% if request.path.startswith('/experiment') %}class="active"{% endif %}>{% if ui_lang == 'he' %}ניסוי{% elif ui_lang == 'ru' %}Эксперимент{% else %}Experiment{% endif %}</a>
-      <a href="/demo/story" {% if request.path.startswith('/demo/story') %}class="active"{% endif %}>{% if ui_lang == 'he' %}סטורис{% elif ui_lang == 'ru' %}Сторис{% else %}Story{% endif %}</a>
-      <a href="/admin/autopilot" {% if request.path.startswith('/admin/autopilot') %}class="active"{% endif %}>Autopilot</a>
+      <a href="/activity/" {% if request.path.startswith('/activity') %}class="active"{% endif %}>{{ ui("nav_proof") }}</a>
+      <a href="/experiment" {% if request.path.startswith('/experiment') %}class="active"{% endif %}>{{ ui("nav_experiment") }}</a>
+      <a href="/demo/story" {% if request.path.startswith('/demo/story') %}class="active"{% endif %}>{{ ui("nav_story") }}</a>
+      <a href="/admin/autopilot" {% if request.path.startswith('/admin/autopilot') %}class="active"{% endif %}>{{ ui("nav_autopilot") }}</a>
     </nav>
     {% endif %}
     <div class="right">
