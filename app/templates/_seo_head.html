@@ -51,17 +51,16 @@
   }
 } %}
 {% set _L = _seo.get(seo_lang, _seo["he"]) %}
-{# canonical + hreflang alternates #}
+{# canonical — apex only. NOTE: hreflang intentionally omitted: lang is served by
+   session/Accept-Language at a single URL (/), so /?lang= variants are NOT distinct
+   self-canonical pages — declaring them as hreflang alternates contradicts the
+   apex canonical and would be worse than no hreflang. Revisit if we move to /en/ /ru/. #}
 <link rel="canonical" href="https://posting-autopilot.com/">
-<link rel="alternate" hreflang="en" href="https://posting-autopilot.com/?lang=en">
-<link rel="alternate" hreflang="ru" href="https://posting-autopilot.com/?lang=ru">
-<link rel="alternate" hreflang="he" href="https://posting-autopilot.com/?lang=he">
-<link rel="alternate" hreflang="x-default" href="https://posting-autopilot.com/">
-{# Twitter card (reuses landing copy; image = existing og:image asset) #}
+{# Twitter card — real 1200x630 social card #}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ _L.tw_title }}">
 <meta name="twitter:description" content="{{ _L.tw_desc }}">
-<meta name="twitter:image" content="https://posting-autopilot.com/static/icon-512.png">
+<meta name="twitter:image" content="https://posting-autopilot.com/static/og-card.png">
 {# Full Open Graph locale (short og:locale already present on the page) #}
 <meta property="og:locale:alternate" content="{{ _L.og_locale }}">
 {# SoftwareApplication structured data #}
@@ -80,10 +79,7 @@
   ]
 } %}
 <script type="application/ld+json">{{ _app_ld | tojson }}</script>
-{# FAQPage structured data #}
-{% set _faq_items = [] %}
-{% for q, a in _L.faq %}
-{% set _ = _faq_items.append({"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}) %}
-{% endfor %}
-{% set _faq_ld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": _faq_items} %}
-<script type="application/ld+json">{{ _faq_ld | tojson }}</script>
+{# FAQPage JSON-LD intentionally NOT emitted here: Google requires FAQ schema to
+   match FAQ that is VISIBLE on the page, and the landing has no visible FAQ yet.
+   The per-language FAQ copy is kept in `_seo.faq` above for Phase 2, where we add a
+   visible FAQ section and re-enable this schema against it. #}

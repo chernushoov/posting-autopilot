@@ -50,10 +50,10 @@ def robots_txt():
 def sitemap_xml():
     from flask import Response
     from xml.sax.saxutils import escape
+    # Only canonical URLs. /?lang= variants are NOT listed: they canonicalize to apex,
+    # so listing them would put non-canonical duplicates in the sitemap.
     urls = [
         "https://posting-autopilot.com/",
-        "https://posting-autopilot.com/?lang=en",
-        "https://posting-autopilot.com/?lang=ru",
         "https://posting-autopilot.com/terms",
         "https://posting-autopilot.com/privacy",
     ]
