@@ -1,0 +1,38 @@
+{# ──────────────────────────────────────────────────────────────────────────────
+   Shared FAQ source of truth — GEO Phase 2.
+   Single owner of the per-language FAQ Q&A. Used by BOTH:
+     1. _seo_head.html  → builds the FAQPage JSON-LD
+     2. the landing pages → render the VISIBLE FAQ section
+   so the schema text is byte-identical to the on-page text (Google/AI requirement).
+
+   Usage — IMPORT (not include; include cannot export a `set` to the caller):
+       {% import "_faq_data.html" as faqdata %}
+       {% set faq_items = faqdata.FAQ.get(seo_lang, faqdata.FAQ["he"]) %}
+   `faq_items` is a list of [question, answer] pairs for that language.
+────────────────────────────────────────────────────────────────────────────── #}
+{% set FAQ = {
+  "en": [
+    ["What does Posting Autopilot do?", "It posts a single ad to 50+ Telegram and Facebook groups at once, then an AI bot answers replies, screens them and collects phone numbers so you only get hot leads."],
+    ["Do I need to install anything?", "No. It runs in the browser. You connect your Telegram and (optionally) Facebook, write one ad and the autopilot handles the distribution."],
+    ["How does the AI lead bot work?", "The bot detects the language, answers from your FAQ, asks screening questions and collects the contact's phone number, then hands you only the qualified leads."],
+    ["Is Facebook required?", "No. Telegram-only setup works fully. Facebook is an optional bonus channel you can add later."],
+    ["How much does it cost?", "Three plans in ILS per month: Starter ₪299, Pro ₪899 and Agency ₪1999. You can start with a free trial."],
+    ["Can it post in Hebrew, Russian and English?", "Yes. The product and the AI bot work in Hebrew, Russian and English, including right-to-left Hebrew."]
+  ],
+  "ru": [
+    ["Что делает Posting Autopilot?", "Размещает одно объявление сразу в 50+ группах Telegram и Facebook, а затем AI-бот отвечает на сообщения, фильтрует их и собирает телефоны, чтобы вам приходили только горячие лиды."],
+    ["Нужно ли что-то устанавливать?", "Нет. Сервис работает в браузере. Вы подключаете Telegram и (по желанию) Facebook, пишете одно объявление, а автопилот занимается рассылкой."],
+    ["Как работает AI-бот по лидам?", "Бот определяет язык, отвечает из вашего FAQ, задаёт скрининговые вопросы и собирает телефон контакта, передавая вам только квалифицированных лидов."],
+    ["Обязателен ли Facebook?", "Нет. Достаточно только Telegram. Facebook — это дополнительный бонус-канал, который можно подключить позже."],
+    ["Сколько это стоит?", "Три тарифа в шекелях в месяц: Starter ₪299, Pro ₪899 и Agency ₪1999. Можно начать с бесплатного пробного периода."],
+    ["Работает ли на иврите, русском и английском?", "Да. Продукт и AI-бот работают на иврите, русском и английском, включая письмо справа налево на иврите."]
+  ],
+  "he": [
+    ["מה Posting Autopilot עושה?", "מפרסם מודעה אחת ל-50+ קבוצות טלגרם ופייסבוק בבת אחת, ואז בוט AI עונה לתגובות, מסנן אותן ואוסף מספרי טלפון כך שאתם מקבלים רק לידים חמים."],
+    ["צריך להתקין משהו?", "לא. השירות פועל בדפדפן. מחברים את הטלגרם ו(לבחירה) פייסבוק, כותבים מודעה אחת והאוטופיילוט מטפל בהפצה."],
+    ["איך בוט הלידים מבוסס ה-AI עובד?", "הבוט מזהה את השפה, עונה מתוך ה-FAQ שלכם, שואל שאלות סינון ואוסף את הטלפון של איש הקשר, ומעביר אליכם רק לידים מתאימים."],
+    ["האם פייסבוק הכרחי?", "לא. הגדרה עם טלגרם בלבד עובדת במלואה. פייסבוק הוא ערוץ בונוס אופציונלי שאפשר להוסיף בהמשך."],
+    ["כמה זה עולה?", "שלוש תוכניות בשקלים לחודש: Starter ₪299, Pro ₪899 ו-Agency ₪1999. אפשר להתחיל עם תקופת ניסיון חינם."],
+    ["האם זה עובד בעברית, רוסית ואנגלית?", "כן. המוצר ובוט ה-AI עובדים בעברית, רוסית ואנגלית, כולל כתיבה מימין לשמאל בעברית."]
+  ]
+} %}

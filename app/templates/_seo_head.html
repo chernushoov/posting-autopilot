@@ -5,52 +5,34 @@
    Emits: canonical, hreflang alternates, twitter card, og:locale (full code),
    SoftwareApplication JSON-LD, FAQPage JSON-LD. Does NOT duplicate the page's
    existing og:title / og:description / og:image / og:type / short og:locale.
+
+   FAQ Q&A live in the shared partial `_faq_data.html` (single source of truth),
+   so the FAQPage schema below is byte-identical to the VISIBLE FAQ section that
+   the landing pages render from the same partial.
 ────────────────────────────────────────────────────────────────────────────── #}
 {% set _seo = {
   "en": {
     "og_locale": "en_US",
     "tw_title": "Posting Autopilot — Auto-posting + AI bot for hot leads",
     "tw_desc": "Post once → 50+ Telegram & Facebook groups. An AI bot answers, filters and collects phone numbers. You only get hot leads.",
-    "app_desc": "Post one ad to 50+ Telegram and Facebook groups at once. An AI lead bot answers in any language, screens replies and collects phone numbers, so you only handle hot leads.",
-    "faq": [
-      ["What does Posting Autopilot do?", "It posts a single ad to 50+ Telegram and Facebook groups at once, then an AI bot answers replies, screens them and collects phone numbers so you only get hot leads."],
-      ["Do I need to install anything?", "No. It runs in the browser. You connect your Telegram and (optionally) Facebook, write one ad and the autopilot handles the distribution."],
-      ["How does the AI lead bot work?", "The bot detects the language, answers from your FAQ, asks screening questions and collects the contact's phone number, then hands you only the qualified leads."],
-      ["Is Facebook required?", "No. Telegram-only setup works fully. Facebook is an optional bonus channel you can add later."],
-      ["How much does it cost?", "Three plans in ILS per month: Starter ₪299, Pro ₪899 and Agency ₪1999. You can start with a free trial."],
-      ["Can it post in Hebrew, Russian and English?", "Yes. The product and the AI bot work in Hebrew, Russian and English, including right-to-left Hebrew."]
-    ]
+    "app_desc": "Post one ad to 50+ Telegram and Facebook groups at once. An AI lead bot answers in any language, screens replies and collects phone numbers, so you only handle hot leads."
   },
   "ru": {
     "og_locale": "ru_RU",
     "tw_title": "Posting Autopilot — Автопостинг + AI-бот для горячих лидов",
     "tw_desc": "Одно объявление → 50+ групп Telegram и Facebook. AI-бот отвечает, фильтрует и собирает телефоны. Вам — только горячие лиды.",
-    "app_desc": "Размещайте одно объявление сразу в 50+ группах Telegram и Facebook. AI-бот отвечает на любом языке, фильтрует ответы и собирает телефоны — вам остаются только горячие лиды.",
-    "faq": [
-      ["Что делает Posting Autopilot?", "Размещает одно объявление сразу в 50+ группах Telegram и Facebook, а затем AI-бот отвечает на сообщения, фильтрует их и собирает телефоны, чтобы вам приходили только горячие лиды."],
-      ["Нужно ли что-то устанавливать?", "Нет. Сервис работает в браузере. Вы подключаете Telegram и (по желанию) Facebook, пишете одно объявление, а автопилот занимается рассылкой."],
-      ["Как работает AI-бот по лидам?", "Бот определяет язык, отвечает из вашего FAQ, задаёт скрининговые вопросы и собирает телефон контакта, передавая вам только квалифицированных лидов."],
-      ["Обязателен ли Facebook?", "Нет. Достаточно только Telegram. Facebook — это дополнительный бонус-канал, который можно подключить позже."],
-      ["Сколько это стоит?", "Три тарифа в шекелях в месяц: Starter ₪299, Pro ₪899 и Agency ₪1999. Можно начать с бесплатного пробного периода."],
-      ["Работает ли на иврите, русском и английском?", "Да. Продукт и AI-бот работают на иврите, русском и английском, включая письмо справа налево на иврите."]
-    ]
+    "app_desc": "Размещайте одно объявление сразу в 50+ группах Telegram и Facebook. AI-бот отвечает на любом языке, фильтрует ответы и собирает телефоны — вам остаются только горячие лиды."
   },
   "he": {
     "og_locale": "he_IL",
     "tw_title": "Posting Autopilot — פרסום אוטומטי + בוט AI ללידים חמים",
     "tw_desc": "מודעה אחת → 50+ קבוצות טלגרם ופייסבוק. בוט AI עונה, מסנן ואוסף טלפונים. אתם מקבלים רק לידים חמים.",
-    "app_desc": "מפרסמים מודעה אחת ל-50+ קבוצות טלגרם ופייסבוק בבת אחת. בוט AI עונה בכל שפה, מסנן את התגובות ואוסף מספרי טלפון, כך שאתם מטפלים רק בלידים חמים.",
-    "faq": [
-      ["מה Posting Autopilot עושה?", "מפרסם מודעה אחת ל-50+ קבוצות טלגרם ופייסבוק בבת אחת, ואז בוט AI עונה לתגובות, מסנן אותן ואוסף מספרי טלפון כך שאתם מקבלים רק לידים חמים."],
-      ["צריך להתקין משהו?", "לא. השירות פועל בדפדפן. מחברים את הטלגרם ו(לבחירה) פייסבוק, כותבים מודעה אחת והאוטופיילוט מטפל בהפצה."],
-      ["איך בוט הלידים מבוסס ה-AI עובד?", "הבוט מזהה את השפה, עונה מתוך ה-FAQ שלכם, שואל שאלות סינון ואוסף את הטלפון של איש הקשר, ומעביר אליכם רק לידים מתאימים."],
-      ["האם פייסבוק הכרחי?", "לא. הגדרה עם טלגרם בלבד עובדת במלואה. פייסבוק הוא ערוץ בונוס אופציונלי שאפשר להוסיף בהמשך."],
-      ["כמה זה עולה?", "שלוש תוכניות בשקלים לחודש: Starter ₪299, Pro ₪899 ו-Agency ₪1999. אפשר להתחיל עם תקופת ניסיון חינם."],
-      ["האם זה עובד בעברית, רוסית ואנגלית?", "כן. המוצר ובוט ה-AI עובדים בעברית, רוסית ואנגלית, כולל כתיבה מימין לשמאל בעברית."]
-    ]
+    "app_desc": "מפרסמים מודעה אחת ל-50+ קבוצות טלגרם ופייסבוק בבת אחת. בוט AI עונה בכל שפה, מסנן את התגובות ואוסף מספרי טלפון, כך שאתם מטפלים רק בלידים חמים."
   }
 } %}
 {% set _L = _seo.get(seo_lang, _seo["he"]) %}
+{% import "_faq_data.html" as faqdata %}
+{% set faq_items = faqdata.FAQ.get(seo_lang, faqdata.FAQ["he"]) %}
 {# canonical — apex only. NOTE: hreflang intentionally omitted: lang is served by
    session/Accept-Language at a single URL (/), so /?lang= variants are NOT distinct
    self-canonical pages — declaring them as hreflang alternates contradicts the
@@ -79,7 +61,19 @@
   ]
 } %}
 <script type="application/ld+json">{{ _app_ld | tojson }}</script>
-{# FAQPage JSON-LD intentionally NOT emitted here: Google requires FAQ schema to
-   match FAQ that is VISIBLE on the page, and the landing has no visible FAQ yet.
-   The per-language FAQ copy is kept in `_seo.faq` above for Phase 2, where we add a
-   visible FAQ section and re-enable this schema against it. #}
+{# FAQPage JSON-LD — Phase 2. Built from the SAME `faq_items` (shared `_faq_data.html`)
+   that the landing renders as a VISIBLE FAQ section, so schema text == on-page text,
+   satisfying Google's visible-FAQ requirement and giving AI engines citable Q&A. #}
+{% set _faq_ld = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": []
+} %}
+{% for q, a in faq_items %}
+  {% set _ = _faq_ld["mainEntity"].append({
+    "@type": "Question",
+    "name": q,
+    "acceptedAnswer": {"@type": "Answer", "text": a}
+  }) %}
+{% endfor %}
+<script type="application/ld+json">{{ _faq_ld | tojson }}</script>

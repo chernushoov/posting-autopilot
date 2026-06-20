@@ -413,6 +413,17 @@ html,body{overflow-x:clip}
 .price-cta.outline{border:2px solid var(--border);color:var(--fg)}
 .price-cta.outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
 
+/* ── FAQ ─────────────────────────────────────────────────────────────────── */
+.l-faq{padding:100px 24px;background:var(--bg-white);position:relative}
+.faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.faq-item{background:var(--card);border:1px solid var(--border-light);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:border-color .2s}
+.faq-item[open]{border-color:var(--accent)}
+.faq-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 26px;font-size:17px;font-weight:600;color:var(--fg);text-align:start}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";font-size:24px;font-weight:400;color:var(--accent);flex-shrink:0;line-height:1;transition:transform .25s}
+.faq-item[open] summary::after{transform:rotate(45deg)}
+.faq-item .faq-a{padding:0 26px 24px;font-size:15px;line-height:1.7;color:var(--muted);text-align:start}
+
 /* ── Final CTA ───────────────────────────────────────────────────────────── */
 .l-final{padding:120px 24px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(170deg,#fff 0%,#f0f4ff 40%,#e8efff 100%)}
 .l-final::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(0,113,227,.06) 0%,transparent 60%);pointer-events:none;animation:pulse 6s ease-in-out infinite}
@@ -513,6 +524,7 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
     </div>
     <a href="#how">How it works</a>
     <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
     <a href="/login">Sign in</a>
     <a href="/register" class="btn" style="border-radius:999px">Start Free</a>
   </div>
@@ -810,6 +822,24 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
       </ul>
       <a href="/register" class="price-cta outline">Contact Us</a>
     </div>
+  </div>
+</section>
+
+
+<!-- ═══ FAQ ═══ -->
+<section class="l-faq" id="faq">
+  <div class="section-label">
+    <div class="eyebrow reveal">FAQ</div>
+    <h2 class="reveal stagger-1">Frequently asked questions</h2>
+  </div>
+  {% import "_faq_data.html" as faqdata %}{% set faq_items = faqdata.FAQ["en"] %}
+  <div class="faq-list reveal stagger-2">
+    {% for q, a in faq_items %}
+    <details class="faq-item"{% if loop.first %} open{% endif %}>
+      <summary>{{ q }}</summary>
+      <div class="faq-a">{{ a }}</div>
+    </details>
+    {% endfor %}
   </div>
 </section>
 
