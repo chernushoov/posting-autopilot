@@ -429,13 +429,15 @@ def build_cabinet_boot(db, owner_id, company_id, user=None):
 
 
 def _onboard(has_company, has_vacancy, has_tg, has_fb, has_campaign, has_posted):
+    # Facebook is intentionally NOT a required onboarding step: the pilot is
+    # Telegram-first and FB is an optional bonus channel. Keeping FB out of the
+    # checklist means a TG-only tenant reaches 100% (5/5), not a permanent 5/6.
     return [
         {"n": "01", "t": "Компания", "lk": "cb.ob.company", "done": has_company, "go": "company"},
         {"n": "02", "t": "Объявление", "lk": "cb.ob.ad", "done": has_vacancy, "go": "ads"},
         {"n": "03", "t": "Telegram", "done": has_tg, "go": "channel-tg"},
-        {"n": "04", "t": "Facebook", "done": has_fb, "go": "channel-fb"},
-        {"n": "05", "t": "Кампания", "lk": "cb.ob.campaign", "done": has_campaign, "go": "campaigns"},
-        {"n": "06", "t": "Первый постинг", "lk": "cb.ob.first", "done": has_posted, "go": "campaigns"},
+        {"n": "04", "t": "Кампания", "lk": "cb.ob.campaign", "done": has_campaign, "go": "campaigns"},
+        {"n": "05", "t": "Первый постинг", "lk": "cb.ob.first", "done": has_posted, "go": "campaigns"},
     ]
 
 
@@ -487,16 +489,19 @@ def _screens(hot, with_phone, active_ads, total_ads, tg_count, fb_count,
                              if hot else "Пока нет горячих лидов. Запустите постинг — отклики появятся здесь.",
                              "cb.cps.leads" if hot else "cb.cps.leads0", {"hot": hot} if hot else None))
 
+    # Telegram-first: the dashboard nudge guides the user to connect Telegram (the
+    # required channel), never alarms about Facebook (optional). No "half the
+    # channels unavailable" scare for a TG-only pilot.
     dash_cp = dict(tone="setup",
         facts=[_fact("doc", "ok" if active_ads else "warn", "Объявлений", active_ads, "cb.f.ads"),
                _fact("send", "ok" if has_telegram else "warn", "Telegram", yn(has_telegram), None, rk(has_telegram)),
-               _fact("fb", "ok" if has_fb else "warn", "Facebook", yn(has_fb), None, rk(has_fb))],
-        warn=([] if has_fb else [_warn("Facebook не подключён — половина каналов недоступна.", "cb.w.fb_half")]),
-        action=(_act("Подключить Facebook", "cb.a.connect_fb", "channel-fb", "fb") if not has_fb
+               _fact("fb", "ok" if has_fb else "ok", "Facebook", yn(has_fb), None, rk(has_fb))],
+        warn=([] if has_telegram else [_warn("Подключите Telegram — этого достаточно, чтобы начать автопостинг.", "cb.w.tg_connect")]),
+        action=(_act("Подключить Telegram", "cb.a.connect_tg", "channel-tg", "send") if not has_telegram
                 else _act("К объявлениям", "cb.a.to_ads", "ads", "doc")))
-    dash_cp.update(_summary("Подключите Facebook и запустите кампанию — постинг пойдёт автоматически." if not has_fb
+    dash_cp.update(_summary("Подключите Telegram и запустите кампанию — постинг пойдёт автоматически. Facebook можно добавить позже." if not has_telegram
                             else "Каналы на месте. Следите за горячими лидами на экране «Лиды».",
-                            "cb.cps.dash_fb" if not has_fb else "cb.cps.dash_ok"))
+                            "cb.cps.dash_tg" if not has_telegram else "cb.cps.dash_ok"))
 
     camp_cp = dict(tone=("manual" if manual else "running"),
         facts=[_fact("rocket", "ok", "Активны", active_camps, "cb.f.active"),
