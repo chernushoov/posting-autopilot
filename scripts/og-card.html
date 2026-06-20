@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:630px}
+  body{
+    background:#f5f5f7;            /* Apple light bg */
+    color:#1d1d1f;                 /* fg */
+    font-family:-apple-system,'SF Pro Display','SF Pro Text',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden;position:relative;
+  }
+  /* soft Apple-blue aurora, low opacity */
+  body::before{content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse at 82% 18%,rgba(0,113,227,.14) 0%,transparent 52%),
+      radial-gradient(ellipse at 12% 92%,rgba(0,113,227,.08) 0%,transparent 55%);
+    pointer-events:none}
+  .card{position:absolute;inset:0;padding:84px 92px;display:flex;flex-direction:column;justify-content:space-between;z-index:1}
+  .top{display:flex;align-items:center;gap:20px}
+  .mark{width:64px;height:64px}
+  .wordmark{font-size:34px;font-weight:800;letter-spacing:-.03em;color:#1d1d1f}
+  .wordmark em{font-style:normal;color:#0071e3}
+  .eyebrow{font-size:16px;letter-spacing:.15em;text-transform:uppercase;color:#0071e3;font-weight:700;margin-top:30px}
+  .eyebrow::after{content:'';display:block;width:48px;height:3px;background:#0071e3;margin-top:14px;border-radius:2px}
+  h1{font-size:78px;line-height:1.05;font-weight:700;letter-spacing:-.03em;color:#1d1d1f;max-width:1010px;margin-top:30px}
+  h1 .accent{color:#0071e3}
+  .foot{display:flex;align-items:flex-end;justify-content:space-between}
+  .sub{font-size:23px;color:#6e6e73;font-weight:400}
+  .url{font-size:22px;color:#1d1d1f;font-weight:600;letter-spacing:.01em}
+</style>
+</head>
+<body>
+<div class="card">
+  <div>
+    <div class="top">
+      <svg class="mark" viewBox="0 0 120 120" fill="none">
+        <defs>
+          <linearGradient id="paLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5aa7ff"/><stop offset="1" stop-color="#0071e3"/></linearGradient>
+          <linearGradient id="paDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a78e6"/><stop offset="1" stop-color="#0a3fc4"/></linearGradient>
+        </defs>
+        <path d="M60 15 L17 104 L60 84 Z" fill="url(#paLight)" stroke="url(#paLight)" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M60 15 L103 104 L60 84 Z" fill="url(#paDark)" stroke="url(#paDark)" stroke-width="5" stroke-linejoin="round"/>
+      </svg>
+      <span class="wordmark">Posting&nbsp;<em>Autopilot</em></span>
+    </div>
+    <div class="eyebrow">Social posting, on autopilot</div>
+    <h1>Autopilot for<br><span class="accent">social posting</span></h1>
+  </div>
+  <div class="foot">
+    <div class="sub">Plan, write &amp; publish to every channel &mdash; automatically</div>
+    <div class="url">posting-autopilot.com</div>
+  </div>
+</div>
+</body>
+</html>
