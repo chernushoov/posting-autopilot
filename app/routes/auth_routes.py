@@ -29,6 +29,74 @@ def index():
     return render_template(template)
 
 
+# ── GEO/SEO discovery files (additive, marketing site) ───────────────────────
+# Static lastmod — a fixed date is fine; bump it when the marketing copy changes.
+_SEO_LASTMOD = "2026-06-20"
+
+
+@bp.get("/robots.txt")
+def robots_txt():
+    from flask import Response
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "\n"
+        "Sitemap: https://posting-autopilot.com/sitemap.xml\n"
+    )
+    return Response(body, mimetype="text/plain")
+
+
+@bp.get("/sitemap.xml")
+def sitemap_xml():
+    from flask import Response
+    from xml.sax.saxutils import escape
+    urls = [
+        "https://posting-autopilot.com/",
+        "https://posting-autopilot.com/?lang=en",
+        "https://posting-autopilot.com/?lang=ru",
+        "https://posting-autopilot.com/terms",
+        "https://posting-autopilot.com/privacy",
+    ]
+    entries = "".join(
+        f"  <url><loc>{escape(u)}</loc><lastmod>{_SEO_LASTMOD}</lastmod></url>\n"
+        for u in urls
+    )
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{entries}"
+        "</urlset>\n"
+    )
+    return Response(body, mimetype="application/xml")
+
+
+@bp.get("/llms.txt")
+def llms_txt():
+    from flask import Response
+    body = (
+        "# Posting Autopilot\n"
+        "\n"
+        "> Post one ad to 50+ Telegram and Facebook groups at once, then an AI lead "
+        "bot answers replies, screens them and collects phone numbers so you only "
+        "handle hot leads.\n"
+        "\n"
+        "Posting Autopilot is a SaaS for small businesses and recruiters. It auto-"
+        "posts a single listing across many Telegram and Facebook groups, and an AI "
+        "bot qualifies the incoming replies (detects language, answers from your FAQ, "
+        "asks screening questions, collects the phone number). Works in Hebrew, "
+        "Russian and English. Plans (ILS/month): Starter 299, Pro 899, Agency 1999.\n"
+        "\n"
+        "## Key pages\n"
+        "\n"
+        "- [Home](https://posting-autopilot.com/): product overview and sign-up\n"
+        "- [Home (English)](https://posting-autopilot.com/?lang=en): English landing page\n"
+        "- [Home (Russian)](https://posting-autopilot.com/?lang=ru): Russian landing page\n"
+        "- [Terms](https://posting-autopilot.com/terms): terms of service\n"
+        "- [Privacy](https://posting-autopilot.com/privacy): privacy policy\n"
+    )
+    return Response(body, mimetype="text/plain")
+
+
 @bp.get("/cabinet")
 @login_required
 def cabinet():
