@@ -1,0 +1,82 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#0c0c16}
+  .stage{position:relative;overflow:hidden;background:#0c0c16;color:#fff;
+    font-family:'Montserrat','Assistant',-apple-system,'Arial Hebrew',Arial,sans-serif}
+  .bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.05)}
+  .scrim{position:absolute;inset:0;background:
+    linear-gradient(180deg,rgba(10,10,22,.72) 0%,rgba(10,10,22,.30) 34%,rgba(10,10,22,.66) 72%,rgba(8,8,18,.94) 100%)}
+  .glow{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 118%,rgba(74,222,128,.22),transparent 60%)}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;z-index:3}
+  .top{display:flex;align-items:center;gap:.6em}
+  .dot{width:.62em;height:.62em;border-radius:50%;background:#4ade80;box-shadow:0 0 16px #4ade80}
+  .kicker{font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b8f0d0}
+  .mid{}
+  .h1{font-weight:900;line-height:1.02;letter-spacing:-.02em;text-shadow:0 4px 40px rgba(0,0,0,.5)}
+  .accent{color:#4ade80}
+  .sub{font-weight:600;color:rgba(255,255,255,.9);line-height:1.32;max-width:20em}
+  .bottom{display:flex;align-items:center;justify-content:space-between;gap:1.2em;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:.5em;font-weight:800;letter-spacing:-.01em}
+  .mark{display:inline-flex;align-items:center;justify-content:center;border-radius:.28em;
+    background:linear-gradient(135deg,#4ade80,#22a3ff);color:#0c0c16;font-weight:900}
+  .cta{background:#4ade80;color:#0a0f12;font-weight:800;border-radius:999px;white-space:nowrap}
+  [dir=rtl] .sub{max-width:22em}
+  [dir=rtl] .kicker{letter-spacing:.06em}
+</style></head>
+<body>
+<div class="stage" id="stage"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const lang = q.get('lang')||'ru';
+  const ratio = q.get('ratio')||'sq'; // sq 1080x1080 | wide 1200x630 | port 1080x1350
+  const dims = {sq:[1080,1080,'bg-square.jpg'], wide:[1200,630,'bg-wide.jpg'], port:[1080,1350,'bg-portrait.jpg']};
+  const [W,H,bg] = dims[ratio];
+  const T = {
+    he:{ dir:'rtl', kicker:'אוטופיילוט לפרסום',
+      h1:['את הפוסט הזה', 'פרסמתי ', 'לבד.'],
+      sub:'Posting Autopilot מפרסם את המשרות והמבצעים שלך בטלגרם ובקבוצות פייסבוק — אוטומטית, עם סינון תשובות ב-AI.',
+      cta:'app.posting-autopilot.com' },
+    ru:{ dir:'ltr', kicker:'автопостинг на автопилоте',
+      h1:['Этот пост', 'я опубликовал ', 'сам.'],
+      sub:'Posting Autopilot постит ваши вакансии и офферы в Telegram и группы Facebook — автоматически, с AI-фильтром откликов.',
+      cta:'app.posting-autopilot.com' },
+    en:{ dir:'ltr', kicker:'posting on autopilot',
+      h1:['This post', 'published ', 'itself.'],
+      sub:'Posting Autopilot posts your jobs & offers to Telegram and Facebook groups — automatically, with AI reply screening.',
+      cta:'app.posting-autopilot.com' }
+  }[lang];
+  const pad = ratio==='wide' ? Math.round(W*0.055) : Math.round(W*0.075);
+  const h1size = ratio==='wide' ? W*0.072 : (ratio==='port'? W*0.108 : W*0.098);
+  const subsize = ratio==='wide' ? W*0.026 : W*0.032;
+  const kickSize = ratio==='wide' ? W*0.019 : W*0.023;
+  const brandSize = ratio==='wide' ? W*0.026 : W*0.032;
+  const ctaSize = ratio==='wide' ? W*0.019 : W*0.023;
+  const s = document.getElementById('stage');
+  s.style.width=W+'px'; s.style.height=H+'px';
+  s.setAttribute('dir', T.dir);
+  s.innerHTML = `
+    <div class="bg" style="background-image:url('${bg}')"></div>
+    <div class="scrim"></div><div class="glow"></div>
+    <div class="wrap" style="padding:${pad}px">
+      <div class="top">
+        <span class="dot"></span>
+        <span class="kicker" style="font-size:${kickSize}px">${T.kicker}</span>
+      </div>
+      <div class="mid">
+        <div class="h1" style="font-size:${h1size}px">${T.h1[0]}<br>${T.h1[1]}<span class="accent">${T.h1[2]}</span></div>
+        <div class="sub" style="font-size:${subsize}px;margin-top:${W*0.03}px">${T.sub}</div>
+      </div>
+      <div class="bottom">
+        <div class="brand" style="font-size:${brandSize}px">
+          <span class="mark" style="width:${brandSize*1.35}px;height:${brandSize*1.35}px;font-size:${brandSize*0.9}px">P</span>
+          Posting&nbsp;Autopilot
+        </div>
+        <div class="cta" style="font-size:${ctaSize}px;padding:${ctaSize*0.6}px ${ctaSize*1.15}px">${T.cta}</div>
+      </div>
+    </div>`;
+  document.title='ready';
+</script>
+</body></html>
