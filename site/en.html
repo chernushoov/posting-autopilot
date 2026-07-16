@@ -397,6 +397,17 @@ textarea{resize:vertical}
 .price-cta.primary:hover{background:var(--accent-hover);text-decoration:none}
 .price-cta.outline{border:2px solid var(--border);color:var(--fg)}
 .price-cta.outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.plan-picker{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:760px;margin:0 auto 36px}
+.plan-picker .pp-label{width:100%;text-align:center;color:var(--muted);font-size:14px;margin-bottom:4px}
+.plan-chip{background:var(--card);border:1px solid var(--border-light);border-radius:999px;padding:9px 18px;font-size:14px;font-weight:600;color:var(--fg);cursor:pointer;transition:all .2s}
+.plan-chip:hover,.plan-chip.on{border-color:var(--accent);color:var(--accent);background:rgba(0,113,227,.06)}
+.price-card.recommended{border-color:var(--accent);box-shadow:0 6px 30px rgba(0,113,227,.10)}
+.plan-rec{max-width:760px;margin:0 auto 28px;text-align:center;color:var(--muted);font-size:15px;min-height:22px}
+.plan-rec b{color:var(--accent)}
+.trust-bar{display:flex;flex-wrap:wrap;gap:14px 28px;justify-content:center;max-width:900px;margin:40px auto 0}
+.trust-bar .ti{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.trust-bar .ti b{color:var(--fg);font-weight:600}
+.trust-bar .ti::before{content:"\2713";color:var(--success);font-weight:800}
 
 /* ── Final CTA ───────────────────────────────────────────────────────────── */
 .l-final{padding:120px 24px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(170deg,#fff 0%,#f0f4ff 40%,#e8efff 100%)}
@@ -461,6 +472,7 @@ textarea{resize:vertical}
     </div>
     <a href="#how">How it works</a>
     <a href="#demo">Demo</a>
+    <a href="#pricing">Pricing</a>
     <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener">Sign in</a>
   </div>
 </nav>
@@ -737,6 +749,97 @@ textarea{resize:vertical}
     </div>
   </div>
 </section>
+
+
+<!-- ═══ PRICING ═══ -->
+<section class="l-pricing" id="pricing">
+  <div class="section-label">
+    <div class="eyebrow reveal">Pricing</div>
+    <h2 class="reveal stagger-1">One clear plan for every business</h2>
+  </div>
+  <div class="plan-picker reveal stagger-1">
+    <span class="pp-label">What's your business?</span>
+    <button type="button" class="plan-chip on" data-rec="pro"  data-name="Recruiting">Recruiting</button>
+    <button type="button" class="plan-chip" data-rec="pro"     data-name="Real estate">Real estate</button>
+    <button type="button" class="plan-chip" data-rec="starter" data-name="Auto">Auto</button>
+    <button type="button" class="plan-chip" data-rec="starter" data-name="Services">Services</button>
+    <button type="button" class="plan-chip" data-rec="agency"  data-name="Agency">Agency</button>
+  </div>
+  <div class="plan-rec reveal stagger-2" id="planRec">For <b>recruiting</b> we recommend <b>Pro</b> — 5 vacancies and 50 channels.</div>
+  <div class="price-cards">
+    <div class="price-card" data-plan="starter">
+      <div class="price-name">Starter</div>
+      <div class="price-amount">&#8362;299 <span>/mo</span></div>
+      <ul class="price-list">
+        <li>1 active ad / vacancy</li>
+        <li>10 channels (Telegram + Facebook)</li>
+        <li>Auto-post to Telegram</li>
+        <li>AI screening of inquiries</li>
+        <li>Russian · Hebrew · English</li>
+        <li>14-day free trial</li>
+      </ul>
+      <a href="#demo" class="price-cta outline">Start 14-day trial</a>
+    </div>
+    <div class="price-card pop" data-plan="pro">
+      <span class="price-badge">Most popular</span>
+      <div class="price-name">Pro</div>
+      <div class="price-amount">&#8362;899 <span>/mo</span></div>
+      <ul class="price-list">
+        <li>5 active ads / vacancies</li>
+        <li>50 channels (Telegram + Facebook)</li>
+        <li>Auto-post + Facebook assistant</li>
+        <li>AI screening (advanced)</li>
+        <li>Campaign scheduler + per-channel analytics</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="#demo" class="price-cta primary">Start 14-day trial</a>
+    </div>
+    <div class="price-card" data-plan="agency">
+      <div class="price-name">Agency</div>
+      <div class="price-amount">&#8362;1999 <span>/mo</span></div>
+      <ul class="price-list">
+        <li>Unlimited ads and channels</li>
+        <li>Multi-company + White-label</li>
+        <li>API access</li>
+        <li>Google Maps client finder</li>
+        <li>Automated outreach</li>
+        <li>Dedicated manager</li>
+      </ul>
+      <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener" class="price-cta outline">Contact us</a>
+    </div>
+  </div>
+  <div class="trust-bar reveal">
+    <span class="ti"><b>14-day free trial</b></span>
+    <span class="ti">No credit card</span>
+    <span class="ti">Cancel anytime</span>
+    <span class="ti"><b>Personal onboarding</b> in early access</span>
+  </div>
+  <!--
+    TESTIMONIALS — template, intentionally NOT rendered. Do not ship fabricated
+    quotes; drop in a REAL customer result (name/role + a concrete number) then remove this.
+  -->
+</section>
+<script>
+(function(){
+  var recCopy = {
+    starter: "Start with <b>Starter</b> — one active ad, ideal for a solo or small business.",
+    pro:     "We recommend <b>Pro</b> — 5 active ads and 50 channels, for most businesses.",
+    agency:  "For multi-company and volume — <b>Agency</b>, no limits with a dedicated manager."
+  };
+  var rec = document.getElementById('planRec');
+  document.querySelectorAll('.plan-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.plan-chip').forEach(function(c){ c.classList.remove('on'); });
+      chip.classList.add('on');
+      var plan = chip.getAttribute('data-rec');
+      if (rec) rec.innerHTML = "For <b>" + chip.getAttribute('data-name') + "</b>: " + (recCopy[plan]||recCopy.pro);
+      document.querySelectorAll('.price-card').forEach(function(card){
+        card.classList.toggle('recommended', card.getAttribute('data-plan') === plan);
+      });
+    });
+  });
+})();
+</script>
 
 
 <!-- ═══ FINAL CTA ═══ -->

@@ -397,6 +397,17 @@ textarea{resize:vertical}
 .price-cta.primary:hover{background:var(--accent-hover);text-decoration:none}
 .price-cta.outline{border:2px solid var(--border);color:var(--fg)}
 .price-cta.outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.plan-picker{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:760px;margin:0 auto 36px}
+.plan-picker .pp-label{width:100%;text-align:center;color:var(--muted);font-size:14px;margin-bottom:4px}
+.plan-chip{background:var(--card);border:1px solid var(--border-light);border-radius:999px;padding:9px 18px;font-size:14px;font-weight:600;color:var(--fg);cursor:pointer;transition:all .2s}
+.plan-chip:hover,.plan-chip.on{border-color:var(--accent);color:var(--accent);background:rgba(0,113,227,.06)}
+.price-card.recommended{border-color:var(--accent);box-shadow:0 6px 30px rgba(0,113,227,.10)}
+.plan-rec{max-width:760px;margin:0 auto 28px;text-align:center;color:var(--muted);font-size:15px;min-height:22px}
+.plan-rec b{color:var(--accent)}
+.trust-bar{display:flex;flex-wrap:wrap;gap:14px 28px;justify-content:center;max-width:900px;margin:40px auto 0}
+.trust-bar .ti{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.trust-bar .ti b{color:var(--fg);font-weight:600}
+.trust-bar .ti::before{content:"\2713";color:var(--success);font-weight:800}
 
 /* ── Final CTA ───────────────────────────────────────────────────────────── */
 .l-final{padding:120px 24px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(170deg,#fff 0%,#f0f4ff 40%,#e8efff 100%)}
@@ -461,6 +472,7 @@ textarea{resize:vertical}
     </div>
     <a href="#how">Как это работает</a>
     <a href="#demo">Демо</a>
+    <a href="#pricing">Цены</a>
     <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener">Войти</a>
   </div>
 </nav>
@@ -739,6 +751,97 @@ textarea{resize:vertical}
     </div>
   </div>
 </section>
+
+
+<!-- ═══ PRICING ═══ -->
+<section class="l-pricing" id="pricing">
+  <div class="section-label">
+    <div class="eyebrow reveal">Цены</div>
+    <h2 class="reveal stagger-1">Один понятный план для любого бизнеса</h2>
+  </div>
+  <div class="plan-picker reveal stagger-1">
+    <span class="pp-label">Какой у вас бизнес?</span>
+    <button type="button" class="plan-chip on" data-rec="pro"  data-name="Найм">Найм</button>
+    <button type="button" class="plan-chip" data-rec="pro"     data-name="Недвижимость">Недвижимость</button>
+    <button type="button" class="plan-chip" data-rec="starter" data-name="Авто">Авто</button>
+    <button type="button" class="plan-chip" data-rec="starter" data-name="Услуги">Услуги</button>
+    <button type="button" class="plan-chip" data-rec="agency"  data-name="Агентство">Агентство</button>
+  </div>
+  <div class="plan-rec reveal stagger-2" id="planRec">Для <b>найма</b> рекомендуем <b>Про</b> — 5 вакансий и 50 каналов.</div>
+  <div class="price-cards">
+    <div class="price-card" data-plan="starter">
+      <div class="price-name">Стартер</div>
+      <div class="price-amount">&#8362;299 <span>/мес</span></div>
+      <ul class="price-list">
+        <li>1 активное объявление / вакансия</li>
+        <li>10 каналов (Telegram + Facebook)</li>
+        <li>Автопостинг в Telegram</li>
+        <li>AI-скрининг обращений</li>
+        <li>Русский · Иврит · English</li>
+        <li>14 дней бесплатно</li>
+      </ul>
+      <a href="#demo" class="price-cta outline">14 дней бесплатно</a>
+    </div>
+    <div class="price-card pop" data-plan="pro">
+      <span class="price-badge">Популярный</span>
+      <div class="price-name">Про</div>
+      <div class="price-amount">&#8362;899 <span>/мес</span></div>
+      <ul class="price-list">
+        <li>5 активных объявлений / вакансий</li>
+        <li>50 каналов (Telegram + Facebook)</li>
+        <li>Автопостинг + ассистент Facebook</li>
+        <li>AI-скрининг (расширенный)</li>
+        <li>Планировщик + аналитика по каналам</li>
+        <li>Приоритетная поддержка</li>
+      </ul>
+      <a href="#demo" class="price-cta primary">14 дней бесплатно</a>
+    </div>
+    <div class="price-card" data-plan="agency">
+      <div class="price-name">Агентство</div>
+      <div class="price-amount">&#8362;1999 <span>/мес</span></div>
+      <ul class="price-list">
+        <li>Безлимит объявлений и каналов</li>
+        <li>Мульти-компания + White-label</li>
+        <li>API-доступ</li>
+        <li>Поиск клиентов в Google Maps</li>
+        <li>Автоматический outreach</li>
+        <li>Персональный менеджер</li>
+      </ul>
+      <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener" class="price-cta outline">Связаться</a>
+    </div>
+  </div>
+  <div class="trust-bar reveal">
+    <span class="ti"><b>14 дней бесплатно</b></span>
+    <span class="ti">Без карты</span>
+    <span class="ti">Отмена в любой момент</span>
+    <span class="ti"><b>Личная интеграция</b> на раннем доступе</span>
+  </div>
+  <!--
+    TESTIMONIALS — template, intentionally NOT rendered. Do not ship fabricated
+    quotes; drop in a REAL customer result (name/role + a concrete number) then remove this.
+  -->
+</section>
+<script>
+(function(){
+  var recCopy = {
+    starter: "Начните со <b>Стартера</b> — одно активное объявление, идеально для соло или малого бизнеса.",
+    pro:     "Рекомендуем <b>Про</b> — 5 активных объявлений и 50 каналов, для большинства бизнесов.",
+    agency:  "Для мульти-компании и объёма — <b>Агентство</b>, без лимитов и с личным менеджером."
+  };
+  var rec = document.getElementById('planRec');
+  document.querySelectorAll('.plan-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.plan-chip').forEach(function(c){ c.classList.remove('on'); });
+      chip.classList.add('on');
+      var plan = chip.getAttribute('data-rec');
+      if (rec) rec.innerHTML = "Для «<b>" + chip.getAttribute('data-name') + "</b>»: " + (recCopy[plan]||recCopy.pro);
+      document.querySelectorAll('.price-card').forEach(function(card){
+        card.classList.toggle('recommended', card.getAttribute('data-plan') === plan);
+      });
+    });
+  });
+})();
+</script>
 
 
 <!-- ═══ FINAL CTA ═══ -->
