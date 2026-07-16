@@ -397,6 +397,19 @@ textarea{resize:vertical}
 .price-cta.primary:hover{background:var(--accent-hover);text-decoration:none}
 .price-cta.outline{border:2px solid var(--border);color:var(--fg)}
 .price-cta.outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+/* vertical plan-picker: helps each business type see its recommended plan */
+.plan-picker{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:760px;margin:0 auto 36px}
+.plan-picker .pp-label{width:100%;text-align:center;color:var(--muted);font-size:14px;margin-bottom:4px}
+.plan-chip{background:var(--card);border:1px solid var(--border-light);border-radius:999px;padding:9px 18px;font-size:14px;font-weight:600;color:var(--fg);cursor:pointer;transition:all .2s}
+.plan-chip:hover,.plan-chip.on{border-color:var(--accent);color:var(--accent);background:rgba(0,113,227,.06)}
+.price-card.recommended{border-color:var(--accent);box-shadow:0 6px 30px rgba(0,113,227,.10)}
+.plan-rec{max-width:760px;margin:0 auto 28px;text-align:center;color:var(--muted);font-size:15px;min-height:22px}
+.plan-rec b{color:var(--accent)}
+/* honest risk-reversal bar — no fabricated proof, real product guarantees */
+.trust-bar{display:flex;flex-wrap:wrap;gap:14px 28px;justify-content:center;max-width:900px;margin:40px auto 0}
+.trust-bar .ti{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.trust-bar .ti b{color:var(--fg);font-weight:600}
+.trust-bar .ti::before{content:"\2713";color:var(--success);font-weight:800}
 
 /* ── Final CTA ───────────────────────────────────────────────────────────── */
 .l-final{padding:120px 24px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(170deg,#fff 0%,#f0f4ff 40%,#e8efff 100%)}
@@ -467,6 +480,7 @@ body{direction:rtl;text-align:right}
     </div>
     <a href="#how">איך זה עובד</a>
     <a href="#demo">דמו</a>
+    <a href="#pricing">מחירים</a>
     <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener">כניסה</a>
   </div>
 </nav>
@@ -745,6 +759,113 @@ body{direction:rtl;text-align:right}
     </div>
   </div>
 </section>
+
+
+<!-- ═══ PRICING ═══ -->
+<section class="l-pricing" id="pricing">
+  <div class="section-label">
+    <div class="eyebrow reveal">מחירים</div>
+    <h2 class="reveal stagger-1">תוכנית אחת ברורה לכל סוג עסק</h2>
+  </div>
+
+  <!-- vertical picker: each business type sees its recommended plan -->
+  <div class="plan-picker reveal stagger-1">
+    <span class="pp-label">מה סוג העסק שלך?</span>
+    <button type="button" class="plan-chip on" data-rec="pro"   data-name="גיוס עובדים">גיוס עובדים</button>
+    <button type="button" class="plan-chip" data-rec="pro"      data-name="נדל״ן">נדל״ן</button>
+    <button type="button" class="plan-chip" data-rec="starter"  data-name="מכירת רכב">מכירת רכב</button>
+    <button type="button" class="plan-chip" data-rec="starter"  data-name="שירותים">שירותים</button>
+    <button type="button" class="plan-chip" data-rec="agency"   data-name="סוכנות / ריבוי חברות">סוכנות</button>
+  </div>
+  <div class="plan-rec reveal stagger-2" id="planRec">לעסקי <b>גיוס עובדים</b> אנחנו ממליצים על <b>פרו</b> — 5 משרות פעילות ו-50 ערוצים.</div>
+
+  <div class="price-cards">
+    <div class="price-card" data-plan="starter">
+      <div class="price-name">סטארטר</div>
+      <div class="price-amount">&#8362;299 <span>/חודש</span></div>
+      <ul class="price-list">
+        <li>משרה / מודעה פעילה אחת</li>
+        <li>10 ערוצים (טלגרם + פייסבוק)</li>
+        <li>פרסום אוטומטי בטלגרם</li>
+        <li>סינון AI של פניות</li>
+        <li>עברית · רוסית · אנגלית</li>
+        <li>14 ימי ניסיון חינם</li>
+      </ul>
+      <a href="#demo" class="price-cta outline">התחל 14 יום חינם</a>
+    </div>
+
+    <div class="price-card pop" data-plan="pro">
+      <span class="price-badge">הכי פופולרי</span>
+      <div class="price-name">פרו</div>
+      <div class="price-amount">&#8362;899 <span>/חודש</span></div>
+      <ul class="price-list">
+        <li>5 משרות / מודעות פעילות</li>
+        <li>50 ערוצים (טלגרם + פייסבוק)</li>
+        <li>אוטופוסט + עוזר פייסבוק</li>
+        <li>סינון AI מורחב</li>
+        <li>מתזמן קמפיינים + אנליטיקה</li>
+        <li>תמיכה בעדיפות</li>
+      </ul>
+      <a href="#demo" class="price-cta primary">התחל 14 יום חינם</a>
+    </div>
+
+    <div class="price-card" data-plan="agency">
+      <div class="price-name">סוכנות</div>
+      <div class="price-amount">&#8362;1999 <span>/חודש</span></div>
+      <ul class="price-list">
+        <li>ללא הגבלת מודעות וערוצים</li>
+        <li>ריבוי חברות + White-label</li>
+        <li>גישת API</li>
+        <li>חיפוש לקוחות ב-Google Maps</li>
+        <li>פנייה אוטומטית</li>
+        <li>מנהל אישי</li>
+      </ul>
+      <a href="https://t.me/TerrazzoTLV" target="_blank" rel="noopener" class="price-cta outline">צור קשר</a>
+    </div>
+  </div>
+
+  <!-- honest risk-reversal: real product guarantees (NOT fabricated testimonials) -->
+  <div class="trust-bar reveal">
+    <span class="ti"><b>14 יום חינם</b></span>
+    <span class="ti">ללא כרטיס אשראי</span>
+    <span class="ti">ביטול בכל עת</span>
+    <span class="ti"><b>הטמעה אישית</b> בגישה מוקדמת</span>
+  </div>
+
+  <!--
+    ═══ TESTIMONIALS — ready-to-use template, intentionally NOT rendered ═══
+    Do NOT ship fabricated quotes. When you have a REAL customer result, drop it in
+    (name/role + a specific number + optional photo/logo) and remove this comment.
+    <div class="cases-grid" style="margin-top:48px">
+      <div class="case-card">
+        <div class="case-result">"[ציטוט אמיתי של לקוח]"</div>
+        <strong>[שם, תפקיד / עסק]</strong>
+      </div>
+    </div>
+  -->
+</section>
+<script>
+// vertical plan-picker → update the recommendation line + highlight the plan
+(function(){
+  var recCopy = {
+    starter: "התחל בתוכנית <b>סטארטר</b> — מודעה אחת פעילה, מושלם לעסק קטן או בודד.",
+    pro:     "אנחנו ממליצים על <b>פרו</b> — 5 מודעות פעילות ו-50 ערוצים, לרוב העסקים.",
+    agency:  "לריבוי חברות ונפח גבוה — <b>סוכנות</b>, ללא הגבלות עם מנהל אישי."
+  };
+  var rec = document.getElementById('planRec');
+  document.querySelectorAll('.plan-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.plan-chip').forEach(function(c){ c.classList.remove('on'); });
+      chip.classList.add('on');
+      var plan = chip.getAttribute('data-rec');
+      if (rec) rec.innerHTML = "לעסקי <b>" + chip.getAttribute('data-name') + "</b>: " + (recCopy[plan]||recCopy.pro);
+      document.querySelectorAll('.price-card').forEach(function(card){
+        card.classList.toggle('recommended', card.getAttribute('data-plan') === plan);
+      });
+    });
+  });
+})();
+</script>
 
 
 <!-- ═══ FINAL CTA ═══ -->
