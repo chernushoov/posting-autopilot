@@ -27,6 +27,19 @@ replaces itself with Gunicorn.
    `pilot-admin`.
 5. Verify `/health`, `/login`, then complete one marked test flow without starting external posts.
 
+## Export pilot data
+
+The free Postgres database expires after 30 days and has no backups. Before day 21, copy its
+external connection URL into `DATABASE_URL` locally and run:
+
+```bash
+python scripts/export_preview_database.py --output-dir "$HOME/Backups/posting-autopilot"
+```
+
+The command creates a private compressed archive plus SHA-256 file, verifies the core tables and
+never puts the database URL in command arguments or output. The archive contains PII and provider
+tokens: keep it on an encrypted disk, never commit it, and never upload it to a shared folder.
+
 Creating the Blueprint is an external deploy action and requires explicit owner approval.
 
 ## Honest limits
