@@ -1,0 +1,12 @@
+# Keep the customer preview web-only. Versions stay centralized in requirements.txt.
+-c requirements.txt
+
+Flask
+flask-wtf
+gunicorn
+psycopg2-binary
+python-dotenv
+redis
+requests
+rq
+SQLAlchemy

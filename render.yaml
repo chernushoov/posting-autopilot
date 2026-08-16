@@ -11,10 +11,12 @@ services:
     runtime: python
     plan: free
     region: frankfurt
-    buildCommand: pip install --no-cache-dir -r requirements.txt
+    buildCommand: pip install --no-cache-dir -r requirements-preview.txt
     startCommand: python scripts/start_render_preview.py
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.15
       - key: APP_ENV
         value: staging
       - key: FORCE_HTTPS

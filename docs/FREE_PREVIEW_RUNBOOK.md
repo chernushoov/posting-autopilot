@@ -6,13 +6,15 @@ types: one web service, one Postgres database and one non-persistent Key Value i
 ## Validate locally
 
 ```bash
+python scripts/test_render_preview_requirements.py
 python scripts/test_render_preview_runtime.py
 python scripts/customer_demo_flow_smoke.py
 ```
 
-The startup script rejects SQLite, local Redis, weak generated secrets and enabled billing. It
-waits for both linked datastores, applies the idempotent schema bootstrap, optionally seeds demo
-data, and then replaces itself with Gunicorn.
+The Blueprint pins the tested Python runtime and installs only web dependencies. The startup
+script rejects SQLite, local Redis, weak generated secrets and enabled billing. It waits for both
+linked datastores, applies the idempotent schema bootstrap, optionally seeds demo data, and then
+replaces itself with Gunicorn.
 
 ## Owner-approved launch
 
