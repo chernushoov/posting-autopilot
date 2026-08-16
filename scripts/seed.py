@@ -44,7 +44,7 @@ def main():
         db.add(s); db.commit()
 
     db.close()
-    print("Seed done. Login: admin / admin123")
+    print(f"Seed done. Admin login: {os.getenv('ADMIN_LOGIN', 'admin')} (password from environment)")
 
 if __name__ == "__main__":
     main()

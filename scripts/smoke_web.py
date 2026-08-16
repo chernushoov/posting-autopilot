@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -13,6 +14,7 @@ from http.cookiejar import CookieJar
 BASE_URL = os.getenv("SMOKE_BASE_URL", "http://localhost:8000")
 LOGIN = os.getenv("SMOKE_ADMIN_LOGIN", "admin")
 PASSWORD = os.getenv("SMOKE_ADMIN_PASSWORD", "admin123")
+CSRF_PATTERN = re.compile(r'name="csrf_token" value="([^"]+)"')
 
 
 def fail(message: str) -> None:
@@ -23,6 +25,13 @@ def fail(message: str) -> None:
 def expect_contains(body: str, needle: str, context: str) -> None:
     if needle not in body:
         fail(f"{context} missing expected text: {needle!r}")
+
+
+def csrf_token(body: str) -> str:
+    match = CSRF_PATTERN.search(body)
+    if not match:
+        fail("/login missing CSRF token")
+    return match.group(1)
 
 
 def open_text(opener: urllib.request.OpenerDirector, url: str, data: bytes | None = None) -> tuple[int, str]:
@@ -40,9 +49,12 @@ def main() -> None:
     status, body = open_text(opener, f"{BASE_URL}/login")
     if status != 200:
         fail(f"/login returned {status}")
-    expect_contains(body, "Login", "/login")
+    expect_contains(body, 'name="login"', "/login")
+    expect_contains(body, 'name="password"', "/login")
 
-    login_payload = urllib.parse.urlencode({"login": LOGIN, "password": PASSWORD}).encode()
+    login_payload = urllib.parse.urlencode(
+        {"login": LOGIN, "password": PASSWORD, "csrf_token": csrf_token(body)}
+    ).encode()
     status, body = open_text(opener, f"{BASE_URL}/login", login_payload)
     if status != 200:
         fail(f"POST /login returned {status}")
@@ -52,9 +64,11 @@ def main() -> None:
         "/companies/": "Default Company",
         "/vacancies/": "Concrete worker",
         "/sources/": "@example_group",
-        "/campaigns/": "Campaigns",
-        "/candidates/": "Candidates",
-        "/ai/settings": "AI settings",
+        "/campaigns/": 'href="/campaigns/new"',
+        "/candidates/": 'href="/candidates/export"',
+        "/ai/settings": 'name="ai_tone"',
+        "/connect/telegram": 'action="/connect/telegram/send-code"',
+        "/connect/facebook": 'action="/connect/facebook/bulk-add"',
     }
 
     for route, expected in route_expectations.items():
