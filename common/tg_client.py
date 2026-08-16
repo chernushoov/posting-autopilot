@@ -252,9 +252,8 @@ def is_authorized(api_id: int, api_hash: str, company_id: int) -> bool:
 # timeout is now 900s (see worker/run_worker.py + docker-compose.yml), but a
 # 10-minute pre-post sleep is also a bad pilot UX — operators expect their
 # "Run Now" click to act in human time. Hourly/daily caps + jitter still
-# enforce anti-spam. If a customer needs aggressive throttling, override via
-# env or raise these constants in a follow-up.
-POST_DELAY_MIN = 30    # 30 s minimum between posts (was 180)
+# enforce anti-spam.
+POST_DELAY_MIN = 60    # 1 min minimum between posts (was 180)
 POST_DELAY_MAX = 120   # 2 min maximum between posts (was 600)
 JITTER_FACTOR = 0.3    # ±30% random jitter
 MAX_POSTS_PER_HOUR = 10
@@ -485,7 +484,7 @@ def post_to_group(
     # Random delay before posting (anti-spam jitter)
     base_delay = random.uniform(POST_DELAY_MIN, POST_DELAY_MAX)
     jitter = base_delay * random.uniform(-JITTER_FACTOR, JITTER_FACTOR)
-    delay = max(1, base_delay + jitter)
+    delay = max(POST_DELAY_MIN, base_delay + jitter)
     logger.info(f"[tg_client] Anti-spam delay: {delay:.0f}s before posting to {group_id}")
     time.sleep(delay)
 
