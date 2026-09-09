@@ -1,3 +1,4 @@
+import hmac
 from functools import wraps
 from flask import session, redirect, url_for, request
 from .config import Config
@@ -57,4 +58,7 @@ def require_company(fn):
 def admin_login_ok(login: str, password: str) -> bool:
     if not Config.ADMIN_PASSWORD:
         return False
-    return login == Config.ADMIN_LOGIN and password == Config.ADMIN_PASSWORD
+    # constant-time comparison — avoid leaking login/password via response timing
+    login_ok = hmac.compare_digest(str(login or ""), str(Config.ADMIN_LOGIN))
+    pw_ok = hmac.compare_digest(str(password or ""), str(Config.ADMIN_PASSWORD))
+    return login_ok and pw_ok
