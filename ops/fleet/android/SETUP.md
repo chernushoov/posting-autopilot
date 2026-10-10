@@ -11,16 +11,14 @@
 - **Tailscale** (Play Store) → войти в тот же аккаунт, что iMac/MacBook.
   Android: Настройки → Сеть → VPN → Tailscale → «Постоянная VPN» = ВКЛ.
   Админка Tailscale: переименовать устройство в `android-agent`, тег `tag:agent`, Disable key expiry. ACL — из `../DEVICES.md`.
-- **Termux**, **Termux:API**, **Termux:Boot** — только из **F-Droid**, все три оттуда же.
-- Открыть Termux:Boot один раз.
+- **Termux**, **Termux:API**, **Termux:Boot** — все три из одного источника: F-Droid или GitHub Releases (`github.com/termux/termux-app/releases`, `termux-api/releases`, `termux-boot/releases`, файл `*arm64-v8a.apk`/`universal`). Не из Play Store.
+- Открыть Termux:Boot один раз. Разрешить уведомления Termux:API.
 - Настройки → Приложения → Termux / Termux:API / Termux:Boot / Tailscale → Батарея → **Без ограничений**.
 
 ## 2. Termux
+Одна команда (вставить целиком):
 ```
-pkg install -y git gh
-gh auth login
-gh repo clone chernushoov/posting-autopilot -- --depth 1 -b ccr-6619f392-28owwd
-bash ~/posting-autopilot/ops/fleet/android/bootstrap.sh
+pkg install -y curl && curl -fsSL https://raw.githubusercontent.com/chernushoov/posting-autopilot/ccr-6619f392-28owwd/ops/fleet/android/install.sh | bash
 ```
 В конце скрипт печатает `FB_PROXY_*` — сохранить.
 

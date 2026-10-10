@@ -8,9 +8,11 @@ WITH_CLAUDE=1
 [ "${1:-}" = "--no-claude" ] && WITH_CLAUDE=0
 
 echo "== packages"
+export DEBIAN_FRONTEND=noninteractive
+APT_OPTS=(-o Dpkg::Options::=--force-confnew -o Dpkg::Options::=--force-confdef)
 pkg update -y
-pkg upgrade -y
-pkg install -y termux-api termux-services cronie tinyproxy curl jq tmux openssh proot-distro coreutils findutils nano
+pkg upgrade -y "${APT_OPTS[@]}"
+pkg install -y "${APT_OPTS[@]}" termux-api termux-services cronie tinyproxy curl jq tmux openssh proot-distro coreutils findutils nano
 
 echo "== fleet dir"
 mkdir -p "$FLEET/state" "$HOME/.termux/boot" "$HOME/agent"
